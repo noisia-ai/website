@@ -16,10 +16,20 @@ export function UseCaseSelector() {
   const mobileTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const mobileViewportRef = useRef<HTMLDivElement | null>(null);
   const mobileTabsRef = useRef<HTMLDivElement | null>(null);
+  const hasInteractedRef = useRef(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const tabs = useMemo(() => homeUseCases.map((item, index) => ({ ...item, index })), []);
 
+  const markInteracted = () => {
+    if (!hasInteractedRef.current) {
+      hasInteractedRef.current = true;
+      setHasInteracted(true);
+    }
+  };
+
   const setCase = (index: number) => {
+    markInteracted();
     setSelectedIndex(index);
     const next = new URLSearchParams(params.toString());
     next.set("caso", String(index + 1));
@@ -32,7 +42,7 @@ export function UseCaseSelector() {
 
   useEffect(() => {
     const mobileQuery = window.matchMedia("(max-width: 760px)");
-    if (!mobileQuery.matches) {
+    if (!mobileQuery.matches || hasInteracted) {
       return undefined;
     }
 
@@ -41,13 +51,14 @@ export function UseCaseSelector() {
     }, 5200);
 
     return () => window.clearInterval(interval);
-  }, []);
+  }, [hasInteracted]);
 
   useEffect(() => {
     const activeCard = mobileCardRefs.current[selectedIndex];
     const mobileViewport = mobileViewportRef.current;
     if (activeCard && mobileViewport) {
-      mobileViewport.scrollTo({ left: activeCard.offsetLeft, behavior: "smooth" });
+      const centeredLeft = activeCard.offsetLeft - mobileViewport.clientWidth / 2 + activeCard.clientWidth / 2;
+      mobileViewport.scrollTo({ left: Math.max(0, centeredLeft), behavior: "smooth" });
     }
 
     const activeTab = mobileTabRefs.current[selectedIndex];

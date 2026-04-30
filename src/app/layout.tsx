@@ -1,10 +1,18 @@
 import type { Metadata, Viewport } from "next";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import { FluidBackground } from "@/components/layout/FluidBackground";
 import { ScrollReveal } from "@/components/layout/ScrollReveal";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { site } from "@/content/site";
+
+const noisiaSans = DM_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-noisia"
+});
 
 export const metadata: Metadata = {
   title: {
@@ -30,7 +38,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
-      <body>
+      <body className={noisiaSans.variable}>
         <FluidBackground />
         <ScrollReveal />
         <div className="site-shell">
