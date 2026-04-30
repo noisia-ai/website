@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -21,8 +23,8 @@
   --positive: #008f66;
   --positive-soft: #eaf8f2;
   --whisper: #c4a8e8;
-  --font-sans: var(--font-noisia), "Google Sans", "Product Sans", "Google Sans Text", "SF Pro Display",
-    "SF Pro Text", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Google Sans", "Product Sans", "Google Sans Text", "SF Pro Display", "SF Pro Text", -apple-system,
+    BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
   --radius-xs: 8px;
   --radius-sm: 12px;
   --radius-md: 16px;
@@ -52,7 +54,6 @@ html {
   background: var(--canvas);
   color: var(--neutral-11);
   font-family: var(--font-sans);
-  overflow-x: hidden;
   scroll-behavior: smooth;
 }
 
@@ -64,13 +65,12 @@ body {
   font-family: var(--font-sans);
   font-size: 16px;
   line-height: 1.6;
-  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
 }
 
 body.menu-open {
-  overflow: hidden;
+  overflow: visible;
 }
 
 body::before {

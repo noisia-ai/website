@@ -2,14 +2,25 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { MethodologyIcon } from "@/components/ui/MethodologyIcon";
 import { methodologies, site, useCases } from "@/content/site";
 
 export function SiteHeader() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    document.body.classList.remove("menu-open");
+  }, []);
+
+  useEffect(() => {
+    setIsOpen(false);
+    document.body.classList.remove("menu-open");
+  }, [pathname]);
 
   useEffect(() => {
     const updateScrolled = () => {
