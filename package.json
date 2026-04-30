@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "NEXT_TEST_WASM_DIR=$PWD/node_modules/@next/swc-wasm-nodejs next dev",
     "build": "NEXT_TEST_WASM_DIR=$PWD/node_modules/@next/swc-wasm-nodejs next build",
-    "start": "next start",
+    "start": "node .next/standalone/server.js",
     "lint": "eslint ."
   },
   "dependencies": {
