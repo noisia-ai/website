@@ -1,0 +1,130 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--canvas);
+  color: var(--neutral-11);
+  font-family: var(--font-body);
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--canvas);
+  color: var(--neutral-11);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+  opacity: 0.1;
+  background-image:
+    linear-gradient(rgba(10, 10, 10, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 10, 10, 0.016) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+.fluid-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  opacity: 0.72;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid rgba(0, 138, 138, 0.7);
+  outline-offset: 4px;
+}
+
+a {
+  color: inherit;
+}
+
+p {
+  margin: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  color: var(--neutral-11);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-family: var(--font-body);
+  font-size: 4.5rem;
+}
+
+h2 {
+  font-family: var(--font-label);
+  font-size: 2.6rem;
+}
+
+h3 {
+  font-family: var(--font-label);
+  font-size: 1.8rem;
+}
+
+strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+::selection {
+  background: rgba(0, 238, 238, 0.28);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 700px) {
+  body {
+    font-size: 15px;
+  }
+
+  h1 {
+    font-size: 3.45rem;
+  }
+
+  h2 {
+    font-size: 2.05rem;
+  }
+
+  h3 {
+    font-size: 1.45rem;
+  }
+}

@@ -1,0 +1,45 @@
+:root {
+  --canvas: #ffffff;
+  --surface-01: #fafafa;
+  --surface-02: #f4f4f4;
+  --neutral-03: #eeeeee;
+  --neutral-04: #e6e6e6;
+  --neutral-05: #dadada;
+  --neutral-09: #999999;
+  --neutral-10: #6d6d6d;
+  --neutral-11: #2b2b2b;
+  --ink: #0a0a0a;
+  --signal: #00eeee;
+  --signal-dark: #008a8a;
+  --tension: #ee0b00;
+  --tension-soft: #fff0ef;
+  --positive: #008f66;
+  --positive-soft: #eaf8f2;
+  --neutral-soft: #f1f1f1;
+  --negative: #ee0b00;
+  --negative-soft: #fff0ef;
+  --whisper: #c4a8e8;
+
+  --font-body: "Google Sans", system-ui, sans-serif;
+  --font-label: "Google Sans", system-ui, sans-serif;
+
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+  --space-3xl: 96px;
+
+  --shadow-soft: 0 4px 32px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lift: 0 8px 48px rgba(0, 0, 0, 0.1), 0 1px 5px rgba(0, 0, 0, 0.05);
+  --max-read: 720px;
+  --max-wide: 1080px;
+}
