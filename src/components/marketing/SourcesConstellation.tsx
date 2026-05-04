@@ -1,39 +1,80 @@
-// Proportional bubble layout for source types.
-// Circle diameter scales with relative signal volume / coverage weight.
-// Server component — no JS needed.
+// Platform logo cloud — visual hierarchy by size (xl → xs).
+// Uses simple-icons for brand SVGs; lucide for platforms not in the package.
 
-type SourceBubble = {
+import { ShoppingBag } from "lucide-react";
+import {
+  siAppstore,
+  siDiscourse,
+  siFacebook,
+  siGoogle,
+  siGoogleplay,
+  siInstagram,
+  siMercadopago,
+  siReddit,
+  siShopify,
+  siSpotify,
+  siThreads,
+  siTiktok,
+  siTrustpilot,
+  siWhatsapp,
+  siX,
+  siYoutube,
+} from "simple-icons";
+
+type Platform = {
   name: string;
+  /** simple-icons icon data (has .path) */
+  si?: { path: string; title?: string };
+  /** Fallback: lucide icon node */
+  lucide?: React.ReactNode;
   size: "xl" | "lg" | "md" | "sm" | "xs";
-  note?: string;
 };
 
-const SOURCES: SourceBubble[] = [
-  { name: "Redes sociales abiertas", size: "xl", note: "mayor volumen" },
-  { name: "Reviews de ecommerce y apps", size: "lg", note: "señal de decisión" },
-  { name: "Foros nicho", size: "lg", note: "alta intención" },
-  { name: "Q&A de marketplaces", size: "md", note: "momento de compra" },
-  { name: "Comunidades accesibles", size: "md" },
-  { name: "News y editoriales", size: "md" },
-  { name: "Podcasts transcritos", size: "sm" },
-  { name: "Video transcrito", size: "sm" },
-  { name: "Blogs y newsletters", size: "xs" },
-  { name: "Marketplaces especializados", size: "xs" },
+const PLATFORMS: Platform[] = [
+  { name: "Instagram",       si: siInstagram,   size: "xl" },
+  { name: "TikTok",          si: siTiktok,      size: "xl" },
+  { name: "YouTube",         si: siYoutube,     size: "lg" },
+  { name: "Facebook",        si: siFacebook,    size: "lg" },
+  { name: "X / Twitter",     si: siX,           size: "lg" },
+  { name: "Google Reviews",  si: siGoogle,      size: "lg" },
+  { name: "Mercado Libre",   si: siMercadopago, size: "lg" },
+  { name: "Amazon",          lucide: <ShoppingBag size={16} strokeWidth={2} />, size: "lg" },
+  { name: "Shopify",         si: siShopify,     size: "md" },
+  { name: "App Store",       si: siAppstore,    size: "md" },
+  { name: "Google Play",     si: siGoogleplay,  size: "md" },
+  { name: "Reddit",          si: siReddit,      size: "md" },
+  { name: "Trustpilot",      si: siTrustpilot,  size: "sm" },
+  { name: "WhatsApp",        si: siWhatsapp,    size: "sm" },
+  { name: "Threads",         si: siThreads,     size: "sm" },
+  { name: "Spotify",         si: siSpotify,     size: "sm" },
+  { name: "Foros y Q&A",    si: siDiscourse,   size: "xs" },
 ];
 
 export function SourcesConstellation() {
   return (
-    <div className="sources-constellation" aria-label="Tipos de fuentes por cobertura">
-      {SOURCES.map((source) => (
+    <div className="sources-constellation" aria-label="Plataformas cubiertas">
+      {PLATFORMS.map((platform) => (
         <div
-          key={source.name}
-          className={`constellation-bubble constellation-bubble--${source.size}`}
-          title={source.note}
+          key={platform.name}
+          className={`constellation-bubble constellation-bubble--${platform.size}`}
+          title={platform.name}
         >
-          <span className="constellation-bubble__name">{source.name}</span>
-          {source.note && (
-            <span className="constellation-bubble__note">{source.note}</span>
+          {platform.si && (
+            <svg
+              className="constellation-bubble__icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              fill="currentColor"
+            >
+              <path d={platform.si.path} />
+            </svg>
           )}
+          {platform.lucide && (
+            <span className="constellation-bubble__icon-wrap" aria-hidden="true">
+              {platform.lucide}
+            </span>
+          )}
+          <span className="constellation-bubble__name">{platform.name}</span>
         </div>
       ))}
     </div>

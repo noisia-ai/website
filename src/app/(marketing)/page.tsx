@@ -22,7 +22,6 @@ export default function HomePage() {
             eyebrow="DEL DATO A LA DECISIÓN"
             title="Así se ve cuando la conversación deja de ser ruido."
             lead="Noisia no entrega listening crudo. Entrega lecturas defendibles, trazables y listas para decisión. Estas son cinco escenas del sistema en acción."
-            align="center"
           />
           <Suspense fallback={<div className="glass loading-panel">Cargando dashboards...</div>}>
             <ProductConsoleShowcase />
@@ -87,7 +86,6 @@ export default function HomePage() {
             eyebrow="COBERTURA"
             title="La conversación que importa rara vez vive en una sola plataforma."
             lead="El corpus se arma por pregunta, no por default. Combinamos fuentes sociales, reviews, foros, noticias, audio, video y marketplaces cuando la decisión lo exige — y dejamos fuera lo que no aporta señal."
-            align="center"
           />
           <SourcesConstellation />
         </div>

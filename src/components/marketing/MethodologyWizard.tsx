@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { saveDiagContext } from "@/lib/diagContext";
 
 const wizardOptions = [
   {
@@ -38,8 +39,9 @@ const wizardOptions = [
 export function MethodologyWizard() {
   const [selected, setSelected] = useState<string | null>(null);
 
-  function handleSelect(slug: string) {
+  function handleSelect(slug: string, label: string) {
     setSelected(slug);
+    saveDiagContext({ wizardSituation: label });
     const target = document.getElementById(`methodology-${slug}`);
     if (!target) return;
     target.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -64,7 +66,7 @@ export function MethodologyWizard() {
           <li className="method-wizard-v2__row" key={option.label}>
             <button
               className={`method-wizard-v2__trigger ${selected === option.slug ? "is-active" : ""}`}
-              onClick={() => handleSelect(option.slug)}
+              onClick={() => handleSelect(option.slug, option.label)}
               type="button"
             >
               <span className="method-wizard-v2__index" aria-hidden="true">

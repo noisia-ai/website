@@ -24,7 +24,6 @@ export function SiteFooter() {
             <h3>Website</h3>
             <Link href="/manifiesto">Manifiesto</Link>
             <Link href="/nosotros">Nosotros</Link>
-            <Link href="/field-notes">Field Notes</Link>
             <Link href="/contacto">Contacto</Link>
           </div>
           <div>

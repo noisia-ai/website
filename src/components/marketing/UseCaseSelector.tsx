@@ -4,6 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MethodologyChip } from "@/components/ui/MethodologyIcon";
 import { homeUseCases } from "@/content/site";
+import { saveDiagContext } from "@/lib/diagContext";
 
 export function UseCaseSelector() {
   const router = useRouter();
@@ -31,6 +32,7 @@ export function UseCaseSelector() {
   const setCase = (index: number) => {
     markInteracted();
     setSelectedIndex(index);
+    saveDiagContext({ caseSlug: homeUseCases[index].slug });
     const next = new URLSearchParams(params.toString());
     next.set("caso", String(index + 1));
     router.replace(`${pathname}?${next.toString()}`, { scroll: false });

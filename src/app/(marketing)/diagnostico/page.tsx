@@ -1,24 +1,23 @@
 import { DiagnosticWizard } from "@/components/forms/DiagnosticWizard";
-import { PageIntro } from "@/components/ui/PageIntro";
 
 export const metadata = {
   title: "Diagnóstico",
-  description: "Cuestionario de discovery para convertir una pregunta de negocio en protocolo Noisia."
+  description: "Cuestionario de discovery para convertir una pregunta de negocio en protocolo Noisia.",
 };
 
 export default function DiagnosticPage() {
   return (
-    <>
-      <PageIntro
-        eyebrow="DIAGNÓSTICO"
-        title="Antes de hablar de metodología, entendamos la pregunta."
-        lead="Este cuestionario toma 8-10 minutos. Tus respuestas serán leídas por uno de nuestros arquitectos antes de cualquier llamada."
-      />
-      <section className="section">
-        <div className="section__inner">
-          <DiagnosticWizard />
-        </div>
-      </section>
-    </>
+    <section className="section diag-page-section">
+      <div className="section__inner diag-page-inner">
+        <header className="diag-page-header">
+          <span className="eyebrow">DIAGNÓSTICO</span>
+          <h1 className="display-md">Empieza por la pregunta.<br />La metodología viene después.</h1>
+          <p className="body-lg">
+            8–10 minutos. Un arquitecto lee tus respuestas antes de cualquier llamada.
+          </p>
+        </header>
+        <DiagnosticWizard />
+      </div>
+    </section>
   );
 }

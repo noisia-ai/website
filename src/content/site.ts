@@ -73,8 +73,7 @@ export const site = {
     { label: "Metodologías", href: "/metodologias" },
     { label: "Arquitectura", href: "/arquitectura-de-datos" },
     { label: "Casos", href: "/casos-de-uso" },
-    { label: "Servicios", href: "/servicios" },
-    { label: "Field Notes", href: "/field-notes" }
+    { label: "Servicios", href: "/servicios" }
   ]
 };
 

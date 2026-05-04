@@ -267,6 +267,7 @@
   text-align: center;
 }
 
+
 .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -546,6 +547,8 @@
 }
 
 .pipelineOutcome span {
+  display: inline-flex;
+  align-items: center;
   width: fit-content;
   min-height: 28px;
   padding: 0 10px;
@@ -1020,14 +1023,18 @@
   }
 
   .heroActions {
-    display: grid;
-    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 10px;
   }
 
+  /* Reset the flex: 1 1 190px from the ≤1023 rule — column flex makes buttons full-width */
   .heroActions :global(.button) {
-    width: 100%;
-    min-height: 54px;
+    flex: none;
+    width: auto;
+    min-width: min(224px, 68vw);
+    min-height: 50px;
   }
 
   .pipelinePanelHeader {
@@ -1114,9 +1121,13 @@
     padding: 12px 11px;
   }
 
+  .voiceMeta {
+    font-size: 0.43rem;
+  }
+
   .pipelineOutcome {
-    gap: 7px;
-    padding: 14px;
+    gap: 12px;
+    padding: 20px 18px;
     background:
       linear-gradient(135deg, rgba(18, 19, 20, 0.95), rgba(18, 19, 20, 0.86)),
       radial-gradient(circle at 20% 15%, rgba(0, 171, 181, 0.22), transparent 42%);
@@ -1203,7 +1214,15 @@
   }
 
   .decisionActions {
-    justify-content: stretch;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .decisionActions :global(.button) {
+    flex: none;
+    width: auto;
+    min-width: min(224px, 68vw);
   }
 }
 
