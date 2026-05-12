@@ -4185,6 +4185,20 @@ h4 {
   }
 }
 
+@media print {
+  body:has(.printScope) {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  body:has(.printScope)::before,
+  body:has(.printScope) .fluid-background,
+  body:has(.printScope) .site-header,
+  body:has(.printScope) .site-footer {
+    display: none !important;
+  }
+}
+
 @media (min-width: 761px) and (max-width: 1160px) {
   .hero-experience__inner {
     grid-template-columns: 1fr;

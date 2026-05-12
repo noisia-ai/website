@@ -70,6 +70,7 @@ export const site = {
   description:
     "Noisia construye inteligencia social para marcas que necesitan resolver decisiones con evidencia trazable, no monitorear menciones.",
   nav: [
+    { label: "Insights", href: "/insights" },
     { label: "Metodologías", href: "/metodologias" },
     { label: "Arquitectura", href: "/arquitectura-de-datos" },
     { label: "Casos", href: "/casos-de-uso" },

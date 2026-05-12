@@ -22,6 +22,7 @@ export function SiteFooter() {
         <div className="site-footer__links">
           <div>
             <h3>Website</h3>
+            <Link href="/insights">Insights</Link>
             <Link href="/manifiesto">Manifiesto</Link>
             <Link href="/nosotros">Nosotros</Link>
             <Link href="/contacto">Contacto</Link>
