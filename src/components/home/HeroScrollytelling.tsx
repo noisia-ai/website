@@ -120,7 +120,8 @@ export function HeroScrollytelling() {
 
       const mm = gsap.matchMedia();
 
-      mm.add("(min-width: 1024px) and (hover: hover) and (pointer: fine)", () => {
+      // Universal: scenes scroll naturally and reveal on enter — no pinning, no fade-out
+      mm.add("all", () => {
         const idleReveal = gsap.to(".scrollyNoiseCard", {
           autoAlpha: (index) => (index < 6 ? 1 : 0.78),
           filter: "blur(0px)",
@@ -131,198 +132,50 @@ export function HeroScrollytelling() {
           ease: "power2.out"
         });
 
-        gsap.set(".scrollyScene", { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" });
-        gsap.set(".scrollyScene:not(.scrollyIntro)", {
-          opacity: 0,
-          y: "42vh",
-          scale: 0.96,
-          filter: "blur(10px)"
-        });
-        gsap.set(".scrollyFill", { scaleX: 0, transformOrigin: "left center" });
-        gsap.set(".scrollyPipelineRailFill", { scaleY: 0, transformOrigin: "top center" });
-        gsap.set(".scrollyPipelineRow, .scrollyMetricCard, .scrollyStateRow, .scrollyRecommendation, .scrollyStat", {
-          opacity: 0,
-          y: 28
-        });
-        gsap.set(".scrollySignalChip", {
-          opacity: 0,
-          scale: 0.88,
-          filter: "blur(10px)"
-        });
-        gsap.set(".scrollyPipelineOutcome", { opacity: 0, y: 28, scale: 0.96 });
-        gsap.set(".scrollyNoiseCard", {
-          autoAlpha: (index) => (index < 6 ? 1 : 0),
-          scale: (index) => (index < 6 ? 1 : 0.94),
-          filter: (index) => (index < 6 ? "blur(0px)" : "blur(8px)")
-        });
-
-        const tl = gsap.timeline({
-          defaults: { ease: "power2.out" },
-          scrollTrigger: {
-            trigger: root,
-            start: "top top",
-            end: () => `+=${Math.round(window.innerHeight * 4.24)}`,
-            pin: stage,
-            pinSpacing: true,
-            scrub: 0.8,
-            anticipatePin: 1,
-            invalidateOnRefresh: true,
-            onUpdate: (self) => {
-              if (self.progress > 0.01) {
-                idleReveal.kill();
-              }
-            }
-          }
-        });
-
-        tl.to(
-          ".scrollyNoiseCard",
-          {
-            x: (index) => desktopDrift[index % desktopDrift.length].x,
-            y: (index) => desktopDrift[index % desktopDrift.length].y,
-            rotate: (index) => desktopDrift[index % desktopDrift.length].r,
-            autoAlpha: 0,
-            scale: 0.88,
-            filter: "blur(12px)",
-            stagger: { each: 0.025, from: "center" },
-            duration: 1.05
-          },
-          0.04
-        )
-          .to(
-            [".scrollyIntroCopy", ".scrollyIntroActions", ".scrollyIntroPrompt"],
-            {
-              opacity: 0,
-              y: -76,
-              filter: "blur(12px)",
-              stagger: 0.035,
-              duration: 0.62
-            },
-            0.14
-          )
-          .fromTo(
-            ".scrollyPipeline",
-            { opacity: 0, y: "48vh", scale: 0.94, filter: "blur(12px)" },
-            { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.88 },
-            0.58
-          )
-          .fromTo(
-            ".scrollySignalChip",
-            {
-              opacity: 0,
-              x: (index) => [-86, 72, -38, 96, -64, 44, 118, -110][index % 8],
-              y: (index) => [-42, -16, 36, 54, 82, -70, 20, -92][index % 8],
-              rotate: (index) => [-8, 6, -5, 8, -4, 5, 7, -7][index % 8],
-              scale: 0.82,
-              filter: "blur(12px)"
-            },
-            {
-              opacity: 1,
-              x: 0,
-              y: 0,
-              rotate: 0,
-              scale: 1,
-              filter: "blur(0px)",
-              stagger: { each: 0.026, from: "random" },
-              duration: 0.5
-            },
-            0.72
-          )
-          .to(".scrollyPipelineRailFill", { scaleY: 1, duration: 0.76, ease: "none" }, 0.86)
-          .to(
-            ".scrollyPipelineRow",
-            { opacity: 1, y: 0, stagger: 0.065, duration: 0.42 },
-            0.9
-          )
-          .to(
-            ".scrollyFill",
-            { scaleX: 1, stagger: 0.06, duration: 0.46 },
-            1.04
-          )
-          .to(
-            ".scrollyPipelineOutcome",
-            { opacity: 1, y: 0, scale: 1, duration: 0.42 },
-            1.2
-          )
-          .to(
-            ".scrollyPipeline",
-            { opacity: 0, y: "-24vh", scale: 0.98, filter: "blur(9px)", duration: 0.58 },
-            1.64
-          )
-          .fromTo(
-            ".scrollyMethod",
-            { opacity: 0, y: "48vh", scale: 0.94, filter: "blur(12px)" },
-            { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.82 },
-            1.94
-          )
-          .to(
-            ".scrollyMetricCard, .scrollyStateRow",
-            { opacity: 1, y: 0, stagger: 0.07, duration: 0.38 },
-            2.16
-          )
-          .to(
-            ".scrollyMethod",
-            { opacity: 0, y: "-24vh", scale: 0.98, filter: "blur(9px)", duration: 0.58 },
-            2.82
-          )
-          .fromTo(
-            ".scrollyDecision",
-            { opacity: 0, y: "48vh", scale: 0.94, filter: "blur(12px)" },
-            { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 0.82 },
-            3.1
-          )
-          .to(
-            ".scrollyRecommendation, .scrollyStat",
-            { opacity: 1, y: 0, stagger: 0.08, duration: 0.4 },
-            3.32
-          )
-          .to(
-            ".scrollyDecision",
-            { opacity: 0, y: "-22vh", scale: 0.985, filter: "blur(9px)", duration: 0.5 },
-            3.86
-          );
-
-        return () => {
-          idleReveal.kill();
-          tl.scrollTrigger?.kill();
-          tl.kill();
-        };
-      });
-
-      mm.add("(max-width: 1023px), (hover: none), (pointer: coarse)", () => {
         gsap.set(".scrollyScene", { clearProps: "opacity,y,scale,filter,position,transform" });
-        gsap.set(".scrollyScene:not(.scrollyIntro)", { opacity: 0.28, y: 88, scale: 0.96, filter: "blur(9px)" });
+        gsap.set(".scrollyScene:not(.scrollyIntro)", { opacity: 0.28, y: 60, scale: 0.97, filter: "blur(6px)" });
         gsap.set(".scrollyFill", { scaleX: 0, transformOrigin: "left center" });
         gsap.set(".scrollyPipelineRailFill", { scaleY: 0, transformOrigin: "top center" });
         gsap.set(".scrollyPipelineRow, .scrollyMetricCard, .scrollyStateRow, .scrollyRecommendation, .scrollyStat", {
           opacity: 0,
           y: 22
         });
-        gsap.set(".scrollySignalChip", { opacity: 0, y: 26, scale: 0.9, filter: "blur(10px)" });
+        gsap.set(".scrollySignalChip", { opacity: 0, y: 26, scale: 0.9, filter: "blur(8px)" });
         gsap.set(".scrollyPipelineOutcome", { opacity: 0, y: 24, scale: 0.96 });
-        gsap.set(".scrollyNoiseCard", { autoAlpha: (index) => (index < 4 ? 1 : 0), scale: 1, filter: "blur(0px)" });
+        gsap.set(".scrollyNoiseCard", {
+          autoAlpha: (index) => (index < 6 ? 1 : 0),
+          scale: (index) => (index < 6 ? 1 : 0.94),
+          filter: (index) => (index < 6 ? "blur(0px)" : "blur(6px)")
+        });
 
-        const mobileTriggers: ScrollTrigger[] = [];
+        const triggers: ScrollTrigger[] = [];
 
-        mobileTriggers.push(
+        // Intro: subtle noise-card drift as user scrolls through the first viewport
+        triggers.push(
           ScrollTrigger.create({
             trigger: ".scrollyIntro",
             start: "top 12%",
-            end: "bottom 18%",
+            end: "bottom 30%",
             scrub: 0.8,
+            onUpdate: (self) => {
+              if (self.progress > 0.02) {
+                idleReveal.kill();
+              }
+            },
             animation: gsap.to(".scrollyNoiseCard", {
-              x: (index) => desktopDrift[index % desktopDrift.length].x * 0.28,
+              x: (index) => desktopDrift[index % desktopDrift.length].x * 0.32,
               y: (index) => desktopDrift[index % desktopDrift.length].y * 0.32,
-              rotate: (index) => desktopDrift[index % desktopDrift.length].r,
-              autoAlpha: 0,
-              filter: "blur(9px)",
-              scale: 0.92,
+              rotate: (index) => desktopDrift[index % desktopDrift.length].r * 0.6,
+              autoAlpha: 0.2,
+              filter: "blur(6px)",
+              scale: 0.94,
               stagger: { each: 0.02, from: "center" },
               ease: "none"
             })
           })
         );
 
+        // Per-scene reveal-on-enter; once revealed, the scene stays visible
         [
           {
             scene: ".scrollyPipeline",
@@ -332,25 +185,27 @@ export function HeroScrollytelling() {
           { scene: ".scrollyMethod", children: ".scrollyMetricCard, .scrollyMethod .scrollyFill, .scrollyStateRow" },
           { scene: ".scrollyDecision", children: ".scrollyRecommendation, .scrollyStat" }
         ].forEach(({ scene, children }) => {
-          mobileTriggers.push(
+          // Scene container reveals as it enters viewport
+          triggers.push(
             ScrollTrigger.create({
               trigger: scene,
-              start: "top 78%",
-              end: "top 35%",
+              start: "top 82%",
+              end: "top 38%",
               scrub: 0.75,
               animation: gsap.fromTo(
                 scene,
-                { opacity: 0.28, y: 88, scale: 0.96, filter: "blur(9px)" },
+                { opacity: 0.28, y: 60, scale: 0.97, filter: "blur(6px)" },
                 { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", ease: "none" }
               )
             })
           );
 
-          mobileTriggers.push(
+          // Internal elements stagger in once the scene is mostly in view
+          triggers.push(
             ScrollTrigger.create({
               trigger: scene,
-              start: "top 66%",
-              end: "top 22%",
+              start: "top 68%",
+              end: "top 25%",
               scrub: 0.7,
               animation: gsap.to(children, {
                 opacity: 1,
@@ -366,7 +221,8 @@ export function HeroScrollytelling() {
         });
 
         return () => {
-          mobileTriggers.forEach((trigger) => trigger.kill());
+          idleReveal.kill();
+          triggers.forEach((t) => t.kill());
         };
       });
 

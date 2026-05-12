@@ -110,34 +110,38 @@
   position: relative;
   z-index: 2;
   width: min(100%, 1440px);
-  min-height: calc(100svh - 112px);
   margin: 0 auto;
   overflow: visible;
+  display: grid;
+  gap: clamp(80px, 9vw, 160px);
 }
 
 .scene {
-  position: absolute;
-  inset: 0;
+  position: relative;
   display: grid;
   align-content: center;
   justify-items: center;
   gap: clamp(18px, 2.6vw, 30px);
-  padding-block: clamp(30px, 5vw, 72px);
-  pointer-events: none;
+  padding-block: clamp(40px, 5vw, 80px);
 }
 
+/* Intro scene fills the first viewport — the hero treatment */
+.introScene {
+  min-height: calc(100svh - 112px);
+  align-content: center;
+}
+
+/* Other scenes: natural height, reveal on scroll, stay visible */
 .pipelineScene,
 .methodScene,
 .decisionScene {
-  opacity: 0;
-  transform: translate3d(0, 42vh, 0) scale(0.96);
-  filter: blur(10px);
+  opacity: 0.28;
+  transform: translate3d(0, 60px, 0) scale(0.97);
+  filter: blur(6px);
+  will-change: opacity, transform;
 }
 
-.scene :is(a, button) {
-  pointer-events: auto;
-}
-
+/* z-index ordering kept for visual depth when noise cards / scene content overlap */
 .introScene {
   z-index: 2;
 }
@@ -794,13 +798,8 @@
     padding-block: clamp(32px, 8vw, 54px);
   }
 
-  .pipelineScene,
-  .methodScene,
-  .decisionScene {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
+  /* Non-intro scenes keep their CSS initial state (faded);
+     GSAP reveals them on scroll across all breakpoints now. */
 
   .noiseCard {
     width: clamp(124px, 33vw, 168px);
