@@ -217,11 +217,11 @@ h4 {
 
 .section {
   position: relative;
-  padding: clamp(44px, 5vw, 72px) 20px;
+  padding: clamp(36px, 3.8vw, 56px) 20px;
 }
 
 .section--compact {
-  padding-block: clamp(36px, 4vw, 60px);
+  padding-block: clamp(28px, 3vw, 44px);
 }
 
 .section__inner {
@@ -237,44 +237,45 @@ h4 {
   display: inline-flex;
   align-items: center;
   width: fit-content;
-  min-height: 28px;
-  padding: 7px 12px;
+  min-height: 22px;
+  padding: 4px 10px;
   border-radius: var(--radius-pill);
   background: var(--surface-02);
   color: var(--neutral-10);
-  font-size: 0.76rem;
+  font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0;
+  letter-spacing: 0.02em;
   line-height: 1;
 }
 
 /* Type scale tuned for compact desktops (1024-1440px ≈ MacBook 13").
-   Max values still reach generous large-screen sizes at ≥1920px. */
+   Calibrated against actual 13" usage: H2s no longer dominate the viewport.
+   Max values still scale up reasonably for ≥1920px screens. */
 .display-xl {
-  font-size: clamp(2.4rem, 3.9vw, 4.5rem);
+  font-size: clamp(2.0rem, 3.1vw, 3.8rem);
   font-weight: 500;
-  line-height: 1.0;
+  line-height: 1.02;
   letter-spacing: 0;
 }
 
 .display-lg {
-  font-size: clamp(2.2rem, 3.35vw, 3.75rem);
+  font-size: clamp(1.7rem, 2.3vw, 2.7rem);
   font-weight: 500;
-  line-height: 1.05;
+  line-height: 1.08;
   letter-spacing: 0;
 }
 
 .display-md {
-  font-size: clamp(1.55rem, 2.5vw, 2.25rem);
+  font-size: clamp(1.3rem, 1.8vw, 1.85rem);
   font-weight: 500;
-  line-height: 1.12;
+  line-height: 1.15;
   letter-spacing: 0;
 }
 
 .body-lg {
   color: var(--neutral-10);
-  font-size: clamp(1rem, 1.6vw, 1.14rem);
-  line-height: 1.48;
+  font-size: clamp(0.92rem, 1.2vw, 1.04rem);
+  line-height: 1.5;
   letter-spacing: 0;
 }
 
@@ -436,9 +437,9 @@ h4 {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 12px;
-  min-height: 64px;
-  padding: 9px 10px 9px 14px;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 8px 6px 12px;
   border-radius: var(--radius-xl);
   pointer-events: auto;
   transition:
@@ -458,9 +459,9 @@ h4 {
 
 .brand-link {
   display: inline-grid;
-  grid-template-columns: 100px minmax(0, auto);
+  grid-template-columns: 84px minmax(0, auto);
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
   color: var(--neutral-11);
   text-decoration: none;
@@ -468,20 +469,20 @@ h4 {
 
 .brand-link img {
   display: block;
-  width: 100px;
+  width: 84px;
   height: auto;
 }
 
 .brand-link span {
   color: var(--neutral-10);
-  font-size: 0.76rem;
+  font-size: 0.68rem;
   font-weight: 700;
   line-height: 1.15;
   white-space: nowrap;
 }
 
 .brand-link--overlay {
-  grid-template-columns: 100px;
+  grid-template-columns: 84px;
 }
 
 .brand-link--overlay span {
@@ -503,12 +504,12 @@ h4 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 38px;
-  padding: 8px 16px;
+  min-height: 34px;
+  padding: 6px 14px;
   border-radius: var(--radius-pill);
   background: var(--ink);
   color: var(--canvas);
-  font-size: 0.84rem;
+  font-size: 0.78rem;
   font-weight: 700;
   text-decoration: none;
 }
@@ -516,8 +517,8 @@ h4 {
 .site-header__menu {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 38px;
+  height: 38px;
   border: 1px solid rgba(230, 230, 230, 0.86);
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.62);
@@ -819,16 +820,24 @@ h4 {
 
 .section-heading {
   display: grid;
-  gap: 20px;
-  max-width: 780px;
-  margin-bottom: clamp(34px, 5vw, 58px);
+  gap: 14px;
+  max-width: 640px;
+  margin-bottom: clamp(22px, 3vw, 38px);
+}
+
+.section-heading h2 {
+  max-width: 22ch;
 }
 
 .section-heading--center {
   justify-items: center;
-  max-width: 850px;
+  max-width: 720px;
   margin-inline: auto;
   text-align: center;
+}
+
+.section-heading--center h2 {
+  max-width: 26ch;
 }
 
 /* Eyebrow always left-anchored regardless of parent alignment */
@@ -837,16 +846,16 @@ h4 {
 }
 
 .site-footer {
-  padding-top: 32px;
+  padding-top: 20px;
 }
 
 .site-footer__panel {
   display: grid;
-  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.55fr);
-  gap: clamp(34px, 6vw, 72px);
+  grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1.55fr);
+  gap: clamp(28px, 4.5vw, 56px);
   width: min(100%, var(--max-wide));
   margin: 0 auto;
-  padding: clamp(26px, 5vw, 46px);
+  padding: clamp(22px, 3.6vw, 36px);
   border-radius: var(--radius-xxl);
 }
 
@@ -1693,9 +1702,9 @@ h4 {
   position: relative;
   display: grid;
   align-content: space-between;
-  gap: 18px;
-  min-height: 360px;
-  padding: clamp(22px, 2.8vw, 30px);
+  gap: 14px;
+  min-height: 280px;
+  padding: clamp(18px, 2.2vw, 26px);
   overflow: hidden;
   border-radius: var(--radius-xl);
   text-decoration: none;
@@ -1781,8 +1790,8 @@ h4 {
 .methodology-card h3 {
   max-width: 460px;
   color: var(--ink);
-  font-size: clamp(1.35rem, 2.2vw, 2.12rem);
-  line-height: 1.06;
+  font-size: clamp(1.15rem, 1.75vw, 1.6rem);
+  line-height: 1.1;
 }
 
 .methodology-card blockquote {
@@ -1804,19 +1813,19 @@ h4 {
 
 .methodology-card--2 {
   grid-column: span 7;
-  min-height: 310px;
+  min-height: 240px;
 }
 
 .methodology-card--3,
 .methodology-card--4,
 .methodology-card--5 {
   grid-column: span 4;
-  min-height: 330px;
+  min-height: 260px;
 }
 
 .methodology-card--6 {
   grid-column: span 12;
-  min-height: 290px;
+  min-height: 220px;
 }
 
 .thesis-panel {
@@ -2431,8 +2440,8 @@ h4 {
 
 .tier-card h3 {
   color: var(--ink);
-  font-size: clamp(1.35rem, 2.3vw, 2.1rem);
-  line-height: 1.1;
+  font-size: clamp(1.15rem, 1.7vw, 1.55rem);
+  line-height: 1.15;
 }
 
 .tier-card ul {
