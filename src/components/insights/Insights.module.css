@@ -381,7 +381,7 @@
   display: grid;
   gap: clamp(86px, 10vw, 138px);
   padding: clamp(44px, 6vw, 80px) 20px clamp(80px, 10vw, 140px);
-  overflow-x: clip;
+  overflow: visible;
 }
 
 .sectionIntro {
@@ -407,6 +407,108 @@
 
 .openingSection {
   padding-top: 18px;
+}
+
+.keyInsightsSection {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  gap: clamp(24px, 4vw, 58px);
+  align-items: start;
+  scroll-margin-top: 152px;
+}
+
+.keyInsightsIntro {
+  position: sticky;
+  top: 154px;
+  display: grid;
+  gap: 14px;
+  align-self: start;
+}
+
+.keyInsightsIntro h2 {
+  max-width: 620px;
+  color: #1a1a1a;
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  font-weight: 850;
+  letter-spacing: -0.05em;
+  line-height: 0.96;
+  text-wrap: balance;
+}
+
+.keyInsightsIntro p {
+  max-width: 560px;
+  color: #5c5c5c;
+  font-size: clamp(1rem, 1.45vw, 1.2rem);
+  line-height: 1.5;
+}
+
+.keyInsightsButton {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  width: fit-content;
+  min-height: 40px;
+  margin-top: 8px;
+  padding: 0 15px;
+  border: 1px solid rgba(26, 26, 26, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: var(--report-shadow-soft);
+  color: #1a1a1a;
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-decoration: none;
+  backdrop-filter: blur(18px) saturate(128%);
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.keyInsightsButton:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.keyInsightsList {
+  display: grid;
+  gap: 0;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  border-top: 1px solid rgba(26, 26, 26, 0.1);
+}
+
+.keyInsightsList li {
+  border-bottom: 1px solid rgba(26, 26, 26, 0.1);
+}
+
+.keyInsightsList a {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 0.86fr) minmax(0, 1.14fr);
+  gap: clamp(14px, 2.4vw, 28px);
+  align-items: baseline;
+  padding: clamp(18px, 2.8vw, 30px) 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.keyInsightsList span {
+  color: var(--signal-color);
+  font-size: 0.85rem;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+}
+
+.keyInsightsList strong {
+  color: #1a1a1a;
+  font-size: clamp(1rem, 1.55vw, 1.35rem);
+  font-weight: 850;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.keyInsightsList p {
+  color: #626262;
+  font-size: clamp(0.9rem, 1.1vw, 1rem);
+  line-height: 1.45;
 }
 
 .editorialColumn {
@@ -451,7 +553,7 @@
   background: var(--report-glass);
   box-shadow: var(--report-shadow-soft);
   backdrop-filter: blur(22px) saturate(132%);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .contractGrid article,
@@ -535,18 +637,6 @@
   box-shadow: var(--report-shadow-soft);
   backdrop-filter: blur(22px) saturate(132%);
   align-content: start;
-}
-
-.radarColumnFeatured {
-  border-left: 4px solid #1d7a55;
-  background:
-    linear-gradient(180deg, rgba(240, 248, 244, 0.78), rgba(255, 255, 255, 0.34)),
-    radial-gradient(circle at 70% 0%, rgba(29, 122, 85, 0.12), transparent 42%);
-}
-
-.radarColumnFeatured header p {
-  color: #0f4a35;
-  font-weight: 760;
 }
 
 .radarColumn header {
@@ -1137,6 +1227,7 @@
 }
 
 .lifecycleChart {
+  position: relative;
   min-width: 0;
 }
 
@@ -1151,7 +1242,7 @@
     rgba(255, 255, 255, 0.34);
   background-size: 100% 25%, 25% 100%, auto;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .lifecycleBands {
@@ -1448,27 +1539,6 @@
   scroll-margin-top: 178px;
 }
 
-.signalCardBigFinding {
-  position: relative;
-  padding: clamp(30px, 5vw, 58px);
-  border: 1px solid color-mix(in srgb, var(--signal-color) 34%, #ffffff);
-  border-top: 6px solid var(--signal-color);
-  border-radius: 34px;
-  background:
-    radial-gradient(circle at 86% 8%, color-mix(in srgb, var(--signal-color) 14%, transparent), transparent 34%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(240, 248, 244, 0.42));
-  box-shadow: 0 34px 96px color-mix(in srgb, var(--signal-color) 13%, transparent), var(--report-shadow-soft);
-}
-
-.bigFindingLabel {
-  border: 1px solid color-mix(in srgb, var(--signal-color) 42%, #ffffff);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--signal-color) 12%, #ffffff);
-  color: var(--signal-color) !important;
-  padding: 7px 11px;
-  letter-spacing: 0.08em !important;
-}
-
 .signalHeader {
   display: grid;
   grid-template-columns: 150px minmax(0, 1fr);
@@ -1663,7 +1733,7 @@
     radial-gradient(circle at top left, color-mix(in srgb, var(--signal-color) 9%, transparent), transparent 34%);
   box-shadow: var(--report-shadow-soft);
   backdrop-filter: blur(20px) saturate(128%);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .headlineCard {
@@ -1929,22 +1999,24 @@
   line-height: 1.58;
 }
 
-.evidenceList blockquote span {
-  display: inline;
+.quoteLine {
+  display: block;
+  max-width: 100%;
 }
 
-:global(.has-scroll-reveal) .evidenceList li:global(.reveal-item) blockquote {
+:global(.has-scroll-reveal) .evidenceList li:global(.reveal-item) .quoteLine {
   color: transparent;
+  clip-path: inset(0 100% 0 0);
 }
 
-:global(.has-scroll-reveal) .evidenceList li:global(.reveal-item.is-visible) blockquote {
+:global(.has-scroll-reveal) .evidenceList li:global(.reveal-item.is-visible) .quoteLine {
   color: #303030;
   clip-path: inset(0 0 0 0);
-  animation: chat-type-reveal 1150ms steps(38, end) calc(var(--reveal-delay, 0ms) + 240ms) both;
+  animation: chat-type-reveal 360ms steps(18, end) calc(var(--reveal-delay, 0ms) + 80ms + (var(--quote-line-index, 0) * 92ms)) both;
 }
 
-:global(.has-scroll-reveal) .evidenceList li:global(.reveal-item.is-visible) blockquote::after {
-  display: inline-block;
+:global(.has-scroll-reveal) .evidenceList li:global(.reveal-item.is-visible) .quoteLine:last-child::after {
+  display: inline-flex;
   width: 2px;
   height: 1em;
   margin-left: 3px;
@@ -1952,7 +2024,7 @@
   background: var(--signal-color);
   content: "";
   vertical-align: -0.13em;
-  animation: chat-caret 1150ms steps(2, end) calc(var(--reveal-delay, 0ms) + 240ms) both;
+  animation: chat-caret 720ms steps(2, end) calc(var(--reveal-delay, 0ms) + 110ms) both;
 }
 
 .evidenceList footer {
@@ -2212,7 +2284,7 @@
   background: var(--report-glass);
   box-shadow: var(--report-shadow-soft);
   backdrop-filter: blur(22px) saturate(132%);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .brandCard {
@@ -2263,7 +2335,7 @@
   background: var(--report-glass);
   box-shadow: var(--report-shadow-soft);
   backdrop-filter: blur(22px) saturate(132%);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .methodGrid article {
@@ -2453,8 +2525,14 @@
   .reportHeroInner,
   .contractGrid,
   .methodGrid,
+  .keyInsightsSection,
   .categoryBlock {
     grid-template-columns: 1fr;
+  }
+
+  .keyInsightsIntro {
+    position: relative;
+    top: auto;
   }
 
   .radarColumns,
@@ -2481,10 +2559,14 @@
 
 @media (max-width: 760px) {
   .reportHero,
-  .stickyNav,
-  .reportMain {
+  .stickyNav {
     max-width: 100vw;
     overflow-x: clip;
+  }
+
+  .reportMain {
+    max-width: 100vw;
+    overflow: visible;
   }
 
   .reportHero {
@@ -2634,14 +2716,28 @@
   }
 
   .lifecycleChart {
-    padding-bottom: 230px;
+    padding-bottom: 0;
   }
 
   .lifecycleCallout {
-    inset: calc(100% + 14px) 0 auto 0;
-    width: auto;
+    position: relative;
+    inset: auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin-top: 14px;
     padding: 14px;
     border-radius: 20px;
+  }
+
+  .lifecycleCallout a {
+    min-width: 0;
+  }
+
+  .lifecycleCallout strong,
+  .lifecycleCallout small {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .stickyNav {
@@ -2664,7 +2760,7 @@
   .reportMain {
     gap: 82px;
     padding-inline: 16px;
-    overflow-x: clip;
+    overflow: visible;
   }
 
   .sectionIntro h2,
@@ -2688,11 +2784,30 @@
     overflow-wrap: break-word;
   }
 
+  .keyInsightsSection {
+    gap: 24px;
+  }
+
+  .keyInsightsIntro h2 {
+    max-width: calc(100vw - 32px);
+    font-size: clamp(2rem, 10vw, 3.1rem);
+  }
+
+  .keyInsightsList a {
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 8px 12px;
+    padding-block: 18px;
+  }
+
+  .keyInsightsList p {
+    grid-column: 2;
+  }
+
   .contractGrid,
   .chartSheet,
+  .keyInsightsSection,
   .radarColumn,
   .umbrellaPanel,
-  .signalCardBigFinding,
   .signalTension,
   .leadQuote,
   .headlineGrid,

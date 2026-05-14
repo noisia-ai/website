@@ -122,7 +122,13 @@ export function SignalScaleChart({ signals }: { signals: InsightSignal[] }) {
   );
 }
 
-export function SignalEvidenceScatter({ signals }: { signals: InsightSignal[] }) {
+export function SignalEvidenceScatter({
+  signals,
+  axisLabel = "Madurez cultural"
+}: {
+  signals: InsightSignal[];
+  axisLabel?: string;
+}) {
   const maxMentions = Math.max(...signals.map((signal) => signal.volume_indicator.records_analyzed));
   const strongestMxSignals = [...signals]
     .sort((a, b) => b.volume_indicator.mx_evidence_estimated - a.volume_indicator.mx_evidence_estimated)
@@ -132,7 +138,7 @@ export function SignalEvidenceScatter({ signals }: { signals: InsightSignal[] })
     <div className={styles.lifecycleChart} role="img" aria-label="Ciclo de vida de señales culturales por madurez y escala de conversación">
       <div className={styles.lifecyclePlot}>
         <span className={styles.lifecycleAxisY}>Escala de conversación revisada</span>
-        <span className={styles.lifecycleAxisX}>Madurez cultural</span>
+        <span className={styles.lifecycleAxisX}>{axisLabel}</span>
         <div className={styles.lifecycleBands} aria-hidden="true">
           {lifecycleStages.map((stage) => (
             <span key={stage.key}>
@@ -171,17 +177,17 @@ export function SignalEvidenceScatter({ signals }: { signals: InsightSignal[] })
             </a>
           );
         })}
-        <aside className={styles.lifecycleCallout}>
-          <span>Marcadores MX más densos</span>
-          {strongestMxSignals.map((signal) => (
-            <a href={`#signal-${signal.order}`} key={signal.id} style={{ ["--signal-color" as string]: signal.color }}>
-              <b>{String(signal.order).padStart(2, "0")}</b>
-              <strong>{compactSignalName(signal.commercial_name)}</strong>
-              <small>{signal.monitor_next.slice(0, 3).join(" · ")}</small>
-            </a>
-          ))}
-        </aside>
       </div>
+      <aside className={styles.lifecycleCallout}>
+        <span>Marcadores MX más densos</span>
+        {strongestMxSignals.map((signal) => (
+          <a href={`#signal-${signal.order}`} key={signal.id} style={{ ["--signal-color" as string]: signal.color }}>
+            <b>{String(signal.order).padStart(2, "0")}</b>
+            <strong>{compactSignalName(signal.commercial_name)}</strong>
+            <small>{signal.monitor_next.slice(0, 3).join(" · ")}</small>
+          </a>
+        ))}
+      </aside>
     </div>
   );
 }
