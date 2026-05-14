@@ -29,26 +29,7 @@ const maturityCopy: Record<InsightSignal["maturity"], { title: string; note: str
   }
 };
 
-const sectionLinks = [
-  { id: "cover", label: "Cover" },
-  { id: "opening", label: "Contexto" },
-  { id: "looked-for", label: "Señales" },
-  { id: "radar", label: "Radar" },
-  { id: "signal-1", label: "01" },
-  { id: "signal-2", label: "02" },
-  { id: "signal-3", label: "03" },
-  { id: "signal-4", label: "04" },
-  { id: "signal-5", label: "05" },
-  { id: "signal-6", label: "06" },
-  { id: "signal-7", label: "07" },
-  { id: "signal-8", label: "08" },
-  { id: "brands", label: "Marcas" },
-  { id: "methodology", label: "Método" },
-  { id: "cta", label: "Contacto" }
-];
-
-const heroNumberOrder = ["corpus_scope", "period", "sources", "signals", "keywords", "evidence"];
-const heroMetaStatOrder = ["period", "sources", "signals", "evidence"];
+const heroNumberOrder = ["corpus_scope", "mentions_reviewed", "period", "sources", "signals", "keywords", "evidence"];
 const maturityOrder: InsightSignal["maturity"][] = ["emergente", "acelerando", "mainstreaming"];
 const printTotalPages = "18";
 const linkedInIcon = {
@@ -65,6 +46,145 @@ const platformIcons = {
   youtube: siYoutube
 };
 
+const futureHumanStudy = "Future is Human";
+
+const reportCopy = {
+  foresight: {
+    printLabel: "cultural foresight",
+    heroVisualKicker: "México Foresight 2026",
+    heroVisualTitle: "Del tener que demostrar al poder respirar",
+    heroVisualBody: "8 señales culturales leídas desde conversación digital pública.",
+    openingLead: "Del Mundial 2026 ya hablarán todos.",
+    openingParagraphs: [
+      "Pantallas, cerveza, jerseys, botanas. Este reporte mira lo que no está en el calendario.",
+      "Los grandes movimientos culturales no son los que se anuncian con fecha. Son los que se construyen en lenguaje cotidiano: cómo la gente describe su descanso, su exposición, su confianza, su aspiración y su humor.",
+      "Este es un radar de esos movimientos. 8 señales detectadas en conversación digital mexicana entre enero 2025 y mayo 2026. No son tendencias predichas; son tensiones presentes que ya están en curso."
+    ],
+    contractEyebrow: "Contrato de lectura",
+    contractTitle: "No buscamos tendencias. Buscamos señales.",
+    contractLead: "Una tendencia se mide en volumen. Una señal se detecta en lenguaje, contradicciones y cambios de vocabulario.",
+    searchedTitle: "Buscamos",
+    searchedItems: [
+      "Frases que se repiten en distintas voces y plataformas.",
+      "Tensiones que aparecen en la conversación cotidiana.",
+      "Contradicciones entre lo que la gente dice y lo que las marcas asumen.",
+      "Cambios de vocabulario que delatan cambios de creencia.",
+      "Comportamientos visibles que aún no tienen nombre."
+    ],
+    cannotTitle: "Lo que no podemos decir",
+    cannotItems: [
+      "No predice el futuro.",
+      "No representa a toda la población mexicana.",
+      "No equipara volumen de menciones con importancia cultural."
+    ],
+    radarEyebrow: "Las 8 señales",
+    radarTitle: "Por madurez cultural.",
+    radarLead: "El radar separa señales emergentes, señales acelerando y señales que ya operan como lenguaje dominante.",
+    maturityChartTitle: "La mayoría de las señales ya están acelerando.",
+    scaleChartTitle: "Dónde hay más conversación revisada.",
+    scatterTitle: "Dónde está cada señal en su ciclo de vida.",
+    brandLead: "Las señales no piden una sola respuesta. Piden ajustar producto, tono, evidencia, participación e identidad.",
+    ctaEyebrow: "Foundation Snapshot",
+    ctaTitle: "¿Qué señal está creciendo en tu categoría?",
+    ctaBody:
+      "Este es un radar exploratorio. El siguiente paso es preguntarse, para una categoría específica, cuál de las 8 señales está cruzando su umbral en este momento y qué debería estar haciendo la marca para no llegar tarde.",
+    ctaButton: "Agendar"
+  },
+  futureHuman: {
+    printLabel: "future is human",
+    heroVisualKicker: "Seeded listening · marcas mexicanas",
+    heroVisualTitle: "La IA no deshumaniza. La falta de criterio sí.",
+    heroVisualBody: "6 señales sobre voz, criterio, transparencia y responsabilidad cuando todo puede automatizarse.",
+    openingLead: "¿Qué hace que una marca se sienta humana cuando todo puede ser automatizado?",
+    openingParagraphs: [
+      "La respuesta corta: no es la IA. Es el criterio.",
+      "Una marca puede ser automatizada y sentirse confiable. Una marca puede sonar cálida y sentirse falsa. Una marca puede responder rápido y aun así sentirse deshumana.",
+      "Este reporte no trata sobre chatbots ni sobre IA en abstracto. Trata sobre las señales que hacen que una marca conserve voz, criterio, transparencia y responsabilidad cuando todo a su alrededor se vuelve automatizable."
+    ],
+    contractEyebrow: "Qué buscamos",
+    contractTitle: "No buscamos IA en abstracto. Buscamos percepción de humanidad.",
+    contractLead:
+      "El estudio cruza brand seeds con frases-señal para leer menciones donde existe contexto explícito de marca, no conversación genérica sobre tecnología.",
+    searchedTitle: "Buscamos",
+    searchedItems: [
+      "Brand seeds de 80+ marcas mexicanas.",
+      "Frases que detectan pérdida o construcción de humanidad.",
+      "Citas con contexto explícito de marca y plataforma.",
+      "Lenguaje que revela voz, criterio, transparencia y responsabilidad.",
+      "Implicaciones accionables para equipos de marca, CX y marketing."
+    ],
+    cannotTitle: "Lo que no podemos decir",
+    cannotItems: [
+      "No predice el futuro.",
+      "No representa a toda la población mexicana.",
+      "No equipara volumen de menciones con importancia cultural.",
+      "No es un análisis de customer service; es una lectura cultural de humanidad de marca."
+    ],
+    radarEyebrow: "Las 6 señales",
+    radarTitle: "Por madurez cultural.",
+    radarLead:
+      "Una señal ya opera como default explícito; las demás muestran dónde la marca pierde voz, criterio o confianza.",
+    maturityChartTitle: "El hallazgo principal ya está en mainstreaming.",
+    scaleChartTitle: "Dónde aparece más conversación brand-tagged.",
+    scatterTitle: "Cómo se distribuye la humanidad de marca por madurez.",
+    brandLead:
+      "Las señales aterrizan en decisiones concretas: acceso a humano, voz, disclosure, criterio y responsabilidad.",
+    ctaEyebrow: "Siguiente paso",
+    ctaTitle: "¿En qué momento tu marca deja de sentirse humana?",
+    ctaBody:
+      "Este es un radar exploratorio. El siguiente paso es preguntarse, para una marca específica, en cuál de las 6 señales está más expuesta y qué debería estar haciendo para conservar humanidad en los momentos que importan.",
+    ctaButton: "Conversemos"
+  }
+};
+
+const brandCatalog = [
+  { name: "BBVA", patterns: [/\bBBVA\b/i, /@BBVA/i], vertical: "banking" },
+  { name: "Banorte", patterns: [/\bBanorte\b/i], vertical: "banking" },
+  { name: "Santander", patterns: [/\bSantander\b/i], vertical: "banking" },
+  { name: "Banamex", patterns: [/\bBanamex\b/i, /\bCitibanamex\b/i], vertical: "banking" },
+  { name: "HSBC", patterns: [/\bHSBC\b/i], vertical: "banking" },
+  { name: "Banco Azteca", patterns: [/\bBanco Azteca\b/i], vertical: "banking" },
+  { name: "Mercado Pago", patterns: [/\bMercado Pago\b/i, /\bMercadoPago\b/i], vertical: "banking" },
+  { name: "Telcel", patterns: [/\bTelcel\b/i], vertical: "telcos" },
+  { name: "Movistar", patterns: [/\bMovistar\b/i], vertical: "telcos" },
+  { name: "AT&T", patterns: [/\bAT&T\b/i, /\bATT\b/i], vertical: "telcos" },
+  { name: "Izzi", patterns: [/\bIzzi\b/i], vertical: "telcos" },
+  { name: "Amazon", patterns: [/\bAmazon\b/i], vertical: "retail" },
+  { name: "Mercado Libre", patterns: [/\bMercado Libre\b/i, /\bMercadoLibre\b/i], vertical: "retail" },
+  { name: "Walmart", patterns: [/\bWalmart\b/i], vertical: "retail" },
+  { name: "Aurrera", patterns: [/\bAurrera\b/i], vertical: "retail" },
+  { name: "Soriana", patterns: [/\bSoriana\b/i], vertical: "retail" },
+  { name: "Liverpool", patterns: [/\bLiverpool\b/i, /@liverpoolmexico/i], vertical: "retail" },
+  { name: "Palacio", patterns: [/\bPalacio de Hierro\b/i], vertical: "retail" },
+  { name: "Sears", patterns: [/\bSears\b/i], vertical: "retail" },
+  { name: "Coppel", patterns: [/\bCoppel\b/i], vertical: "retail" },
+  { name: "Elektra", patterns: [/\bElektra\b/i], vertical: "retail" },
+  { name: "SHEIN", patterns: [/\bSHEIN\b/i, /\bShein\b/i], vertical: "retail" },
+  { name: "Temu", patterns: [/\bTemu\b/i], vertical: "retail" },
+  { name: "Rappi", patterns: [/\bRappi\b/i], vertical: "delivery" },
+  { name: "Uber Eats", patterns: [/\bUber Eats\b/i, /\bUberEats\b/i], vertical: "delivery" },
+  { name: "DiDi", patterns: [/\bDiDi\b/i, /@DiDi_Mexico/i], vertical: "delivery" },
+  { name: "OXXO", patterns: [/\bOXXO\b/i, /\bOxxo\b/i], vertical: "delivery" },
+  { name: "7 Eleven", patterns: [/\b7 Eleven\b/i, /\b7-Eleven\b/i], vertical: "delivery" },
+  { name: "Starbucks", patterns: [/\bStarbucks\b/i], vertical: "delivery" },
+  { name: "McDonald's", patterns: [/\bMcDonald's\b/i, /\bMcDonalds\b/i], vertical: "delivery" },
+  { name: "Burger King", patterns: [/\bBurger King\b/i], vertical: "delivery" },
+  { name: "KFC", patterns: [/\bKFC\b/i], vertical: "delivery" },
+  { name: "Domino's", patterns: [/\bDomino'?s\b/i], vertical: "delivery" },
+  { name: "Aeroméxico", patterns: [/\bAeromexico\b/i, /\bAeroméxico\b/i, /@Aeromexico/i], vertical: "airlines" },
+  { name: "Volaris", patterns: [/\bVolaris\b/i, /@viajaVolaris/i], vertical: "airlines" },
+  { name: "Viva Aerobus", patterns: [/\bViva Aerobus\b/i, /\bVivaAerobus\b/i], vertical: "airlines" },
+  { name: "Coca-Cola", patterns: [/\bCoca-Cola\b/i, /\bCoca Cola\b/i], vertical: "cpg" },
+  { name: "Pepsi", patterns: [/\bPepsi\b/i], vertical: "cpg" },
+  { name: "Bimbo", patterns: [/\bBimbo\b/i], vertical: "cpg" },
+  { name: "Sabritas", patterns: [/\bSabritas\b/i], vertical: "cpg" },
+  { name: "Doritos", patterns: [/\bDoritos\b/i], vertical: "cpg" },
+  { name: "Cheetos", patterns: [/\bCheetos\b/i], vertical: "cpg" },
+  { name: "Takis", patterns: [/\bTakis\b/i], vertical: "cpg" },
+  { name: "Gatorade", patterns: [/\bGatorade\b/i], vertical: "cpg" },
+  { name: "Red Bull", patterns: [/\bRed Bull\b/i], vertical: "cpg" }
+];
+
 function padOrder(order: number) {
   return String(order).padStart(2, "0");
 }
@@ -75,6 +195,9 @@ function stripEmoji(input: string) {
 
 function cleanText(input: string, maxLength = 260) {
   const compact = stripEmoji(input)
+    .replace(/&amp;/g, "&")
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, "\"")
     .replace(/[“”]/g, "\"")
     .replace(/[‘’]/g, "'")
     .replace(/\s+/g, " ")
@@ -113,6 +236,53 @@ function platformName(input: string) {
   };
 
   return map[input.toLowerCase()] ?? input;
+}
+
+function isFutureHumanReport(report: InsightReport) {
+  return report.meta.study === futureHumanStudy;
+}
+
+function getReportCopy(report: InsightReport) {
+  return isFutureHumanReport(report) ? reportCopy.futureHuman : reportCopy.foresight;
+}
+
+function makeSectionLinks(report: InsightReport) {
+  return [
+    { id: "cover", label: "Cover" },
+    { id: "opening", label: isFutureHumanReport(report) ? "Apertura" : "Contexto" },
+    { id: "looked-for", label: isFutureHumanReport(report) ? "Qué buscamos" : "Señales" },
+    { id: "radar", label: "Radar" },
+    ...report.signals.map((signal) => ({ id: `signal-${signal.order}`, label: padOrder(signal.order) })),
+    { id: "brands", label: "Marcas" },
+    { id: "methodology", label: "Método" },
+    { id: "cta", label: "Contacto" }
+  ];
+}
+
+function heroMetaStatOrder(report: InsightReport) {
+  const preferred = isFutureHumanReport(report)
+    ? ["corpus_scope", "mentions_reviewed", "period", "sources", "signals", "evidence"]
+    : ["period", "sources", "signals", "evidence"];
+
+  return preferred.map((key) => report.hero_numbers[key]).filter(Boolean);
+}
+
+function detectBrand(text: string) {
+  return brandCatalog.find((brand) => brand.patterns.some((pattern) => pattern.test(text))) ?? null;
+}
+
+function BrandPill({ text }: { text: string }) {
+  const brand = detectBrand(text);
+
+  if (!brand) {
+    return null;
+  }
+
+  return (
+    <span className={styles.brandPill} data-vertical={brand.vertical}>
+      {brand.name}
+    </span>
+  );
 }
 
 function PlatformIcon({ platform }: { platform: string }) {
@@ -174,7 +344,15 @@ function SectionIntro({ eyebrow, title, lead }: { eyebrow: string; title: string
   );
 }
 
-function PrintChrome({ page, label = "cultural foresight" }: { page: string; label?: string }) {
+function PrintChrome({
+  page,
+  label = "cultural foresight",
+  total = printTotalPages
+}: {
+  page: string;
+  label?: string;
+  total?: string;
+}) {
   return (
     <>
       <div className={styles.printAtmos} aria-hidden="true" />
@@ -185,7 +363,7 @@ function PrintChrome({ page, label = "cultural foresight" }: { page: string; lab
         </div>
         <div className={styles.printPageNumber}>
           <strong>{page}</strong>
-          <span>/ {printTotalPages}</span>
+          <span>/ {total}</span>
         </div>
       </header>
       <footer className={styles.printFooter} aria-hidden="true">
@@ -389,18 +567,73 @@ function PrintSignalEvidence({ signal }: { signal: InsightSignal }) {
   );
 }
 
-function SignalCard({ signal }: { signal: InsightSignal }) {
+function EvidenceItem({
+  item,
+  signal,
+  index
+}: {
+  item: InsightSignal["evidence"][number];
+  signal: InsightSignal;
+  index: number;
+}) {
+  return (
+    <li
+      className={index % 2 === 0 ? styles.evidenceLeft : styles.evidenceRight}
+      key={`${signal.id}-${item.platform}-${item.date}-${index}`}
+      style={{ ["--bubble-index" as string]: index }}
+    >
+      <div className={styles.evidenceMeta}>
+        <span className={styles.platformMark}>
+          <PlatformIcon platform={item.platform} />
+          {platformName(item.platform)}
+        </span>
+        <span>{item.date}</span>
+        {item.mx ? <b>MX</b> : null}
+        <BrandPill text={item.text} />
+      </div>
+      <blockquote>
+        <span>&ldquo;{cleanText(item.text)}&rdquo;</span>
+      </blockquote>
+      <footer>
+        {item.phrase ? <span className={styles.phraseTag}>{item.phrase}</span> : null}
+        {item.url ? (
+          <a href={item.url} target="_blank" rel="noreferrer">
+            Fuente
+          </a>
+        ) : null}
+      </footer>
+    </li>
+  );
+}
+
+function EvidenceList({ signal, evidence }: { signal: InsightSignal; evidence: InsightSignal["evidence"] }) {
+  return (
+    <ul className={styles.evidenceList} data-reveal-group>
+      {evidence.map((item, index) => (
+        <EvidenceItem item={item} signal={signal} index={index} key={`${signal.id}-${item.platform}-${item.date}-${index}`} />
+      ))}
+    </ul>
+  );
+}
+
+function SignalCard({ signal, printTotal }: { signal: InsightSignal; printTotal: string }) {
+  const positiveEvidence = signal.evidence.filter((item) => item.polarity === "positive");
+  const negativeEvidence = signal.evidence.filter((item) => item.polarity === "negative");
+  const hasDualEvidence = positiveEvidence.length > 0 && negativeEvidence.length > 0;
+  const isBigFinding = signal.order === 1 && signal.maturity === "mainstreaming";
+
   return (
     <article
-      className={styles.signalCard}
+      className={`${styles.signalCard} ${isBigFinding ? styles.signalCardBigFinding : ""}`}
       id={`signal-${signal.order}`}
       style={{ ["--signal-color" as string]: signal.color }}
     >
-      <PrintChrome page={padOrder(signal.order + 7)} label={`señal ${padOrder(signal.order)}`} />
+      <PrintChrome page={padOrder(signal.order + 7)} label={`señal ${padOrder(signal.order)}`} total={printTotal} />
       <header className={styles.signalHeader}>
         <span className={styles.signalNumber}>{padOrder(signal.order)}</span>
         <div>
           <div className={styles.signalHeaderMeta}>
+            {isBigFinding ? <span className={styles.bigFindingLabel}>El hallazgo principal</span> : null}
             <span>Señal {padOrder(signal.order)}</span>
             <MaturityBadge signal={signal} />
           </div>
@@ -427,6 +660,7 @@ function SignalCard({ signal }: { signal: InsightSignal }) {
             {platformName(signal.lead_quote.platform)}
           </span>
           <span>{signal.lead_quote.attribution}</span>
+          <BrandPill text={signal.lead_quote.text} />
         </div>
         <p>&ldquo;{cleanText(signal.lead_quote.text, 340)}&rdquo;</p>
         <QuoteGlyph />
@@ -461,34 +695,20 @@ function SignalCard({ signal }: { signal: InsightSignal }) {
             <span>{signalPlatforms(signal).length} plataformas con evidencia</span>
           </div>
         </div>
-        <ul className={styles.evidenceList} data-reveal-group>
-          {signal.evidence.map((item, index) => (
-            <li
-              className={index % 2 === 0 ? styles.evidenceLeft : styles.evidenceRight}
-              key={`${signal.id}-${item.platform}-${item.date}-${index}`}
-              style={{ ["--bubble-index" as string]: index }}
-            >
-              <div className={styles.evidenceMeta}>
-                <span className={styles.platformMark}>
-                  <PlatformIcon platform={item.platform} />
-                  {platformName(item.platform)}
-                </span>
-                <span>{item.date}</span>
-                {item.mx ? <b>MX</b> : null}
-              </div>
-              <blockquote>
-                <span>&ldquo;{cleanText(item.text)}&rdquo;</span>
-              </blockquote>
-              <footer>
-                {item.url ? (
-                  <a href={item.url} target="_blank" rel="noreferrer">
-                    Fuente
-                  </a>
-                ) : null}
-              </footer>
-            </li>
-          ))}
-        </ul>
+        {hasDualEvidence ? (
+          <div className={styles.evidenceDual}>
+            <article className={`${styles.evidenceBlock} ${styles.evidenceBlockPositive}`}>
+              <span className="eyebrow">Marcas que asumieron</span>
+              <EvidenceList signal={signal} evidence={positiveEvidence} />
+            </article>
+            <article className={`${styles.evidenceBlock} ${styles.evidenceBlockNegative}`}>
+              <span className="eyebrow">Marcas que se lavaron las manos</span>
+              <EvidenceList signal={signal} evidence={negativeEvidence} />
+            </article>
+          </div>
+        ) : (
+          <EvidenceList signal={signal} evidence={signal.evidence} />
+        )}
       </section>
 
       <section className={styles.implicationsGrid}>
@@ -561,7 +781,7 @@ export function InsightsIndexPage() {
             </p>
             <div className="hero-actions">
               <Button href={`/insights/${featured.slug}`} icon={<ArrowRight size={17} strokeWidth={1.8} />}>
-                Leer reporte inaugural
+                Leer reporte más reciente
               </Button>
               <Button href="/diagnostico" variant="secondary">
                 Iniciar diagnóstico
@@ -584,17 +804,19 @@ export function InsightsIndexPage() {
         <div className={`section__inner ${styles.indexReportShelf}`}>
           <SectionIntro
             eyebrow="BIBLIOTECA"
-            title="Un primer radar para marcas operando en México en 2026."
+            title="Radares para marcas operando en México en 2026."
             lead="El formato combina lectura editorial, señales clasificadas por madurez, evidencia textual y movimientos accionables para equipos comerciales."
           />
-          <article className={styles.indexFeatureCard}>
-            <span className={styles.chartLabel}>{featured.indexLabel}</span>
-            <h3>{featured.meta.study}</h3>
-            <p>{featured.meta.subtitle}</p>
-            <Button href={`/insights/${featured.slug}`} icon={<ArrowRight size={17} strokeWidth={1.8} />}>
-              Leer reporte
-            </Button>
-          </article>
+          {insightsReports.map((report) => (
+            <article className={styles.indexFeatureCard} key={report.slug}>
+              <span className={styles.chartLabel}>{report.indexLabel}</span>
+              <h3>{report.meta.study}</h3>
+              <p>{report.meta.subtitle}</p>
+              <Button href={`/insights/${report.slug}`} icon={<ArrowRight size={17} strokeWidth={1.8} />}>
+                Leer reporte
+              </Button>
+            </article>
+          ))}
         </div>
       </section>
     </>
@@ -603,15 +825,20 @@ export function InsightsIndexPage() {
 
 export function InsightReportPage({ report }: { report: InsightReport }) {
   const heroNumbers = heroNumberOrder.map((key) => report.hero_numbers[key]).filter(Boolean);
-  const heroMetaStats = heroMetaStatOrder.map((key) => report.hero_numbers[key]).filter(Boolean);
+  const heroMetaStats = heroMetaStatOrder(report);
   const methodLimitations = report.methodology.limitations.map((item) =>
     item.includes("Mundial") ? "Los eventos de calendario masivo se trataron como contexto externo; no se analizaron como señal." : item
   );
+  const copy = getReportCopy(report);
+  const sectionLinks = makeSectionLinks(report);
+  const hasBrandSeeds = Boolean(report.methodology.corpus.brand_seeds?.length);
+  const printPagesTotal = String(report.signals.length + 10);
+  const printPage = (page: number) => padOrder(page);
 
   return (
     <div className="printScope">
       <section className={styles.reportHero} id="cover">
-        <PrintChrome page="01" label="cultural foresight" />
+        <PrintChrome page="01" label={copy.printLabel} total={printPagesTotal} />
         <div className={styles.reportHeroInner}>
           <div className={styles.heroText}>
             <span className="eyebrow">NOISIA · INTELIGENCIA SOCIAL</span>
@@ -630,9 +857,9 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
           </div>
 
           <aside className={styles.heroVisual} aria-label="Visual editorial del reporte">
-            <span>México Foresight 2026</span>
-            <strong>Del tener que demostrar al poder respirar</strong>
-            <p>8 señales culturales leídas desde conversación digital pública.</p>
+            <span>{copy.heroVisualKicker}</span>
+            <strong>{copy.heroVisualTitle}</strong>
+            <p>{copy.heroVisualBody}</p>
           </aside>
         </div>
       </section>
@@ -649,47 +876,37 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
 
       <main className={styles.reportMain}>
         <section className={styles.openingSection} id="opening">
-          <PrintChrome page="02" label="contexto" />
+          <PrintChrome page="02" label="contexto" total={printPagesTotal} />
           <div className={styles.editorialColumn}>
-            <p className={styles.openingLead}>Del Mundial 2026 ya hablarán todos.</p>
-            <p>
-              Pantallas, cerveza, jerseys, botanas. Este reporte mira lo que no está en el calendario.
-            </p>
-            <p>
-              Los grandes movimientos culturales no son los que se anuncian con fecha. Son los que se construyen en lenguaje
-              cotidiano: cómo la gente describe su descanso, su exposición, su confianza, su aspiración y su humor.
-            </p>
-            <p>
-              Este es un radar de esos movimientos. 8 señales detectadas en conversación digital mexicana entre enero 2025 y
-              mayo 2026. No son tendencias predichas; son tensiones presentes que ya están en curso.
-            </p>
+            <p className={styles.openingLead}>{copy.openingLead}</p>
+            {copy.openingParagraphs.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
           </div>
         </section>
 
         <section className={styles.contractSection} id="looked-for">
-          <PrintChrome page="03" label="contrato de lectura" />
+          <PrintChrome page="03" label="contrato de lectura" total={printPagesTotal} />
           <SectionIntro
-            eyebrow="Contrato de lectura"
-            title="No buscamos tendencias. Buscamos señales."
-            lead="Una tendencia se mide en volumen. Una señal se detecta en lenguaje, contradicciones y cambios de vocabulario."
+            eyebrow={copy.contractEyebrow}
+            title={copy.contractTitle}
+            lead={copy.contractLead}
           />
           <div className={styles.contractGrid}>
             <article>
-              <h3>Buscamos</h3>
+              <h3>{copy.searchedTitle}</h3>
               <ul>
-                <li>Frases que se repiten en distintas voces y plataformas.</li>
-                <li>Tensiones que aparecen en la conversación cotidiana.</li>
-                <li>Contradicciones entre lo que la gente dice y lo que las marcas asumen.</li>
-                <li>Cambios de vocabulario que delatan cambios de creencia.</li>
-                <li>Comportamientos visibles que aún no tienen nombre.</li>
+                {copy.searchedItems.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
               </ul>
             </article>
             <article>
-              <h3>Lo que no podemos decir</h3>
+              <h3>{copy.cannotTitle}</h3>
               <ul>
-                <li>No predice el futuro.</li>
-                <li>No representa a toda la población mexicana.</li>
-                <li>No equipara volumen de menciones con importancia cultural.</li>
+                {copy.cannotItems.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
               </ul>
             </article>
           </div>
@@ -711,16 +928,21 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
 
         <section className={styles.radarSection} id="radar">
           <div className={styles.printDeckPage}>
-            <PrintChrome page="04" label="radar cultural" />
+            <PrintChrome page="04" label="radar cultural" total={printPagesTotal} />
             <SectionIntro
-              eyebrow="Las 8 señales"
-              title="Por madurez cultural."
-              lead="El radar separa señales emergentes, señales acelerando y señales que ya operan como lenguaje dominante."
+              eyebrow={copy.radarEyebrow}
+              title={copy.radarTitle}
+              lead={copy.radarLead}
             />
 
             <div className={styles.radarColumns}>
               {maturityOrder.map((maturity) => (
-                <article className={styles.radarColumn} key={maturity}>
+                <article
+                  className={`${styles.radarColumn} ${
+                    isFutureHumanReport(report) && maturity === "mainstreaming" ? styles.radarColumnFeatured : ""
+                  }`}
+                  key={maturity}
+                >
                   <header>
                     <MaturityBadge maturity={maturity} />
                     <p>{maturityCopy[maturity].note}</p>
@@ -744,10 +966,10 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
           </div>
 
           <div className={`${styles.chartGrid} ${styles.printDeckPage}`}>
-            <PrintChrome page="05" label="lectura visual" />
+            <PrintChrome page="05" label="lectura visual" total={printPagesTotal} />
             <ChartFigure
               label="Radar mix"
-              title="La mayoría de las señales ya están acelerando."
+              title={copy.maturityChartTitle}
               subtitle="Distribución del portafolio cultural por madurez."
               info="El gráfico muestra cuántas señales caen en cada nivel de madurez. La madurez orienta qué tan rápido debería reaccionar una marca."
             >
@@ -755,7 +977,7 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
             </ChartFigure>
             <ChartFigure
               label="Signal scale"
-              title="Dónde hay más conversación revisada."
+              title={copy.scaleChartTitle}
               subtitle="Menciones revisadas por señal. El volumen orienta contexto; la lectura viene de la densidad cultural."
               info="Esta vista compara la escala de conversación revisada por señal usando el campo volume_indicator del JSON."
             >
@@ -764,10 +986,10 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
           </div>
 
           <div className={`${styles.chartGrid} ${styles.chartGridSingle} ${styles.printDeckPage}`}>
-            <PrintChrome page="06" label="evidencia comparada" />
+            <PrintChrome page="06" label="evidencia comparada" total={printPagesTotal} />
             <ChartFigure
               label="Lifecycle view"
-              title="Dónde está cada señal en su ciclo de vida."
+              title={copy.scatterTitle}
               subtitle="La altura muestra escala de conversación revisada; la posición muestra madurez cultural. Los marcadores MX ayudan a leer el tipo de lenguaje que sostiene cada señal."
               info="Cada punto es una señal cultural. El eje horizontal usa la clasificación de madurez del estudio; el eje vertical usa menciones revisadas del JSON. El tamaño indica fuentes de captura."
               wide
@@ -777,7 +999,7 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
           </div>
 
           <aside className={`${styles.umbrellaPanel} ${styles.printDeckPage}`}>
-            <PrintChrome page="07" label="hipótesis paraguas" />
+            <PrintChrome page="07" label="hipótesis paraguas" total={printPagesTotal} />
             <span className="eyebrow">Hipótesis paraguas</span>
             <h2>{displayCopy(report.narrative_umbrella.title)}</h2>
             <p>{displayCopy(report.narrative_umbrella.description)}</p>
@@ -799,16 +1021,16 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
 
         <section className={styles.signalStack} aria-label="Señales culturales">
           {report.signals.map((signal) => (
-            <SignalCard signal={signal} key={signal.id} />
+            <SignalCard signal={signal} printTotal={printPagesTotal} key={signal.id} />
           ))}
         </section>
 
         <section className={styles.brandSection} id="brands">
-          <PrintChrome page="16" label="movimientos de marca" />
+          <PrintChrome page={printPage(report.signals.length + 8)} label="movimientos de marca" total={printPagesTotal} />
           <SectionIntro
             eyebrow="Qué significa para marcas"
             title="Cinco movimientos para pasar de lectura a decisión."
-            lead="Las señales no piden una sola respuesta. Piden ajustar producto, tono, evidencia, participación e identidad."
+            lead={copy.brandLead}
           />
           <div className={styles.brandGrid}>
             {report.brand_action_map.map((action, index) => (
@@ -834,7 +1056,7 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
         </section>
 
         <section className={styles.methodSection} id="methodology">
-          <PrintChrome page="17" label="método" />
+          <PrintChrome page={printPage(report.signals.length + 9)} label="método" total={printPagesTotal} />
           <SectionIntro
             eyebrow="Cómo se leyeron las señales"
             title="Método cualitativo, evidencia trazable."
@@ -875,6 +1097,16 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
               </dl>
             </article>
           </div>
+          {hasBrandSeeds ? (
+            <div className={styles.verticalSeedBlock}>
+              <span className="eyebrow">Verticales sembradas</span>
+              <ul className={styles.verticalBadges}>
+                {report.methodology.corpus.brand_seeds?.map((seed) => (
+                  <li key={seed}>{seed}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
           <ul className={`${styles.heroStats} ${styles.methodStats}`} aria-label="Snapshot de escala metodológica">
             {heroNumbers.map((item) => (
               <li key={item.label}>
@@ -900,16 +1132,13 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
         </section>
 
         <section className={styles.ctaSection} id="cta">
-          <PrintChrome page="18" label="siguiente paso" />
-          <span className="eyebrow">Foundation Snapshot</span>
-          <h2>¿Qué señal está creciendo en tu categoría?</h2>
-          <p>
-            Este es un radar exploratorio. El siguiente paso es preguntarse, para una categoría específica, cuál de las 8
-            señales está cruzando su umbral en este momento y qué debería estar haciendo la marca para no llegar tarde.
-          </p>
+          <PrintChrome page={printPage(report.signals.length + 10)} label="siguiente paso" total={printPagesTotal} />
+          <span className="eyebrow">{copy.ctaEyebrow}</span>
+          <h2>{copy.ctaTitle}</h2>
+          <p>{copy.ctaBody}</p>
           <div className="hero-actions">
             <Button href={report.ctaHref} icon={<ArrowRight size={17} strokeWidth={1.8} />}>
-              Agendar
+              {copy.ctaButton}
             </Button>
           </div>
         </section>

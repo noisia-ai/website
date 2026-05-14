@@ -537,6 +537,18 @@
   align-content: start;
 }
 
+.radarColumnFeatured {
+  border-left: 4px solid #1d7a55;
+  background:
+    linear-gradient(180deg, rgba(240, 248, 244, 0.78), rgba(255, 255, 255, 0.34)),
+    radial-gradient(circle at 70% 0%, rgba(29, 122, 85, 0.12), transparent 42%);
+}
+
+.radarColumnFeatured header p {
+  color: #0f4a35;
+  font-weight: 760;
+}
+
 .radarColumn header {
   display: grid;
   gap: 12px;
@@ -1436,6 +1448,27 @@
   scroll-margin-top: 178px;
 }
 
+.signalCardBigFinding {
+  position: relative;
+  padding: clamp(30px, 5vw, 58px);
+  border: 1px solid color-mix(in srgb, var(--signal-color) 34%, #ffffff);
+  border-top: 6px solid var(--signal-color);
+  border-radius: 34px;
+  background:
+    radial-gradient(circle at 86% 8%, color-mix(in srgb, var(--signal-color) 14%, transparent), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.72), rgba(240, 248, 244, 0.42));
+  box-shadow: 0 34px 96px color-mix(in srgb, var(--signal-color) 13%, transparent), var(--report-shadow-soft);
+}
+
+.bigFindingLabel {
+  border: 1px solid color-mix(in srgb, var(--signal-color) 42%, #ffffff);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--signal-color) 12%, #ffffff);
+  color: var(--signal-color) !important;
+  padding: 7px 11px;
+  letter-spacing: 0.08em !important;
+}
+
 .signalHeader {
   display: grid;
   grid-template-columns: 150px minmax(0, 1fr);
@@ -1707,6 +1740,42 @@
   gap: 20px;
 }
 
+.evidenceDual {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.evidenceBlock {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: clamp(16px, 2vw, 22px);
+  border: 1px solid color-mix(in srgb, var(--polarity-color) 28%, #ffffff);
+  border-radius: 24px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.34)),
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--polarity-color) 10%, transparent), transparent 42%);
+  box-shadow: var(--report-shadow-soft);
+}
+
+.evidenceBlockPositive {
+  --polarity-color: #1d7a55;
+}
+
+.evidenceBlockNegative {
+  --polarity-color: #e8521a;
+}
+
+.evidenceBlock :global(.eyebrow) {
+  color: var(--polarity-color);
+}
+
+.evidenceBlock .evidenceList li {
+  width: 100%;
+}
+
 .evidenceHeader {
   display: flex;
   flex-wrap: wrap;
@@ -1904,6 +1973,61 @@
   border-radius: 6px;
   color: var(--signal-color);
   font-size: 0.66rem;
+}
+
+.brandPill,
+.phraseTag {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 180px;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.brandPill {
+  --vertical-color: #1a4470;
+  border: 1px solid color-mix(in srgb, var(--vertical-color) 30%, transparent);
+  background: color-mix(in srgb, var(--vertical-color) 12%, transparent);
+  color: var(--vertical-color);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.brandPill[data-vertical="banking"] {
+  --vertical-color: #1a4470;
+}
+
+.brandPill[data-vertical="telcos"] {
+  --vertical-color: #5b2d8e;
+}
+
+.brandPill[data-vertical="retail"] {
+  --vertical-color: #e8521a;
+}
+
+.brandPill[data-vertical="delivery"] {
+  --vertical-color: #1d7a55;
+}
+
+.brandPill[data-vertical="airlines"] {
+  --vertical-color: #2d6a9f;
+}
+
+.brandPill[data-vertical="cpg"] {
+  --vertical-color: #c9892e;
+}
+
+.phraseTag {
+  border: 1px solid color-mix(in srgb, var(--signal-color) 22%, #ffffff);
+  background: rgba(255, 255, 255, 0.48);
+  color: #777;
+  text-transform: none;
 }
 
 .evidenceList a {
@@ -2179,6 +2303,41 @@
   gap: 10px;
 }
 
+.verticalSeedBlock {
+  display: grid;
+  gap: 14px;
+  padding: clamp(20px, 2.6vw, 30px);
+  border: 1px solid var(--report-line);
+  border-radius: 26px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0.34)),
+    radial-gradient(circle at top right, rgba(29, 122, 85, 0.1), transparent 34%);
+  box-shadow: var(--report-shadow-soft);
+  backdrop-filter: blur(20px) saturate(128%);
+}
+
+.verticalBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.verticalBadges li {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(29, 122, 85, 0.18);
+  border-radius: 999px;
+  background: rgba(229, 244, 237, 0.62);
+  color: #0f4a35;
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
 .methodChips :global(.methodology-chip) {
   display: inline-flex;
   align-items: center;
@@ -2354,6 +2513,7 @@
   .maturityFrameworkCards,
   .radarColumns,
   .brandGrid,
+  .evidenceDual,
   .umbrellaGrid {
     grid-template-columns: 1fr;
   }
@@ -2532,6 +2692,7 @@
   .chartSheet,
   .radarColumn,
   .umbrellaPanel,
+  .signalCardBigFinding,
   .signalTension,
   .leadQuote,
   .headlineGrid,
@@ -2669,6 +2830,11 @@
 
   .evidenceList blockquote {
     font-size: 0.98rem;
+  }
+
+  .evidenceBlock {
+    padding: 14px;
+    border-radius: 20px;
   }
 
   .platformMark,
