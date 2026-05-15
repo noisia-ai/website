@@ -32,7 +32,7 @@ export function MethodologyPreviewGrid() {
               </span>
             ))}
           </div>
-          <b>Estudiar método →</b>
+          <b>Ver cómo se aplica →</b>
         </Link>
       ))}
     </div>

@@ -15,7 +15,7 @@ const wizardOptions = [
     slug: "triggers-y-barriers"
   },
   {
-    label: "Mi journey está roto y no sé dónde",
+    label: "La gente se interesa, pero no termina de avanzar",
     method: "Journey Friction Mapping",
     slug: "journey-friction-mapping"
   },
@@ -25,12 +25,12 @@ const wizardOptions = [
     slug: "cultural-codes-decoding"
   },
   {
-    label: "Mi comunicación no llega a los nodos correctos",
+    label: "No sé qué voces hacen creíble mi mensaje",
     method: "Influence Architecture",
     slug: "influence-architecture"
   },
   {
-    label: "El consumidor decide lento en mi categoría",
+    label: "La decisión tarda demasiado en cerrarse",
     method: "Decision Velocity",
     slug: "decision-velocity"
   }
@@ -52,12 +52,12 @@ export function MethodologyWizard() {
   return (
     <div className="method-wizard-v2">
       <header className="method-wizard-v2__head">
-        <span className="eyebrow">DISEÑO DE PROTOCOLO</span>
+        <span className="eyebrow">GUÍA RÁPIDA</span>
         <h2 className="method-wizard-v2__title">
-          Empieza por la pregunta. La metodología viene después.
+          Elige la situación que más se parece a la tuya.
         </h2>
         <p className="method-wizard-v2__lead">
-          Si reconoces tu situación abajo, ya tienes la lente que entra por lógica. Click para ir al protocolo.
+          Te llevamos al método que normalmente ayuda a responder esa pregunta.
         </p>
       </header>
 
@@ -75,7 +75,7 @@ export function MethodologyWizard() {
               <span className="method-wizard-v2__situation">{option.label}</span>
               <span className="method-wizard-v2__arrow" aria-hidden="true">→</span>
               <span className="method-wizard-v2__method">{option.method}</span>
-              <span className="method-wizard-v2__cta" aria-hidden="true">Ir al protocolo ↓</span>
+              <span className="method-wizard-v2__cta" aria-hidden="true">Ver método ↓</span>
             </button>
           </li>
         ))}

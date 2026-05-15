@@ -193,7 +193,7 @@ export function SiteHeader() {
                   <h2>Arquitectura</h2>
                 </header>
                 <Link className="site-header__overlay-pill glass" href="/arquitectura-de-datos" onClick={closeMenu}>
-                  Corpus, normalización y evidencia trazable
+                  Cómo ordenamos fuentes, señales y evidencia
                 </Link>
               </section>
 

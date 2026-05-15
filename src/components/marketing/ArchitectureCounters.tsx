@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 const counters = [
   { value: 150, suffix: "+", label: "fuentes" },
-  { value: 10000, suffix: "+", label: "scrapers" },
+  { value: 10000, suffix: "+", label: "capturas posibles" },
   { value: 45, suffix: "+", label: "mercados" },
   { value: 8, suffix: "+", label: "categorías" }
 ];

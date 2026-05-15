@@ -157,6 +157,7 @@
 .noiseField {
   position: absolute;
   inset: 0;
+  z-index: 1;
   pointer-events: none;
 }
 
@@ -172,15 +173,19 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: clamp(190px, 17vw, 250px);
-  min-height: 126px;
-  padding: 14px 16px;
-  border-radius: 24px;
+  width: clamp(168px, 14vw, 218px);
+  min-height: 112px;
+  padding: 12px 14px;
+  border-radius: 20px;
   transform: translate3d(calc(-50% + var(--card-x)), calc(-50% + var(--card-y)), 0) rotate(var(--card-r));
   background: rgba(255, 255, 255, 0.64);
-  box-shadow: 0 24px 90px rgba(47, 56, 72, 0.12);
+  box-shadow: 0 22px 72px rgba(47, 56, 72, 0.11);
   isolation: isolate;
   will-change: transform, opacity, filter;
+}
+
+.noiseCard[data-intro-noise="false"] {
+  display: none;
 }
 
 .noiseCard::before {
@@ -233,10 +238,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 12px;
   color: var(--neutral-10);
-  font-size: 0.72rem;
+  font-size: 0.58rem;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -245,12 +250,12 @@
   display: inline-flex;
   align-items: center;
   min-width: 0;
-  gap: 7px;
+  gap: 6px;
 }
 
 .voiceIcon {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   flex: 0 0 auto;
   fill: var(--channel-accent);
 }
@@ -258,8 +263,8 @@
 .noiseCard p {
   margin: 0;
   color: var(--ink);
-  font-size: 1rem;
-  line-height: 1.42;
+  font-size: 0.82rem;
+  line-height: 1.36;
   text-wrap: balance;
 }
 
@@ -268,8 +273,8 @@
   z-index: 2;
   display: grid;
   justify-items: center;
-  gap: 16px;
-  width: min(100%, 940px);
+  gap: 18px;
+  width: min(100%, 1040px);
   text-align: center;
 }
 
@@ -284,18 +289,18 @@
   color: var(--neutral-10);
   font-size: 0.68rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
   line-height: 1;
   text-transform: uppercase;
 }
 
 .heroTitle {
-  max-width: 10.5ch;
+  width: min(100%, 760px);
   text-wrap: balance;
 }
 
 .heroLead {
-  max-width: 720px;
+  width: min(100%, 760px);
 }
 
 .heroActions {
@@ -303,9 +308,11 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 12px;
+  width: min(100%, 760px);
 }
 
 .scrollPrompt {
+  width: min(100%, 760px);
   color: var(--neutral-10);
   font-size: 0.9rem;
   font-weight: 600;
@@ -316,18 +323,19 @@
   display: grid;
   justify-items: center;
   gap: 14px;
-  width: min(100%, 880px);
+  width: min(100%, 960px);
   text-align: center;
 }
 
 .storyHeading h2,
 .decisionTop h2 {
+  width: min(100%, 760px);
   text-wrap: balance;
 }
 
 .storyHeading p,
 .decisionTop p {
-  max-width: 720px;
+  width: min(100%, 760px);
 }
 
 .pipelinePanel {
@@ -506,7 +514,7 @@
 }
 
 .pipelineLabels strong {
-  font-size: 1.02rem;
+  font-size: 0.94rem;
 }
 
 .pipelineLabels span,
@@ -588,43 +596,22 @@
   opacity: 0.72;
 }
 
-/* Act 03: open layout — no glass container, items live in the stage flow */
 .methodologyHead {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 14px;
+  gap: 16px;
   width: 100%;
-  margin-bottom: clamp(28px, 3.5vw, 48px);
-}
-
-.methodologyTop {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 0.7fr);
-  gap: 24px;
-  align-items: start;
-}
-
-.methodologyKicker {
-  display: inline-flex;
-  align-items: center;
-  min-height: 26px;
-  margin-top: 4px;
-  padding: 5px 12px;
-  border-radius: 999px;
-  background: rgba(35, 35, 39, 0.05);
-  color: var(--neutral-10);
-  font-size: 0.78rem;
-  font-weight: 700;
+  margin-bottom: clamp(24px, 3vw, 42px);
 }
 
 .methodologyTitle {
-  margin-top: 14px;
-  max-width: 14ch;
+  margin-top: 0;
+  width: min(100%, 760px);
 }
 
 .methodologyLead {
-  max-width: 62ch;
+  width: min(100%, 760px);
 }
 
 .methodologyChips {
@@ -695,8 +682,21 @@
   gap: 8px;
 }
 
+.stateRow > div:first-child {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.stateRow > div:first-child strong,
+.stateRow > div:first-child span {
+  min-width: 0;
+}
+
 .decisionTop h2 {
-  max-width: 12ch;
+  max-width: none;
 }
 
 .recommendationGrid {
@@ -768,11 +768,13 @@
 
 @media (max-width: 1220px) {
   .noiseCard {
-    width: clamp(170px, 18vw, 218px);
+    width: clamp(150px, 14vw, 188px);
+    min-height: 98px;
+    padding: 11px 12px;
   }
 
   .noiseCard p {
-    font-size: 0.9rem;
+    font-size: 0.74rem;
   }
 }
 
@@ -806,26 +808,23 @@
     padding-block: clamp(32px, 8vw, 54px);
   }
 
-  /* Non-intro scenes keep their CSS initial state (faded);
-     GSAP reveals them on scroll across all breakpoints now. */
-
   .noiseCard {
-    width: clamp(124px, 33vw, 168px);
-    min-height: 88px;
-    padding: 10px 11px;
+    width: clamp(126px, 31vw, 156px);
+    min-height: 82px;
+    padding: 9px 10px;
     border-radius: 18px;
     box-shadow: 0 18px 58px rgba(47, 56, 72, 0.11);
     transform: translate3d(calc(-50% + var(--mobile-card-x)), calc(-50% + var(--mobile-card-y)), 0) rotate(var(--mobile-card-r));
   }
 
-  .noiseCard:nth-child(n + 5) {
+  .noiseCard[data-mobile-noise="false"] {
     display: none;
   }
 
   .voiceMeta {
-    gap: 7px;
-    margin-bottom: 8px;
-    font-size: 0.56rem;
+    gap: 6px;
+    margin-bottom: 7px;
+    font-size: 0.48rem;
   }
 
   .voicePlatform {
@@ -838,18 +837,18 @@
   }
 
   .noiseCard p {
-    font-size: 0.76rem;
-    line-height: 1.28;
+    font-size: 0.68rem;
+    line-height: 1.26;
   }
 
   .introContent,
   .storyHeading,
   .decisionTop {
-    width: min(100%, 620px);
+    width: min(100%, 680px);
   }
 
   .heroTitle {
-    max-width: 9ch;
+    width: min(100%, 760px);
   }
 
   .heroActions :global(.button),
@@ -954,7 +953,6 @@
     font-size: 1.24rem;
   }
 
-  .methodologyTop,
   .methodologyGrid,
   .matrixGrid,
   .recommendationGrid,
@@ -969,6 +967,7 @@
   .methodologyTitle,
   .decisionTop h2 {
     max-width: none;
+    width: min(100%, 660px);
   }
 
   .statePanel {
@@ -981,6 +980,10 @@
 }
 
 @media (max-width: 760px) {
+  .heroSection {
+    --scrolly-copy-width: min(100%, 390px);
+  }
+
   .heroSection {
     padding-top: 86px;
     padding-inline: 12px;
@@ -1001,32 +1004,51 @@
 
   .introContent,
   .storyHeading,
+  .methodologyHead,
   .decisionTop {
     justify-items: center;
     text-align: center;
+    width: var(--scrolly-copy-width);
+  }
+
+  .methodologyHead {
+    align-items: center;
+  }
+
+  .storyHeading .eyebrow,
+  .methodologyHead .eyebrow,
+  .decisionTop .eyebrow {
+    justify-self: center;
   }
 
   .introContent {
-    width: min(100%, 360px);
     gap: 14px;
     align-self: end;
   }
 
   .noiseCard {
-    width: clamp(118px, 37vw, 150px);
-    min-height: 80px;
-    border-radius: 17px;
+    width: clamp(136px, 40vw, 168px);
+    min-height: 88px;
+    padding: 10px 11px;
+    border-radius: 18px;
   }
 
   .heroTitle {
-    max-width: 8.6ch;
+    width: 100%;
   }
 
   .heroLead,
   .storyHeading p,
+  .methodologyLead,
   .decisionTop p {
-    max-width: 32ch;
+    width: 100%;
+    max-width: none;
     font-size: 1rem;
+  }
+
+  .methodologyChips {
+    justify-content: center;
+    width: 100%;
   }
 
   .scrollPrompt {
@@ -1038,13 +1060,13 @@
     flex-direction: column;
     align-items: center;
     gap: 10px;
+    width: min(100%, 320px);
   }
 
-  /* Reset the flex: 1 1 190px from the ≤1023 rule — column flex makes buttons full-width */
   .heroActions :global(.button) {
     flex: none;
-    width: auto;
-    min-width: min(224px, 68vw);
+    width: 100%;
+    min-width: 0;
     min-height: 50px;
   }
 
@@ -1065,13 +1087,15 @@
   }
 
   .pipelineScene .storyHeading h2 {
-    max-width: 10.7ch;
+    width: 100%;
+    max-width: none;
     font-size: clamp(1.9rem, 8.5vw, 3rem);
     line-height: 0.96;
   }
 
   .pipelineScene .storyHeading p {
-    max-width: 31ch;
+    width: 100%;
+    max-width: none;
   }
 
   .pipelinePanel {
@@ -1133,7 +1157,13 @@
   }
 
   .voiceMeta {
-    font-size: 0.43rem;
+    font-size: 0.52rem;
+    line-height: 1.1;
+  }
+
+  .noiseCard p {
+    font-size: 0.74rem;
+    line-height: 1.28;
   }
 
   .pipelineOutcome {
@@ -1175,11 +1205,6 @@
   .decisionStat span,
   .decisionCopy {
     font-size: 0.8rem;
-  }
-
-  .methodologyKicker {
-    min-height: 30px;
-    font-size: 0.76rem;
   }
 
   .methodologyLead {
@@ -1232,8 +1257,8 @@
 
   .decisionActions :global(.button) {
     flex: none;
-    width: auto;
-    min-width: min(224px, 68vw);
+    width: min(100%, 320px);
+    min-width: 0;
   }
 }
 

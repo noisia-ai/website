@@ -11,8 +11,8 @@ export default function ContactPage() {
     <>
       <PageIntro
         eyebrow="CONTACTO"
-        title="Salida directa para quien ya sabe qué necesita preguntar."
-        lead="Si prefieres no hacer el diagnóstico, escribe directo. El mejor mensaje incluye contexto, mercado, deadline y qué decisión necesitas tomar."
+        title="Cuéntanos qué decisión necesitas tomar."
+        lead="Si ya tienes contexto, escríbenos directo. Mercado, urgencia y pregunta de negocio son suficientes para empezar."
       />
       <section className="section">
         <div className="section__inner detail-layout">

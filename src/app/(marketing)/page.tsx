@@ -1,7 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { Suspense } from "react";
 import { HeroScrollytelling } from "@/components/home/HeroScrollytelling";
-import { ArchitectureFlow } from "@/components/marketing/ArchitectureFlow";
 import { EvidenceStrip } from "@/components/marketing/EvidenceStrip";
 import { MethodologyPreviewGrid } from "@/components/marketing/MethodologyPreviewGrid";
 import { SourcesConstellation } from "@/components/marketing/SourcesConstellation";
@@ -11,19 +10,32 @@ import { Button } from "@/components/ui/Button";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import { serviceTiers } from "@/content/site";
 
+const timingPattern = /semana|trimestral|anual/i;
+
 export default function HomePage() {
   return (
     <>
       <HeroScrollytelling />
 
+      <section className="section">
+        <div className="section__inner">
+          <SectionHeader
+            eyebrow="COBERTURA"
+            title="Escuchamos donde la decisión se está formando."
+            lead="La señal puede vivir en TikTok, reviews, foros, búsquedas, noticias o marketplaces. La cobertura se define por tu pregunta, no por una lista fija de fuentes."
+          />
+          <SourcesConstellation />
+        </div>
+      </section>
+
       <section className="section product-preview-section" data-reveal>
         <div className="section__inner product-preview-section__inner">
           <SectionHeader
             eyebrow="DEL DATO A LA DECISIÓN"
-            title="Así se ve cuando la conversación deja de ser ruido."
-            lead="Noisia no entrega listening crudo. Entrega lecturas defendibles, trazables y listas para decisión. Estas son cinco escenas del sistema en acción."
+            title="Así se ve una lectura cuando ya está lista para negocio."
+            lead="Ejemplos de salidas: una pregunta clara, una tensión visible, evidencia detrás y un movimiento recomendado."
           />
-          <Suspense fallback={<div className="glass loading-panel">Cargando dashboards...</div>}>
+          <Suspense fallback={<div className="glass loading-panel">Cargando lecturas...</div>}>
             <ProductConsoleShowcase />
           </Suspense>
         </div>
@@ -33,8 +45,8 @@ export default function HomePage() {
         <div className="section__inner">
           <SectionHeader
             eyebrow="LA PREGUNTA QUE TIENES ENFRENTE"
-            title="Si reconoces tu pregunta acá, ya sabemos por dónde empezar."
-            lead="Cada situación activa un protocolo distinto — fuentes, método, entregables. Estas son siete preguntas que hemos resuelto antes y donde el camino ya está calibrado."
+            title="Encuentra la pregunta que hoy te está frenando."
+            lead="Lanzamiento, medios, producto, mercado, competencia, tendencias o crisis. El punto de partida cambia, pero la salida siempre es una decisión defendible."
           />
           <Suspense fallback={<div className="glass loading-panel">Cargando preguntas...</div>}>
             <UseCaseSelector />
@@ -46,8 +58,8 @@ export default function HomePage() {
         <div className="section__inner">
           <SectionHeader
             eyebrow="METODOLOGÍAS PROPIETARIAS"
-            title="Seis metodologías. Cada una entra cuando la incertidumbre lo exige."
-            lead="Se aplican solas, en combinación o como sistema, según la profundidad de la decisión. La estructura del problema define cuáles y en qué orden."
+            title="Métodos propios, explicados en lenguaje de negocio."
+            lead="Cada método responde una duda concreta: qué activa compra, qué frena confianza, dónde hay valor, quién influye y qué mensaje acelera la decisión."
           />
           <MethodologyPreviewGrid />
         </div>
@@ -57,54 +69,26 @@ export default function HomePage() {
         <div className="section__inner">
           <SectionHeader
             eyebrow="EVIDENCIA"
-            title="Esto es lo que parece la conversación cuando se analiza bien."
-            lead="Fragmentos representativos del corpus. Cada cita lleva metodología, tag y fuente original."
+            title="La evidencia no queda escondida."
+            lead="Cada hallazgo conserva la cita, la fuente y el tag que lo sostiene para que tu equipo pueda discutir la decisión, no adivinarla."
           />
         </div>
         <EvidenceStrip />
       </section>
 
       <section className="section">
-        <div className="section__inner data-architecture-home">
-          <div>
-            <SectionHeader
-              eyebrow="INFRAESTRUCTURA"
-              title="La inteligencia empieza antes del modelo."
-              lead="Noisia arma un corpus comparable, lo enriquece con contexto y conserva trazabilidad hasta el output. La metodología corre sobre evidencia normalizada, con fuente, tag y razón de inclusión."
-            />
-            <Button href="/arquitectura-de-datos" variant="secondary" icon={<ArrowRight size={17} strokeWidth={1.8} />}>
-              Conocer arquitectura
-            </Button>
-          </div>
-          <ArchitectureFlow />
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="section__inner">
-          <SectionHeader
-            eyebrow="COBERTURA"
-            title="La conversación que importa rara vez vive en una sola plataforma."
-            lead="El corpus se arma por pregunta, no por default. Combinamos fuentes sociales, reviews, foros, noticias, audio, video y marketplaces cuando la decisión lo exige — y dejamos fuera lo que no aporta señal."
-          />
-          <SourcesConstellation />
-        </div>
-      </section>
-
-      <section className="section">
         <div className="section__inner">
           <SectionHeader
             eyebrow="SERVICIOS"
-            title="Tres formas de trabajar juntos. Una sola lógica: la pregunta manda."
-            lead="Foundation, Intelligence y Strategy no son paquetes cerrados. Son niveles de profundidad para construir una respuesta proporcional al riesgo de la decisión que tienes enfrente."
+            title="Elige la profundidad según el tamaño de la decisión."
+            lead="Foundation, Intelligence y Strategy son tres formas de llegar a una respuesta útil: desde validar una hipótesis hasta sostener un sistema continuo de decisiones."
           />
           <div className="tier-grid">
             {serviceTiers.map((tier) => (
               <article className="tier-card glass" key={tier.name}>
-                <span className="chip">{tier.name}</span>
-                <h3>{tier.description}</h3>
+                <h3>{tier.name}</h3>
                 <ul>
-                  {tier.scope.map((item) => (
+                  {tier.scope.filter((item) => !timingPattern.test(item)).map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
@@ -121,12 +105,11 @@ export default function HomePage() {
       <section className="section section--compact">
         <div className="section__inner">
           <div className="closing-panel glass">
-            <span className="eyebrow">HONESTIDAD METODOLÓGICA</span>
-            <h2 className="display-lg">Tu pregunta no es “qué dicen sobre mi marca”. Es “qué hago con lo que dicen”.</h2>
+            <span className="eyebrow">LISTO PARA DECIDIR</span>
+            <h2 className="display-lg">No necesitas más ruido. Necesitas una lectura que puedas defender.</h2>
             <p className="body-lg">
-              Lo que la conversación pública dice de tu marca es materia prima, no producto final.
-              Nuestro trabajo es encontrar la respuesta que sostiene tu pregunta de negocio,
-              defenderla con evidencia trazable y traducirla a algo que tu equipo pueda accionar el lunes.
+              Trabajamos con la conversación pública para responder una pregunta de negocio,
+              sostenerla con evidencia trazable y traducirla en acciones que tu equipo pueda poner sobre la mesa.
             </p>
             <div className="hero-actions">
               <Button href="/diagnostico" icon={<ArrowRight size={17} strokeWidth={1.8} />}>

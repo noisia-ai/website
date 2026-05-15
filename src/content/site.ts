@@ -68,7 +68,7 @@ export const site = {
   name: "Noisia",
   eyebrow: "SOCIAL INTELLIGENCE ARCHITECTS",
   description:
-    "Noisia construye inteligencia social para marcas que necesitan resolver decisiones con evidencia trazable, no monitorear menciones.",
+    "Noisia convierte conversación pública en decisiones claras para equipos de marca, producto y estrategia.",
   nav: [
     { label: "Insights", href: "/insights" },
     { label: "Metodologías", href: "/metodologias" },
@@ -80,32 +80,32 @@ export const site = {
 
 export const productSurfaces = [
   {
-    name: "Report builder",
-    description: "La pregunta estratégica se formula antes de consumir análisis.",
-    proof: "Mercado, timeframe, hipótesis, fuentes y output esperado quedan visibles desde el intake."
+    name: "Brief de lectura",
+    description: "La pregunta estratégica se define antes de empezar a analizar.",
+    proof: "Mercado, hipótesis, fuentes y salida esperada quedan visibles desde el inicio."
   },
   {
-    name: "Credit wallet",
+    name: "Alcance claro",
     description: "Cada corrida explica su costo antes de ejecutarse.",
     proof: "Sin consumo opaco: ves qué compra cada crédito y qué profundidad habilita."
   },
   {
-    name: "Narrative dashboard",
+    name: "Reporte narrativo",
     description: "El reporte funciona como argumento, no como tablero de métricas sueltas.",
-    proof: "Tesis, tensión, recomendación, cortes de lectura y evidencia trazable."
+    proof: "Tesis, tensión, recomendación, cortes de lectura y evidencia a la vista."
   },
   {
-    name: "Source drawer",
+    name: "Fuentes abiertas",
     description: "Cada insight conserva la fuente que lo sostiene.",
     proof: "Texto original, fecha, plataforma, mercado, tags y razón de relevancia."
   },
   {
-    name: "Chat with data",
+    name: "Chat con la lectura",
     description: "Una conversación con el reporte para cambiar de ángulo sin perder evidencia.",
     proof: "Preguntas, respuestas, citas y acciones sobre el reporte."
   },
   {
-    name: "Export layer",
+    name: "Exportables",
     description: "Las salidas se preparan para decisión, cliente o equipo.",
     proof: "Link privado, PPT, snapshot, resumen ejecutivo y narrativa editable."
   }
@@ -113,37 +113,15 @@ export const productSurfaces = [
 
 export const productConsoleScenes: ProductConsoleScene[] = [
   {
-    slug: "food-rescue",
-    tab: "Campaña",
-    label: "01 · El corpus",
-    title: "Lectura de campaña · food rescue LATAM",
-    methodologies: ["Cultural Codes", "Triggers & Barriers"],
-    question: "¿Qué tensión cultural sostiene una campaña de adquisición sin activar cinismo?",
-    insight: "La oportunidad no está en \"ahorrar\". Está en quitar la culpa de una compra inteligente.",
-    summary:
-      "El driver racional ya está instalado en la conversación. Lo que cambia conversión no es repetir el ahorro — es permitir que el usuario se sienta parte de una solución cotidiana, no de una compra de descarte.",
-    metrics: [
-      { label: "tensión dominante", value: "47.2%", tone: "positive" },
-      { label: "fricción narrativa", value: "31.8%", tone: "tension" }
-    ],
-    sourceQuote: "Me gusta la idea, pero no quiero sentir que compro sobras. Si lo cuentan como rescate, cambia.",
-    sourceMeta: [
-      { label: "Plataforma", value: "Review pública" },
-      { label: "Mercado", value: "Chile" },
-      { label: "Tag", value: "framing · culpa · valor" }
-    ],
-    chatPrompt: "Dame el ángulo para México sin sonar alarmista."
-  },
-  {
     slug: "checkout-fintech",
-    tab: "Fricción",
-    label: "02 · La fricción",
-    title: "Diagnóstico de conversión · wallet fintech",
+    tab: "Conversión",
+    label: "01 · Punto de freno",
+    title: "Lectura de conversión · wallet fintech",
     methodologies: ["Journey Friction Mapping", "Decision Velocity"],
-    question: "¿Dónde se rompe la decisión cuando el usuario ya entendió el beneficio?",
-    insight: "El abandono no ocurre por falta de interés. Ocurre cuando la prueba de seguridad llega tarde.",
+    question: "¿Qué hace que alguien se frene justo antes de registrarse?",
+    insight: "La conversión cae cuando la confianza llega tarde.",
     summary:
-      "La intención de compra está alta, pero la velocidad cae en el paso donde el usuario necesita validar control, reversibilidad y soporte humano. La fricción no es de pricing — es de confianza mal secuenciada.",
+      "El beneficio ya se entiende. El problema aparece cuando el usuario necesita saber qué pasa si algo sale mal. La respuesta debe llegar antes del CTA, no después.",
     metrics: [
       { label: "bloqueo de velocidad", value: "38.6%", tone: "tension" },
       { label: "permiso a CTA", value: "52.4%", tone: "positive" }
@@ -154,18 +132,18 @@ export const productConsoleScenes: ProductConsoleScene[] = [
       { label: "Mercado", value: "México" },
       { label: "Tag", value: "riesgo · reversibilidad · soporte" }
     ],
-    chatPrompt: "Resume el cambio de UX que aceleraría el registro."
+    chatPrompt: "Resume el cambio de mensaje que aceleraría el registro."
   },
   {
     slug: "beauty-jobs",
     tab: "Producto",
-    label: "03 · El job",
-    title: "Mapa de oportunidad · skincare sensible",
+    label: "02 · Necesidad",
+    title: "Oportunidad de producto · skincare sensible",
     methodologies: ["Triggers & Barriers", "Value Perception Matrix"],
-    question: "¿Qué jobs no resueltos justifican una nueva línea sin competir solo por claims?",
-    insight: "La oportunidad no es prometer más potencia. Es reducir la ansiedad antes de probar.",
+    question: "¿Qué necesidad sigue mal resuelta por las marcas actuales?",
+    insight: "La oportunidad no es más potencia. Es bajar el miedo a probar.",
     summary:
-      "Los reviews largos separan deseo de eficacia y miedo a irritación. El valor aparece cuando la marca convierte diagnóstico, prueba y rutina en una misma experiencia, en lugar de empujar producto suelto.",
+      "Los reviews muestran deseo de eficacia, pero también miedo a irritación. Una nueva línea gana si hace más fácil diagnosticar, probar y armar rutina.",
     metrics: [
       { label: "unmet job visible", value: "44.9%", tone: "positive" },
       { label: "barrera de prueba", value: "29.7%", tone: "tension" }
@@ -176,40 +154,18 @@ export const productConsoleScenes: ProductConsoleScene[] = [
       { label: "Mercado", value: "Colombia" },
       { label: "Tag", value: "riesgo · rutina · sensibilidad" }
     ],
-    chatPrompt: "Dame tres rutas de concepto con menor riesgo percibido."
-  },
-  {
-    slug: "market-entry",
-    tab: "Mercado",
-    label: "04 · El código",
-    title: "Entrada de mercado · proteína plant-based",
-    methodologies: ["Cultural Codes", "Influence Architecture"],
-    question: "¿Qué código local puede legitimar la categoría sin sonar importada?",
-    insight: "El permiso cultural no vive en bienestar aspiracional. Vive en rendimiento cotidiano.",
-    summary:
-      "La conversación local rechaza superioridad moral, pero acepta soluciones prácticas cuando vienen validadas por nodos técnicos y comunidades de entrenamiento. El terreno simbólico ganador es funcional, no ético.",
-    metrics: [
-      { label: "código legitimador", value: "41.3%", tone: "positive" },
-      { label: "rechazo moral", value: "26.2%", tone: "tension" }
-    ],
-    sourceQuote: "No me interesa que me regañen por comer carne. Me interesa rendir y no sentirme pesado.",
-    sourceMeta: [
-      { label: "Plataforma", value: "Comunidad fitness" },
-      { label: "Mercado", value: "Perú" },
-      { label: "Tag", value: "rendimiento · identidad · validadores" }
-    ],
-    chatPrompt: "¿Qué nodos conviene escuchar antes de pauta?"
+    chatPrompt: "Dame tres conceptos con menor riesgo percibido."
   },
   {
     slug: "value-defense",
-    tab: "Defensa",
-    label: "05 · La defensa",
-    title: "Defensa de valor · marketplace premium",
+    tab: "Valor",
+    label: "03 · Defensa de valor",
+    title: "Defensa de margen · marketplace premium",
     methodologies: ["Value Perception Matrix", "Decision Velocity", "Journey Friction Mapping"],
-    question: "¿Qué dimensión de valor sostiene margen cuando el competidor gana por precio?",
-    insight: "La defensa no es justificar precio. Es hacer visible el costo de equivocarse.",
+    question: "¿Qué valor sostiene margen cuando el competidor baja precio?",
+    insight: "No justifiques precio. Haz visible el costo de equivocarse.",
     summary:
-      "El competidor gana la comparación rápida. Pero cuando el riesgo de la compra sube, los compradores vuelven a valorar garantía, trazabilidad y resolución. La defensa no se construye justificando precio — se construye haciendo visible el costo de equivocarse.",
+      "El competidor gana la comparación rápida. Cuando el riesgo sube, garantía, trazabilidad y respuesta vuelven a importar. Ahí vive la defensa de margen.",
     metrics: [
       { label: "valor defendible", value: "49.6%", tone: "positive" },
       { label: "presión por precio", value: "34.1%", tone: "tension" }
@@ -220,7 +176,51 @@ export const productConsoleScenes: ProductConsoleScene[] = [
       { label: "Mercado", value: "Argentina" },
       { label: "Tag", value: "garantía · riesgo · soporte" }
     ],
-    chatPrompt: "Convierte esto en argumento para paid search."
+    chatPrompt: "Convierte esto en argumento para performance."
+  },
+  {
+    slug: "market-entry",
+    tab: "Mercado",
+    label: "04 · Permiso local",
+    title: "Entrada de mercado · proteína plant-based",
+    methodologies: ["Cultural Codes", "Influence Architecture"],
+    question: "¿Qué hace que la categoría se sienta local y creíble?",
+    insight: "El permiso no está en predicar bienestar. Está en resolver rendimiento cotidiano.",
+    summary:
+      "La conversación rechaza el regaño, pero acepta soluciones prácticas cuando vienen de voces técnicas y comunidades de entrenamiento. El camino es funcional, no moral.",
+    metrics: [
+      { label: "código legitimador", value: "41.3%", tone: "positive" },
+      { label: "rechazo moral", value: "26.2%", tone: "tension" }
+    ],
+    sourceQuote: "No me interesa que me regañen por comer carne. Me interesa rendir y no sentirme pesado.",
+    sourceMeta: [
+      { label: "Plataforma", value: "Comunidad fitness" },
+      { label: "Mercado", value: "Perú" },
+      { label: "Tag", value: "rendimiento · identidad · validadores" }
+    ],
+    chatPrompt: "¿Qué voces conviene escuchar antes de pauta?"
+  },
+  {
+    slug: "food-rescue",
+    tab: "Campaña",
+    label: "05 · Lectura",
+    title: "Campaña de adquisición · food rescue LATAM",
+    methodologies: ["Cultural Codes", "Triggers & Barriers"],
+    question: "¿Qué historia convierte sin sonar oportunista?",
+    insight: "No vendas \"sobras\". Vende una compra inteligente que también ayuda.",
+    summary:
+      "La gente entiende el ahorro. Lo que necesita es una forma de comprar sin sentirse juzgada ni rebajada. El ángulo ganador cambia culpa por utilidad cotidiana.",
+    metrics: [
+      { label: "tensión dominante", value: "47.2%", tone: "positive" },
+      { label: "fricción narrativa", value: "31.8%", tone: "tension" }
+    ],
+    sourceQuote: "Me gusta la idea, pero no quiero sentir que compro sobras. Si lo cuentan como rescate, cambia.",
+    sourceMeta: [
+      { label: "Plataforma", value: "Review pública" },
+      { label: "Mercado", value: "Chile" },
+      { label: "Tag", value: "framing · culpa · valor" }
+    ],
+    chatPrompt: "Dame el ángulo para México en lenguaje de campaña."
   }
 ];
 
@@ -228,71 +228,71 @@ export const homeUseCases: HomeUseCase[] = [
   {
     slug: "lanzamiento-de-campana",
     shortTitle: "Lanzamiento de campaña",
-    title: "Tengo que lanzar una campaña. ¿Sobre qué territorio cultural se construye sin sonar genérica?",
+    title: "Voy a lanzar campaña. ¿Qué historia tiene permiso real?",
     methodologies: ["Cultural Codes", "Triggers & Barriers"],
     timing: "4-6 semanas",
     reading:
-      "La mayoría de las campañas llegan con tres territorios creativos sobre la mesa. Decodificamos las tensiones simbólicas activas en la categoría y mapeamos sobre cuáles tu marca tiene permiso real para hablar — no por aspiración, sino por evidencia conversacional. Casi nunca gana el más aspiracional. Gana el que convierte una frustración cotidiana en lenguaje accionable.",
+      "Probamos territorios contra conversación real para saber cuál conecta sin sentirse forzado. Casi nunca gana el más aspiracional: gana el que convierte una frustración cotidiana en una idea fácil de defender.",
     deliverables: ["Mapa de tensión cultural", "Brief de ángulo de campaña", "Narrativa con fuentes"]
   },
   {
     slug: "optimizacion-de-medios",
     shortTitle: "Optimización de medios",
-    title: "Mi plan de medios no rinde. ¿Dónde se rompe el mensaje antes de llegar a conversión?",
+    title: "Mi plan de medios no convierte. ¿Dónde se rompe el mensaje?",
     methodologies: ["Journey Friction Mapping", "Decision Velocity"],
     timing: "4-6 semanas",
     reading:
-      "El funnel dice una cosa, la conversación dice otra. Reconstruimos el journey conversacional real e identificamos los puntos donde el mensaje pierde tracción — la fricción rara vez está donde el dashboard la pone. Muchas veces lo que falla no es el canal ni la frecuencia: es una promesa que acelera decisión en usuarios expertos y la bloquea en compradores nuevos.",
+      "Cruzamos lo que dice el funnel con lo que la gente expresa antes de comprar. A veces no falla el canal ni la frecuencia: falla una promesa que acelera a expertos y confunde a compradores nuevos.",
     deliverables: ["Mapa de fricción", "Bloqueos de velocidad", "Plan de reparación de mensaje"]
   },
   {
     slug: "desarrollo-de-producto",
     shortTitle: "Desarrollo de producto",
-    title: "Necesito desarrollar producto nuevo. ¿Qué jobs reales aún no están resueltos?",
+    title: "Necesito producto nuevo. ¿Qué necesidad sigue mal resuelta?",
     methodologies: ["Triggers & Barriers", "Value Perception Matrix"],
     timing: "6-10 semanas",
     reading:
-      "Los reviews y foros separan deseo declarado de oportunidad accionable. Extraemos los unmet jobs con esa diferencia — no lo que la gente dice que quiere, sino lo que ya está resolviendo mal. La oportunidad no suele ser una nueva feature. Suele ser una reducción de riesgo percibido que nadie está comunicando como valor.",
+      "Leemos reviews y foros para separar deseos bonitos de oportunidades reales. Muchas veces la innovación no es otra feature: es reducir un riesgo que nadie está comunicando como valor.",
     deliverables: ["Landscape de jobs", "Reporte de whitespace", "Direcciones de concepto"]
   },
   {
     slug: "entrada-a-nuevo-mercado",
     shortTitle: "Nuevo mercado",
-    title: "Vamos a entrar a un mercado nuevo. ¿Cómo se decodifica nuestra categoría en este país?",
+    title: "Vamos a entrar a un mercado nuevo. ¿Qué nos daría permiso local?",
     methodologies: ["Cultural Codes", "Influence Architecture"],
     timing: "6-10 semanas",
     reading:
-      "La categoría no se traduce — se reinscribe. Reconstruimos el sistema simbólico local: qué significa la categoría, quién la legitima, qué narrativas la rechazan. Lo que afuera se lee como aspiración, adentro puede operar como señal de exceso. La entrada cambia cuando entiendes en qué código local opera tu producto, no cuál querrías que ocupara.",
+      "Una categoría no aterriza igual en todos los países. Identificamos qué significa localmente, quién la legitima y qué narrativas la rechazan para entrar con un ángulo creíble.",
     deliverables: ["Dossier de código local", "Mapa de influencia de categoría", "Brief de entrada de mercado"]
   },
   {
     slug: "defensa-competitiva",
     shortTitle: "Defensa competitiva",
-    title: "Estoy perdiendo share. ¿Por qué los consumidores migran al competidor?",
+    title: "Estoy perdiendo share. ¿Qué está ganando el competidor?",
     methodologies: ["Triggers & Barriers", "Journey Friction Mapping"],
     timing: "4-8 semanas",
     reading:
-      "La migración rara vez es por precio. Analizamos las narrativas de salida: cuándo se quiebra la lealtad, qué la dispara, qué capitaliza el competidor. Muchas veces lo que pierdes no es feature ni costo — es el código emocional. El competidor convirtió soporte y transparencia en prueba de respeto, y tú seguías hablando de eficiencia.",
+      "Analizamos las razones que la gente usa para irse: cuándo se rompe la lealtad, qué lo dispara y qué promesa del competidor se siente más justa, simple o confiable.",
     deliverables: ["Mapa de narrativas de migración", "Barreras de retención", "Brief de defensa competitiva"]
   },
   {
     slug: "anticipacion-de-tendencias",
     shortTitle: "Anticipación de tendencias",
-    title: "Mi categoría se está moviendo. ¿Qué se está formando que aún no es visible?",
+    title: "Mi categoría se está moviendo. ¿Qué señal viene creciendo?",
     methodologies: ["Cultural Codes", "Influence Architecture"],
     timing: "6-10 semanas",
     reading:
-      "Las tendencias que importan no aparecen como hashtag. Aparecen como vocabulario nuevo en comunidades pequeñas, prácticas que se repiten antes de tener nombre, actores que empiezan a traducir entre nichos. Detectamos esas señales débiles antes de que entren en métricas de plataforma — cuando todavía se puede decidir, no solo reaccionar.",
+      "Las tendencias útiles suelen empezar como lenguaje nuevo, hábitos pequeños o voces que conectan nichos. Las detectamos antes de que se vuelvan obvias, cuando todavía puedes decidir y no solo reaccionar.",
     deliverables: ["Radar de señales débiles", "Vocabulario emergente", "Dossier de nodos tempranos"]
   },
   {
     slug: "decodificacion-de-crisis",
     shortTitle: "Crisis",
-    title: "Estamos en crisis. ¿Qué está pasando realmente en la conversación?",
+    title: "Estamos en crisis. ¿Qué está alimentando la conversación?",
     methodologies: ["Influence Architecture", "Cultural Codes"],
     timing: "2-4 semanas",
     reading:
-      "La crisis no crece por volumen — crece por estructura narrativa. Decodificamos quién la sostiene, qué la alimenta y qué necesita para desactivarse. Casi siempre hay un grupo pequeño que ya instaló un frame moral fácil de repetir. La respuesta correcta depende del tipo de crisis, no del tamaño: lo que apaga una crisis de confianza no es lo mismo que apaga una de identidad.",
+      "No miramos solo volumen. Identificamos quién sostiene la narrativa, qué frase la vuelve repetible y qué tipo de respuesta puede bajarle fuerza sin amplificarla.",
     deliverables: ["Mapa narrativo de crisis", "Lista de nodos de riesgo", "Estrategia de respuesta"]
   }
 ];
@@ -302,9 +302,9 @@ export const methodologies: Methodology[] = [
     slug: "triggers-y-barriers",
     number: "01",
     name: "Triggers & Barriers",
-    question: "¿Qué motiva y qué frena la decisión de tu consumidor?",
+    question: "¿Qué empuja la compra y qué la detiene?",
     lead:
-      "Toda categoría tiene fuerzas que empujan al consumidor hacia la compra y fuerzas que lo frenan. Esta metodología las separa, las cuantifica y muestra cuáles puede mover tu marca y cuáles no.",
+      "Separamos los motivos que acercan a la compra de las dudas que la frenan, para saber qué puede mover tu marca y qué conviene dejar de empujar.",
     foundations: [
       {
         theory: "Dual-Process Theory",
@@ -332,24 +332,24 @@ export const methodologies: Methodology[] = [
       }
     ],
     problem:
-      "Las marcas suelen conocer los motivos de compra como aparecen en focus groups. Esta metodologia desmonta esa formulacion reportada para revelar lo que el consumidor expresa cuando no esta siendo entrevistado.",
+      "Las marcas suelen conocer lo que la gente dice en una investigación formal. Aquí buscamos lo que aparece cuando habla sin guion: qué la acerca, qué la frena y qué no se atreve a decir tan claro.",
     protocol: [
-      "Definimos el jobs landscape funcional, emocional y social de la categoria.",
-      "Extraemos conversaciones espontaneas en reviews, foros, comentarios largos, X, YouTube y comunidades de nicho.",
-      "Codificamos cada expresion como trigger o barrier y la subclasificamos por tipo.",
-      "Jerarquizamos por frecuencia, intensidad linguistica y capacidad predictiva dentro de la misma conversacion.",
-      "Traducimos cada fuerza a una accion posible en comunicacion, producto o experiencia."
+      "Definimos qué intenta resolver la gente en la categoría.",
+      "Leemos reviews, foros, comentarios largos y comunidades donde la duda aparece completa.",
+      "Separamos frases que empujan la decisión de frases que la frenan.",
+      "Priorizamos por tamaño, intensidad y capacidad de mover comportamiento.",
+      "Traducimos cada fuerza a una acción posible en comunicación, producto o experiencia."
     ],
     outputs: [
-      "Triggers & Barriers Map",
-      "Activation Playbook",
-      "Friction Removal Plan",
-      "Comparative Brief con hasta tres competidores"
+      "Mapa de motivadores",
+      "Plan de activación",
+      "Plan para quitar fricción",
+      "Comparativo con hasta tres competidores"
     ],
     uses:
-      "Lanzamiento de producto, optimizacion de funnel, comunicacion que busca activar comportamiento, defensa competitiva y repositioning motivacional.",
+      "Lanzamientos, optimización de conversión, defensa competitiva y mensajes que necesitan activar comportamiento.",
     limitations:
-      "No predice tamanos de mercado ni cuotas. Tampoco sustituye un test cuantitativo de concepto. Su valor es direccional y motivacional.",
+      "No estima tamaño de mercado ni reemplaza pruebas cuantitativas. Sirve para entender qué mueve la decisión y qué la bloquea.",
     reading: [
       "Kahneman, D. Thinking, Fast and Slow.",
       "Christensen, C. Competing Against Luck.",
@@ -361,9 +361,9 @@ export const methodologies: Methodology[] = [
     slug: "value-perception-matrix",
     number: "02",
     name: "Value Perception Matrix",
-    question: "¿Qué dimensión de valor capitaliza tu marca y cuál está abandonando?",
+    question: "¿Por qué te eligen cuando no eres la opción más barata?",
     lead:
-      "Valor no es precio. Es lo que tu consumidor recibe en dinero, tiempo, esfuerzo y riesgo, comparado contra cada alternativa relevante. Esta metodología muestra dónde tu marca capitaliza y dónde está pagando una prima sin retorno.",
+      "Mide valor como lo vive el consumidor: dinero, tiempo, esfuerzo y riesgo. Así vemos dónde tu marca justifica margen y dónde está pagando una prima sin retorno.",
     foundations: [
       {
         theory: "Perceived Value",
@@ -391,24 +391,24 @@ export const methodologies: Methodology[] = [
       }
     ],
     problem:
-      "Las marcas asumen que su valor esta en lo que comunican. El consumidor construye valor contra alternativas reales, no en abstracto.",
+      "Tu marca puede explicar valor de una forma, pero la gente lo compara contra alternativas reales: precio, tiempo, riesgo, confianza y esfuerzo.",
     protocol: [
-      "Reconstruimos el frame competitivo real desde la conversacion.",
-      "Extraemos las dimensiones de valor que el consumidor usa para evaluar.",
-      "Codificamos menciones por dimension y polaridad.",
-      "Construimos una matriz marca por dimension con percepcion agregada.",
-      "Detectamos gaps defensivos, permisos desaprovechados y whitespaces de categoria."
+      "Reconstruimos contra qué alternativas compara la gente.",
+      "Detectamos qué entiende como valor: ahorro, rapidez, confianza, estatus o menor riesgo.",
+      "Clasificamos menciones por dimensión y tono.",
+      "Comparamos marca, competidores y sustitutos bajo los mismos criterios.",
+      "Detectamos argumentos de valor, huecos defensivos y oportunidades de diferenciación."
     ],
     outputs: [
-      "Value Perception Matrix",
-      "Whitespace Report",
-      "Defense Brief",
-      "Recategorization Hypothesis"
+      "Mapa de valor percibido",
+      "Oportunidades de diferenciación",
+      "Brief de defensa de margen",
+      "Hipótesis de recategorización"
     ],
     uses:
-      "Reposicionamiento, propuesta de valor, pricing strategy, defensa de margen y evaluacion post-lanzamiento.",
+      "Reposicionamiento, propuesta de valor, defensa de margen y evaluación post-lanzamiento.",
     limitations:
-      "La matriz es comparativa, no absoluta. No mide elasticidad de precio ni sustituye un conjoint.",
+      "La matriz compara percepción; no mide elasticidad de precio ni reemplaza un estudio cuantitativo de pricing.",
     reading: [
       "Zeithaml, V. Consumer Perceptions of Price, Quality, and Value.",
       "Kahneman, D. & Tversky, A. Prospect Theory.",
@@ -420,9 +420,9 @@ export const methodologies: Methodology[] = [
     slug: "cultural-codes-decoding",
     number: "03",
     name: "Cultural Codes Decoding",
-    question: "¿Qué significa tu categoría en el sistema simbólico de tu consumidor?",
+    question: "¿Qué significa tu categoría en la vida real de la gente?",
     lead:
-      "Toda categoría tiene reglas no escritas — qué se dice, qué no, qué legitima, qué cancela. Esta metodología las hace visibles para que tu marca decida si las cumple, las rompe o las reescribe.",
+      "Toda categoría tiene reglas no escritas: qué se admira, qué incomoda y qué da permiso. Las hacemos visibles para elegir un lenguaje que sí pertenezca.",
     foundations: [
       {
         theory: "Semiótica Estructural",
@@ -450,19 +450,19 @@ export const methodologies: Methodology[] = [
       }
     ],
     problem:
-      "Las marcas globales aplican formulas globales en mercados locales; las marcas locales asumen proximidad como conocimiento. Ambas pierden cuando no traducen el sistema simbolico.",
+      "Una idea puede funcionar en un mercado y sonar ajena en otro. Este método ayuda a entender qué lenguaje pertenece, qué incomoda y qué da permiso.",
     protocol: [
-      "Orquestamos fuentes culturalmente densas: foros, comunidades, comentarios largos y lenguaje vernaculo.",
+      "Leemos fuentes culturalmente densas: foros, comunidades, comentarios largos y lenguaje local.",
       "Identificamos palabras, metaforas y comparaciones recurrentes.",
-      "Mapeamos oposiciones binarias operativas en la categoria.",
-      "Reconstruimos el sistema de codigo: que legitima, que rechaza, que transgrede.",
-      "Ubicamos marcas y competidores dentro del codigo y detectamos posiciones vacantes."
+      "Mapeamos qué se admira, qué se ridiculiza, qué se rechaza y qué se considera auténtico.",
+      "Reconstruimos las reglas no escritas de la categoría.",
+      "Ubicamos marcas y competidores dentro de esas reglas para encontrar espacios creíbles."
     ],
-    outputs: ["Cultural Code Dossier", "Symbolic Map", "Code Strategy Brief"],
+    outputs: ["Dossier de código cultural", "Mapa simbólico", "Brief de entrada cultural"],
     uses:
-      "Entrada a nuevo mercado, repositioning profundo, lanzamiento de marca, transferibilidad de campanas globales y oportunidades culturales.",
+      "Entrada a nuevo mercado, reposicionamiento, lanzamiento de marca y adaptación de campañas globales.",
     limitations:
-      "Es interpretativa por naturaleza. No produce certezas estadisticas, produce comprensiones estructurales rigurosas.",
+      "No produce certezas estadísticas. Produce una lectura cultural para decidir con más contexto.",
     reading: [
       "Barthes, R. Mythologies.",
       "Geertz, C. The Interpretation of Cultures.",
@@ -474,9 +474,9 @@ export const methodologies: Methodology[] = [
     slug: "decision-velocity",
     number: "04",
     name: "Decision Velocity",
-    question: "¿Por qué tu consumidor decide rápido en una categoría y lento en la tuya?",
+    question: "¿Qué acelera o frena la decisión?",
     lead:
-      "Hay categorías donde el consumidor decide en treinta segundos y otras donde tarda seis meses. La velocidad la define la categoría, no el comprador. Esta metodología detecta qué la acelera y qué la traba.",
+      "Hay compras que se resuelven rápido y otras que piden prueba, control o comparación. Detectamos qué debe aparecer antes para que la decisión avance.",
     foundations: [
       {
         theory: "Dual-Process Theory",
@@ -504,24 +504,24 @@ export const methodologies: Methodology[] = [
       }
     ],
     problem:
-      "Muchas marcas optimizan mensaje y canal sin diagnosticar la velocidad cognitiva que su categoria exige. Ese desajuste cuesta conversion o consideracion.",
+      "A veces el mensaje no falla por creatividad, sino porque llega en el momento equivocado. La gente necesita prueba, control o comparación antes de avanzar.",
     protocol: [
-      "Reconstruimos narrativas de decision reales desde conversaciones espontaneas.",
-      "Codificamos tiempos, actores consultados, informacion buscada y momento de click.",
-      "Diagnosticamos si domina Sistema 1 o Sistema 2 por segmento.",
-      "Detectamos velocity blockers y velocity accelerators.",
-      "Recomendamos arquitectura de eleccion para opciones, mensajes, secuencias y CTAs."
+      "Reconstruimos cómo decide la gente antes de comprar, registrarse o recomendar.",
+      "Identificamos qué información busca, a quién consulta y cuándo se detiene.",
+      "Separamos decisiones rápidas de decisiones que piden más explicación.",
+      "Detectamos qué acelera y qué bloquea el avance.",
+      "Recomendamos qué mostrar antes, qué simplificar y qué dejar para después."
     ],
     outputs: [
-      "Decision Velocity Diagnostic",
-      "Velocity Blockers Map",
-      "Velocity Accelerators Map",
-      "Choice Architecture Brief"
+      "Diagnóstico de velocidad",
+      "Bloqueos de decisión",
+      "Aceleradores de decisión",
+      "Brief de arquitectura de elección"
     ],
     uses:
-      "Optimizacion de funnel, UX de decision, e-commerce, configuradores, pricing pages y lanzamientos en categorias de velocidad inusual.",
+      "Optimización de conversión, ecommerce, pricing pages, formularios, configuradores y lanzamientos donde la decisión se traba.",
     limitations:
-      "No sustituye un A/B test. Identifica hipotesis fuertes que luego se validan con experimentacion.",
+      "No reemplaza un A/B test. Ayuda a elegir qué hipótesis vale la pena probar.",
     reading: [
       "Kahneman, D. Thinking, Fast and Slow.",
       "Thaler, R. & Sunstein, C. Nudge.",
@@ -533,9 +533,9 @@ export const methodologies: Methodology[] = [
     slug: "journey-friction-mapping",
     number: "05",
     name: "Journey Friction Mapping",
-    question: "¿Dónde se rompe el camino entre la intención y la acción?",
+    question: "¿Dónde se pierde la intención antes de convertirse en acción?",
     lead:
-      "El journey que se construye en workshop es una hipótesis. El journey real es donde se pierden ventas. Esta metodología identifica los puntos de pérdida y los tipifica para que la solución sea quirúrgica, no cosmética.",
+      "El recorrido dibujado en un workshop es una hipótesis. El real aparece en las dudas, quejas y comparaciones de la gente. Ahí ubicamos los puntos que hacen caer la acción.",
     foundations: [
       {
         theory: "Customer Journey Theory",
@@ -563,19 +563,19 @@ export const methodologies: Methodology[] = [
       }
     ],
     problem:
-      "La analitica web muestra donde la gente abandona, no por que. Esta metodologia reconstruye el por que desde conversacion espontanea y masiva.",
+      "La analítica web puede mostrar dónde se cae la gente, pero no siempre explica por qué. Aquí buscamos las dudas y fricciones que aparecen antes de abandonar.",
     protocol: [
-      "Reconstruimos etapas del journey tal como el consumidor las vive.",
-      "Codificamos fricciones por etapa y tipo.",
-      "Detectamos break points donde la friccion es mas densa o decisiva.",
-      "Cruzamos fricciones con touchpoints bajo control de la marca.",
-      "Priorizamos por frecuencia, capacidad de abortar decision y costo de eliminacion."
+      "Reconstruimos el recorrido como lo vive la gente.",
+      "Clasificamos dudas, esfuerzo, enojo o confusión por etapa.",
+      "Detectamos puntos donde la intención se rompe.",
+      "Cruzamos esas fricciones con momentos que la marca puede corregir.",
+      "Priorizamos qué remover primero por impacto y dificultad."
     ],
-    outputs: ["Friction Map", "Break Points Brief", "Friction Removal Roadmap"],
+    outputs: ["Mapa de fricción", "Puntos de quiebre", "Roadmap de mejora"],
     uses:
-      "Optimizacion de conversion, rediseno de experiencias, evaluacion post-lanzamiento, defensa de share y expansion a nuevos canales.",
+      "Optimización de conversión, rediseño de experiencia, defensa de share y expansión a nuevos canales.",
     limitations:
-      "Captura fricciones articuladas. Las fricciones invisibles requieren metodos complementarios como usability testing observacional.",
+      "Captura fricciones que la gente expresa. Las fricciones invisibles requieren observación directa o pruebas de usabilidad.",
     reading: [
       "Lemon, K. & Verhoef, P. Understanding Customer Experience Throughout the Customer Journey.",
       "Nordgren, L. & Schonthal, D. The Human Element.",
@@ -587,9 +587,9 @@ export const methodologies: Methodology[] = [
     slug: "influence-architecture",
     number: "06",
     name: "Influence Architecture",
-    question: "¿Quiénes diseñan, sin saberlo, el imaginario de tu categoría?",
+    question: "¿Qué voces hacen creíble una idea en tu categoría?",
     lead:
-      "La influencia no se mide en seguidores. Se mide en nodos: ciertas voces mueven significado entre comunidades y desbloquean adopción de manera desproporcionada. Esta metodología los identifica, los caracteriza y los prioriza.",
+      "La influencia que importa no siempre tiene más seguidores. Mapeamos las voces que conectan comunidades, validan ideas y cambian cómo se interpreta la categoría.",
     foundations: [
       {
         theory: "Strength of Weak Ties",
@@ -617,24 +617,24 @@ export const methodologies: Methodology[] = [
       }
     ],
     problem:
-      "Las marcas hacen influencer marketing por followers y engagement rate. La influencia que mueve categorias suele vivir en nodos especializados, validadores invisibles y conectores entre comunidades.",
+      "La voz más grande no siempre es la más creíble. Muchas decisiones se mueven por especialistas, comunidades puente y personas que validan antes de que el tema sea masivo.",
     protocol: [
-      "Mapeamos comunidades de conversacion alrededor de la categoria.",
-      "Calculamos centralidad de grado, betweenness y eigenvector.",
-      "Tipificamos nodos: innovator, early adopter, validator, connector, dissenter, gatekeeper.",
-      "Reconstruimos propagacion de narrativas reales.",
-      "Priorizamos nodos a activar, monitorear o investigar."
+      "Mapeamos comunidades alrededor de la categoría.",
+      "Identificamos voces que conectan grupos, validan ideas o bloquean narrativas.",
+      "Separamos especialistas, conectores, detractores, validadores y comunidades puente.",
+      "Vemos cómo viajan las ideas entre grupos.",
+      "Priorizamos qué voces conviene escuchar, activar o monitorear."
     ],
     outputs: [
-      "Influence Architecture Map",
-      "Key Nodes Dossier",
-      "Activation Strategy",
-      "Early Warning System"
+      "Mapa de influencia",
+      "Dossier de voces clave",
+      "Estrategia de activación",
+      "Sistema de alerta temprana"
     ],
     uses:
-      "Estrategias de influencia, lanzamientos en categorias especializadas, defensa reputacional, tendencias emergentes y comunidades de marca.",
+      "Estrategias de influencia, lanzamientos especializados, defensa reputacional, tendencias emergentes y comunidades de marca.",
     limitations:
-      "Identifica la estructura. La activacion requiere relationship building, contenido relevante y respeto por cada comunidad.",
+      "Identifica la estructura de influencia. La activación requiere contenido relevante y respeto por cada comunidad.",
     reading: [
       "Granovetter, M. The Strength of Weak Ties.",
       "Rogers, E. Diffusion of Innovations.",
@@ -647,131 +647,131 @@ export const methodologies: Methodology[] = [
 export const useCases: UseCase[] = [
   {
     slug: "lanzamiento-de-campana",
-    title: "Tengo que lanzar una campaña. ¿Sobre qué territorio cultural se construye sin sonar genérica?",
+    title: "Voy a lanzar campaña. ¿Qué historia tiene permiso real?",
     shortTitle: "Lanzamiento de campaña",
     industries: "Consumo, retail, fintech, food, movilidad",
     methodologies: ["Cultural Codes", "Triggers & Barriers"],
     timing: "4-6 semanas",
     approach:
-      "Decodificamos las tensiones simbólicas activas en la categoría y mapeamos sobre cuáles tu marca tiene permiso real para hablar — no por aspiración, sino por evidencia conversacional.",
-    deliverables: ["Tension map", "Campaign angle brief", "Narrativa con fuentes"],
+      "Probamos territorios contra conversación real para elegir un ángulo que la categoría sí pueda creer.",
+    deliverables: ["Mapa de tensión", "Brief de campaña", "Narrativa con fuentes"],
     vignette:
-      "Una marca llego con tres territorios creativos. La conversacion mostro que solo uno tenia permiso cultural: no el mas aspiracional, sino el que convertia una frustracion cotidiana en lenguaje accionable."
+      "La conversación mostró que el territorio más útil no era el más aspiracional, sino el que convertía una frustración cotidiana en lenguaje de campaña."
   },
   {
     slug: "optimizacion-de-medios",
-    title: "Mi plan de medios no rinde. ¿En qué punto del journey se rompe el mensaje?",
+    title: "Mi plan de medios no convierte. ¿Dónde se rompe el mensaje?",
     shortTitle: "Optimización de medios",
     industries: "Agencias, ecommerce, subscription, apps",
     methodologies: ["Journey Friction Mapping", "Decision Velocity"],
     timing: "4-6 semanas",
     approach:
-      "Reconstruimos el journey conversacional real e identificamos los puntos donde el mensaje pierde tracción antes de llegar a conversión. La fricción rara vez está donde dice el funnel.",
-    deliverables: ["Friction map", "Velocity blockers", "Message repair plan"],
+      "Comparamos lo que dice el funnel con lo que la gente expresa antes de comprar para ubicar dónde se pierde tracción.",
+    deliverables: ["Mapa de fricción", "Bloqueos de decisión", "Plan de reparación de mensaje"],
     vignette:
       "El problema no estaba en el canal ni en la frecuencia. Estaba en una promesa que aceleraba decisión en usuarios expertos y la bloqueaba en nuevos compradores."
   },
   {
     slug: "desarrollo-de-producto",
-    title: "Necesito desarrollar productos nuevos. ¿Qué jobs reales aún no están resueltos?",
+    title: "Necesito producto nuevo. ¿Qué necesidad sigue mal resuelta?",
     shortTitle: "Desarrollo de producto",
     industries: "CPG, health, beauty, SaaS, fintech",
     methodologies: ["Triggers & Barriers", "Value Perception Matrix"],
     timing: "6-10 semanas",
     approach:
-      "Extraemos unmet jobs desde reviews, foros y discusiones reales para separar deseo declarado de oportunidad accionable. La diferencia define el roadmap.",
-    deliverables: ["Jobs landscape", "Whitespace report", "Concept directions"],
+      "Leemos reviews, foros y discusiones reales para separar deseos bonitos de oportunidades que sí pueden entrar a roadmap.",
+    deliverables: ["Mapa de necesidades", "Oportunidades de diferenciación", "Rutas de concepto"],
     vignette:
       "La oportunidad no era una nueva feature, sino una reducción de riesgo percibido que nadie había comunicado como valor."
   },
   {
     slug: "entrada-a-nuevo-mercado",
-    title: "Vamos a entrar a un mercado nuevo. ¿Cómo se decodifica nuestra categoría en este país?",
+    title: "Vamos a entrar a un mercado nuevo. ¿Qué nos daría permiso local?",
     shortTitle: "Nuevo mercado",
     industries: "Marcas regionales, expansion LATAM, scaleups",
     methodologies: ["Cultural Codes", "Influence Architecture"],
     timing: "6-10 semanas",
     approach:
-      "Reconstruimos el sistema simbólico local: qué significa la categoría, quién la legitima y qué narrativas la rechazan. La categoría no se traduce — se reinscribe.",
-    deliverables: ["Local code dossier", "Category influence map", "Market entry brief"],
+      "Identificamos qué significa la categoría localmente, quién la legitima y qué narrativas conviene evitar.",
+    deliverables: ["Dossier de código local", "Mapa de influencia", "Brief de entrada"],
     vignette:
       "La categoría parecía aspiracional desde afuera. Localmente operaba como señal de exceso. La entrada cambió de prestigio a control."
   },
   {
     slug: "reposicionamiento",
-    title: "Necesito reposicionar la marca. ¿Qué código simbólico ocupamos hoy y cuál podríamos ocupar?",
+    title: "Necesito reposicionar la marca. ¿Qué espacio podemos ocupar con credibilidad?",
     shortTitle: "Reposicionamiento",
     industries: "Brand strategy, consumer brands, legacy brands",
     methodologies: ["Cultural Codes", "Value Perception Matrix"],
     timing: "6-10 semanas",
     approach:
-      "Mapeamos la posición simbólica actual de la marca y de los competidores dentro del sistema cultural de la categoría. El movimiento se define por contraste, no por aspiración aislada.",
-    deliverables: ["Symbolic position map", "Value gap analysis", "Repositioning routes"],
+      "Mapeamos cómo se lee hoy la marca y qué espacio puede reclamar sin sonar forzada.",
+    deliverables: ["Mapa de posición", "Gaps de valor", "Rutas de reposicionamiento"],
     vignette:
       "La marca no necesitaba sonar más joven. Necesitaba dejar de ocupar un código de eficiencia fría en una categoría que había migrado a cuidado y confianza."
   },
   {
     slug: "defensa-competitiva",
-    title: "Estoy perdiendo share. ¿Por qué los consumidores migran al competidor?",
+    title: "Estoy perdiendo share. ¿Qué está ganando el competidor?",
     shortTitle: "Defensa competitiva",
     industries: "Retail, telecom, apps, servicios financieros",
     methodologies: ["Triggers & Barriers", "Journey Friction Mapping"],
     timing: "4-8 semanas",
     approach:
-      "Analizamos las narrativas de migración: cuándo se quiebra la lealtad, qué la dispara y qué capitaliza el competidor. La defensa no se construye reaccionando — se construye anticipando.",
-    deliverables: ["Migration narrative map", "Retention barriers", "Competitive defense brief"],
+      "Analizamos las razones que la gente usa para irse y qué promesa del competidor se siente más justa, simple o confiable.",
+    deliverables: ["Mapa de migración", "Barreras de retención", "Brief de defensa competitiva"],
     vignette:
       "Los usuarios no se iban por precio. Se iban porque el competidor había convertido soporte y transparencia en prueba de respeto."
   },
   {
     slug: "validacion-de-hipotesis",
-    title: "Tenemos una tesis estratégica. ¿La conversación pública la sostiene?",
+    title: "Tenemos una hipótesis estratégica. ¿La conversación la sostiene?",
     shortTitle: "Validación de hipótesis",
     industries: "Estrategia, planning, venture, innovacion",
     methodologies: ["Protocolo a medida"],
     timing: "4-6 semanas",
     approach:
-      "Diseñamos un protocolo que busca señales confirmatorias y disconfirmatorias en data conversacional real. Si la tesis no se sostiene, lo decimos antes de que se convierta en decisión.",
-    deliverables: ["Evidence brief", "Counter-signal log", "Decision recommendation"],
+      "Buscamos señales a favor y en contra para saber si la tesis merece avanzar, ajustarse o frenarse.",
+    deliverables: ["Brief de evidencia", "Señales en contra", "Recomendación de decisión"],
     vignette:
       "La hipótesis se sostenía en usuarios heavy, pero fallaba en compradores nuevos. El reporte cambió el target de la primera fase."
   },
   {
     slug: "anticipacion-de-tendencias",
-    title: "Mi categoría se está moviendo. ¿Qué tendencias están emergiendo que aún no son visibles?",
+    title: "Mi categoría se está moviendo. ¿Qué señal viene creciendo?",
     shortTitle: "Anticipación de tendencias",
     industries: "Beauty, food, gaming, cultura, tecnologia",
     methodologies: ["Cultural Codes", "Influence Architecture"],
     timing: "6-10 semanas",
     approach:
-      "Detectamos señales débiles: vocabularios, prácticas y actores nuevos que predicen movimientos de categoría antes de que aparezcan en métricas de plataforma.",
-    deliverables: ["Weak signal radar", "Emerging vocabulary", "Early node dossier"],
+      "Detectamos lenguaje, hábitos y voces que empiezan a crecer antes de volverse obvios.",
+    deliverables: ["Radar de señales", "Vocabulario emergente", "Voces tempranas"],
     vignette:
       "La tendencia no aparecía como hashtag. Aparecía como nuevo vocabulario en comunidades chicas que luego fue adoptado por creadores medianos."
   },
   {
     slug: "decodificacion-de-crisis",
-    title: "Estamos en una crisis. ¿Qué está pasando realmente en la conversación?",
+    title: "Estamos en crisis. ¿Qué está alimentando la conversación?",
     shortTitle: "Crisis",
     industries: "Reputacion, consumo, instituciones, plataformas",
     methodologies: ["Influence Architecture", "Cultural Codes"],
     timing: "2-4 semanas",
     approach:
-      "Decodificamos la estructura narrativa de la crisis: quién la sostiene, qué la alimenta y qué necesita para desactivarse. La respuesta correcta depende del tipo de crisis, no del tamaño.",
-    deliverables: ["Crisis narrative map", "Node risk list", "Response strategy"],
+      "Identificamos quién sostiene la narrativa, qué frase la vuelve repetible y qué respuesta puede bajarle fuerza.",
+    deliverables: ["Mapa narrativo de crisis", "Voces de riesgo", "Estrategia de respuesta"],
     vignette:
       "La crisis no estaba creciendo por volumen. Crecía porque un grupo pequeño había logrado instalar un frame moral fácil de repetir."
   },
   {
     slug: "influencia-de-categoria",
-    title: "Necesito mapear influencia. ¿Quiénes mueven la conversación de mi categoría?",
+    title: "Necesito mapear influencia. ¿Qué voces hacen creíble una idea?",
     shortTitle: "Influencia de categoría",
     industries: "Tech, gaming, belleza, finanzas personales",
     methodologies: ["Influence Architecture"],
     timing: "6-10 semanas",
     approach:
-      "Mapeamos nodos centrales, conectores entre comunidades, voces emergentes y detractores estructurales. La estrategia de influencia empieza por entender la red, no por contratar followers.",
-    deliverables: ["Influence map", "Key nodes dossier", "Activation strategy"],
+      "Mapeamos voces que conectan comunidades, validan ideas y cambian cómo se interpreta la categoría.",
+    deliverables: ["Mapa de influencia", "Dossier de voces clave", "Estrategia de activación"],
     vignette:
       "El nodo más útil no era el que tenía más audiencia. Era una cuenta técnica que traducían cinco comunidades distintas antes de decidir."
   }
@@ -781,22 +781,22 @@ export const dataLayers = [
   {
     name: "Ingesta",
     detail:
-      "150+ fuentes orquestadas, 10,000+ scrapers especializados, APIs nativas e ingesta de podcasts, video y texto largo. La cobertura se arma por pregunta, no por default."
+      "150+ tipos de fuente, APIs disponibles y lectura de podcasts, video y texto largo. La cobertura se arma por pregunta, no por costumbre."
   },
   {
     name: "Normalización",
     detail:
-      "Esquema único, deduplicación, atribución, metadatos comparables y traducción cuando aplica. Sin esto, comparar plataformas es comparar cosas distintas."
+      "Limpiamos duplicados, contexto, fechas y formatos para comparar señales que vienen de lugares distintos."
   },
   {
     name: "Enriquecimiento",
     detail:
-      "Clasificación temática, entidades, sentimiento multidimensional, sarcasmo contextual y tensión narrativa. El sentiment plano no resuelve preguntas reales."
+      "Añadimos temas, entidades, tono, sarcasmo y tensiones para que la lectura no se quede en positivo o negativo."
   },
   {
     name: "Analítica",
     detail:
-      "Operacionalización de las seis metodologías sobre el corpus normalizado, con evidencia trazable a la fuente original."
+      "Aplicamos los métodos adecuados y conservamos la fuente que sostiene cada hallazgo."
   }
 ];
 
@@ -816,39 +816,39 @@ export const sourceTypes = [
 export const serviceTiers = [
   {
     name: "Foundation",
-    description: "El piso analítico antes de comprometer presupuesto.",
-    scope: ["Una pregunta de negocio respondida", "1-2 metodologías aplicadas", "4-6 semanas hasta decisión"],
-    ideal: "Cuando tienes una hipótesis y necesitas evidencia antes de avanzar — validar una categoría nueva, sostener un brief estratégico, decidir si entrar o no."
+    description: "Una lectura clara antes de comprometer presupuesto.",
+    scope: ["Una pregunta de negocio respondida", "Evidencia suficiente para decidir", "Recomendación clara de siguiente paso"],
+    ideal: "Para validar una hipótesis, sostener un brief o decidir si vale la pena avanzar."
   },
   {
     name: "Intelligence",
     description: "Inteligencia construida sobre una decisión activa.",
-    scope: ["Protocolo a la medida de tu pregunta", "3-4 metodologías combinadas", "6-10 semanas hasta playbook accionable"],
-    ideal: "Cuando la decisión está cerca y el riesgo es real — lanzamiento, reposicionamiento, defensa competitiva o entrada a mercado."
+    scope: ["Lectura a la medida", "Recomendaciones priorizadas", "Plan para campaña, producto o mercado"],
+    ideal: "Para lanzamientos, reposicionamientos, defensa competitiva o entrada a mercado."
   },
   {
     name: "Strategy",
     description: "Inteligencia social como capacidad continua, no como proyecto.",
-    scope: ["Protocolo evolutivo, datos vivos", "Las 6 metodologías + retainer estratégico", "Trimestral o anual"],
-    ideal: "Cuando la categoría se mueve rápido o la decisión es recurrente — portafolios complejos, mercados fragmentados, presencia multi-mercado."
+    scope: ["Sistema vivo de señales", "Lecturas recurrentes para decisiones clave", "Acompañamiento estratégico del equipo"],
+    ideal: "Para categorías que se mueven rápido, portafolios complejos o decisiones recurrentes."
   }
 ];
 
 export const manifesto = [
-  "La industria del social listening crecio ofreciendo a las marcas algo que parecia valioso: acceso. Acceso a millones de menciones, metricas en tiempo real y dashboards configurables.",
-  "Hoy la pregunta es vieja y el dato es abundante. Tener acceso a datos no es lo mismo que tener inteligencia sobre ellos.",
-  "Una metrica no es un insight. Un dashboard no es una estrategia. Un sentiment score no es una decision.",
-  "Construir inteligencia social no es construir una mejor herramienta. Es construir arquitectura de datos plural, metodologias propietarias por pregunta y traduccion a decision.",
-  "Noisia es una agencia de inteligencia social: un equipo de arquitectos que disena sistemas analiticos a la medida del problema estrategico del cliente.",
-  "Cobramos por inteligencia, no por acceso. Entregamos decisiones, no dashboards. Operamos con metodologia, no con plantillas."
+  "La industria del social listening prometió acceso: más menciones, más métricas, más reportes.",
+  "Pero acceso no es claridad. Ver más conversación no significa saber qué hacer con ella.",
+  "Una métrica no es un insight. Un reporte no es una estrategia. Un semáforo de sentimiento no decide por tu equipo.",
+  "Noisia existe para convertir conversación pública en una lectura que explique qué está pasando y qué conviene hacer.",
+  "Trabajamos desde la pregunta de negocio: qué decisión se necesita tomar, qué evidencia la sostiene y qué acción sigue.",
+  "Cobramos por inteligencia, no por acceso. Entregamos decisiones, no ruido organizado."
 ];
 
 export const principles = [
-  "La pregunta antes que el metodo.",
-  "Honestidad metodologica antes que promesa comercial.",
+  "La pregunta antes que el método.",
+  "Honestidad antes que promesa comercial.",
   "Profundidad antes que velocidad.",
-  "Decisiones antes que dashboards.",
-  "Plural en datos, unico en interpretacion."
+  "Decisiones antes que reportes.",
+  "Muchas fuentes, una lectura clara."
 ];
 
 export const fieldNotes = [

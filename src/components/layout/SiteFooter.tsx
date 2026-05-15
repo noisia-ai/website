@@ -15,13 +15,12 @@ export function SiteFooter() {
             suppressHydrationWarning
           />
           <p>
-            Arquitectura de inteligencia social para convertir conversación pública en decisiones
-            estratégicas trazables.
+            Conversación pública convertida en decisiones defendibles.
           </p>
         </div>
         <div className="site-footer__links">
           <div>
-            <h3>Website</h3>
+            <h3>Explorar</h3>
             <Link href="/insights">Insights</Link>
             <Link href="/manifiesto">Manifiesto</Link>
             <Link href="/nosotros">Nosotros</Link>

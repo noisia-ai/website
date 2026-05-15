@@ -19,34 +19,34 @@ import {
 
 const architectureSteps = [
   {
-    name: "Ingesta",
+    name: "Escucha",
     metric: "2,847 señales",
     detail: "Reviews, foros, redes, marketplaces, audio, video y documentos entran con fuente, fecha, mercado y contexto."
   },
   {
-    name: "Normalización",
+    name: "Orden",
     metric: "1 esquema",
     detail: "Deduplicación, idioma, entidades, atribución y taxonomía común para comparar plataformas sin mezclar peras con manzanas."
   },
   {
-    name: "Enriquecimiento",
+    name: "Contexto",
     metric: "8 capas",
     detail: "Tono, sarcasmo, jobs, fricción, motivación, valor, velocidad y códigos culturales se anotan sobre el mismo corpus."
   },
   {
-    name: "Method engine",
+    name: "Lectura",
     metric: "6 lentes",
-    detail: "Triggers, barriers, velocity, value, influence y journey se ejecutan sobre evidencia comparable, no sobre capturas sueltas."
+    detail: "Los métodos se aplican sobre evidencia comparable, no sobre capturas sueltas."
   },
   {
-    name: "Evidence graph",
+    name: "Evidencia",
     metric: "100% trazable",
-    detail: "Cada insight conserva cita, fuente, tag, criterio de inclusión y relación con la pregunta estratégica."
+    detail: "Cada hallazgo conserva cita, fuente, tag y relación con la pregunta de negocio."
   },
   {
-    name: "Output layer",
-    metric: "export-ready",
-    detail: "Dashboard narrativo, source drawer, chat con data y entregables exportables salen del mismo grafo de evidencia."
+    name: "Salida",
+    metric: "lista para usar",
+    detail: "Reporte, fuentes y exportables salen de la misma base de evidencia."
   }
 ];
 
@@ -56,7 +56,7 @@ const codeLines = [
   "const enriched = enrich(corpus, ['jobs', 'tone', 'sarcasm']);",
   "const evidenceGraph = methods.run(enriched, activeLenses);",
   "const narrative = composeDecision(evidenceGraph, citations);",
-  "return exportReady({ dashboard, drawer, chat, deck });"
+  "return decisionReady({ report, sources, deck });"
 ];
 
 const processLogs = [
@@ -70,7 +70,7 @@ const processLogs = [
   "→ graph       built 1,204 edges",
   "→ citations   linked 847 nodes",
   "→ narrative   draft ready · 3 moves",
-  "→ export      dashboard compiled",
+  "→ export      decision deck ready",
   "→ source_drawer  linked · 2,847 refs"
 ];
 
@@ -166,7 +166,7 @@ export function ArchitectureFlow() {
       <div className="architecture-code-card">
         <div className="architecture-code-top">
           <span>noisia.pipeline.ts</span>
-          <strong>runtime activo</strong>
+          <strong>lectura activa</strong>
         </div>
         <pre aria-label="Código del proceso Noisia">
           <code>
@@ -226,9 +226,9 @@ export function ArchitectureFlow() {
         </div>
 
         <div className={`architecture-outputs ${progress > 0.82 ? "is-active" : ""}`} aria-label="Capas de salida">
-          <span>Dashboard narrativo</span>
-          <span>Source drawer</span>
-          <span>Chat con data</span>
+          <span>Reporte narrativo</span>
+          <span>Fuentes conectadas</span>
+          <span>Preguntas al reporte</span>
           <span>Export</span>
         </div>
       </div>

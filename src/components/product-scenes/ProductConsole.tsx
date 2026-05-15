@@ -13,7 +13,7 @@ export function ProductConsole({ scene = productConsoleScenes[0] }: ProductConso
         <div>
           <div className="product-console__eyebrow-row">
             <span className="eyebrow">{scene.label}</span>
-            <div className="console-method-icons" aria-label="Metodologías del protocolo">
+            <div className="console-method-icons" aria-label="Métodos aplicados">
               {scene.methodologies.map((methodology) => {
                 const meta = resolveMethodologyMeta(methodology);
 
@@ -46,7 +46,7 @@ export function ProductConsole({ scene = productConsoleScenes[0] }: ProductConso
 
       <div className="console-grid">
         <section className="narrative-card solid-panel">
-          <span className="chip">Narrative dashboard</span>
+          <span className="chip">Lectura de decisión</span>
           <h3>{scene.insight}</h3>
           <p>{scene.summary}</p>
           <div className="metric-row">
@@ -60,7 +60,7 @@ export function ProductConsole({ scene = productConsoleScenes[0] }: ProductConso
         </section>
 
         <aside className="source-drawer glass">
-          <span className="chip">Source drawer</span>
+          <span className="chip">Fuente original</span>
           <blockquote>“{scene.sourceQuote}”</blockquote>
           <dl>
             {scene.sourceMeta.map((item) => (

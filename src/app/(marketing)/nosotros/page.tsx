@@ -12,8 +12,8 @@ export default function AboutPage() {
     <>
       <PageIntro
         eyebrow="NOSOTROS"
-        title="Arquitectos de inteligencia social para decisiones que no caben en un dashboard."
-        lead="Noisia nace para cubrir el espacio entre dato abundante y decisión estratégica. Operamos con método, criterio editorial y arquitectura técnica."
+        title="Un equipo para convertir conversación pública en decisiones claras."
+        lead="Noisia existe porque las marcas no necesitan más ruido. Necesitan saber qué significa, qué hacer con él y cómo defenderlo con evidencia."
       />
       <section className="section">
         <div className="section__inner">
@@ -23,8 +23,8 @@ export default function AboutPage() {
                 <span className="chip">{String(index + 1).padStart(2, "0")}</span>
                 <h2>{principle}</h2>
                 <p>
-                  Este principio regula cómo diseñamos protocolos, elegimos fuentes, interpretamos evidencia y
-                  decidimos qué recomendaciones merecen llegar a cliente.
+                  Este principio guía cómo elegimos fuentes, leemos evidencia y decidimos qué recomendaciones
+                  sí merecen llegar a una mesa de negocio.
                 </p>
               </article>
             ))}
@@ -35,10 +35,10 @@ export default function AboutPage() {
         <div className="section__inner">
           <div className="closing-panel glass">
             <span className="eyebrow">TRABAJAMOS DESDE LATAM</span>
-            <h2 className="display-md">Pensamos categorías locales con arquitectura global de datos.</h2>
+            <h2 className="display-md">Leemos categorías locales con estándares de evidencia globales.</h2>
             <p className="body-lg">
-              El equipo se organiza alrededor de estrategia, antropología, análisis cultural, arquitectura de
-              datos y producción de reportes ejecutivos.
+              Combinamos estrategia, análisis cultural, investigación y producto para entregar lecturas que un equipo
+              pueda usar, presentar y cuestionar.
             </p>
             <Button href="/contacto">Contactar</Button>
           </div>

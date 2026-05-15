@@ -22,15 +22,15 @@ export async function generateMetadata({ params }: MethodologyDetailProps) {
   };
 }
 
-// Hero stat chips — sin timing. Sólo dimensiones del método y rigor del corpus.
+// Hero stat chips: dimensiones simples del método.
 const heroStats: Record<string, Array<{ label: string; value: string }>> = {
   "triggers-y-barriers": [
-    { value: "1K–15K", label: "señales codificadas" },
+    { value: "1K–15K", label: "señales revisadas" },
     { value: "100%", label: "supervisado" },
     { value: "12+", label: "industrias validadas" }
   ],
   "value-perception-matrix": [
-    { value: "2K–20K", label: "señales codificadas" },
+    { value: "2K–20K", label: "señales revisadas" },
     { value: "4–6", label: "dimensiones de valor" },
     { value: "8+", label: "industrias validadas" }
   ],
@@ -45,7 +45,7 @@ const heroStats: Record<string, Array<{ label: string; value: string }>> = {
     { value: "10+", label: "industrias validadas" }
   ],
   "journey-friction-mapping": [
-    { value: "2K–18K", label: "señales codificadas" },
+    { value: "2K–18K", label: "señales revisadas" },
     { value: "4", label: "tipos de fricción" },
     { value: "12+", label: "industrias validadas" }
   ],
@@ -56,92 +56,90 @@ const heroStats: Record<string, Array<{ label: string; value: string }>> = {
   ]
 };
 
-// Step subtitles per methodology — descripciones por paso, sin durations.
 const protocolSteps: Record<string, ProcessStep[]> = {
   "triggers-y-barriers": [
-    { name: "Jobs landscape", description: "Mapeamos motivaciones funcionales, emocionales y sociales de la categoría — no las que aparecen en focus group, las que viven en conversación espontánea." },
-    { name: "Queryficación", description: "Convertimos hipótesis en queries de escucha social. Combinación de intenciones, acciones y contexto de marca." },
-    { name: "Codificación", description: "NLP supervisado. Cada expresión etiquetada como trigger o barrier y subclasificada por dimensión." },
-    { name: "Cuantificación", description: "Frecuencia, intensidad lingüística y capacidad predictiva. La fuerza no es el conteo plano." },
-    { name: "Traducción a acción", description: "Cada fuerza relevante se convierte en una acción posible en comunicación, producto o experiencia." }
+    { name: "Entender la necesidad", description: "Mapeamos qué quiere resolver la gente en la categoría: motivos prácticos, emocionales y sociales." },
+    { name: "Escuchar donde aparece", description: "Buscamos conversaciones donde la gente expresa dudas, deseo, rechazo o comparación." },
+    { name: "Separar fuerza y freno", description: "Clasificamos cada expresión como algo que acerca a la compra o la bloquea." },
+    { name: "Priorizar lo que pesa", description: "No todo lo repetido importa igual. Medimos tamaño, intensidad y capacidad de mover decisión." },
+    { name: "Convertirlo en acción", description: "Cada fuerza relevante termina en una decisión de comunicación, producto o experiencia." }
   ],
   "value-perception-matrix": [
-    { name: "Frame competitivo real", description: "Reconstruimos el conjunto competitivo desde la conversación, no desde el que define el cliente." },
-    { name: "Dimensiones de valor", description: "Extraemos las dimensiones que el consumidor usa para evaluar — funcionales, emocionales y simbólicas." },
-    { name: "Codificación por dimensión", description: "Cada mención codificada por dimensión y polaridad: positiva, negativa, mixta." },
-    { name: "Matriz + gaps", description: "Construimos la matriz marca×dimensión y detectamos gaps, permisos desaprovechados y whitespaces." },
-    { name: "Traducción defensiva", description: "Cada gap se convierte en argumento para defender margen o reposicionar narrativa." }
+    { name: "Reconocer alternativas", description: "Leemos contra qué opciones compara la gente, no solo contra los competidores obvios." },
+    { name: "Detectar valor", description: "Identificamos qué entiende el consumidor como valor: ahorro, tiempo, confianza, estatus o menor riesgo." },
+    { name: "Comparar por dimensión", description: "Vemos dónde tu marca gana, dónde pierde y dónde no está siendo reconocida." },
+    { name: "Encontrar gaps", description: "Ubicamos permisos desaprovechados y argumentos de valor poco claros." },
+    { name: "Defender margen", description: "Convertimos esos gaps en argumentos para precio, comunicación o posicionamiento." }
   ],
   "cultural-codes-decoding": [
-    { name: "Fuentes densas", description: "Orquestamos foros, comunidades, comentarios largos y lenguaje vernáculo — donde el código vive." },
-    { name: "Vocabulario emergente", description: "Identificamos palabras, metáforas y comparaciones recurrentes. El código aparece en el lenguaje antes que en la encuesta." },
-    { name: "Oposiciones binarias", description: "Mapeamos qué se legitima vs qué se rechaza, qué es auténtico vs artificial." },
-    { name: "Sistema de código", description: "Reconstruimos el código completo: qué permite, qué cancela, qué transgrede." },
-    { name: "Posicionamiento", description: "Ubicamos marcas y competidores dentro del código, detectamos posiciones vacantes con permiso real." }
+    { name: "Leer conversaciones densas", description: "Entramos a foros, comunidades y comentarios donde la gente explica más de lo que reacciona." },
+    { name: "Detectar lenguaje", description: "Identificamos palabras, metáforas y comparaciones que revelan cómo se entiende la categoría." },
+    { name: "Mapear permisos", description: "Vemos qué se admira, qué incomoda, qué se rechaza y qué se considera auténtico." },
+    { name: "Armar el código", description: "Reconstruimos las reglas no escritas que ordenan la conversación." },
+    { name: "Elegir posición", description: "Ubicamos qué espacio puede ocupar la marca con credibilidad." }
   ],
   "decision-velocity": [
-    { name: "Narrativas de decisión", description: "Reconstruimos decisiones reales desde conversaciones espontáneas, no desde encuestas recordadas." },
-    { name: "Codificación temporal", description: "Tiempos, actores consultados, información buscada y momento del click codificados por etapa." },
-    { name: "Diagnóstico cognitivo", description: "Diagnosticamos si domina Sistema 1 o Sistema 2 por segmento de consumidor." },
-    { name: "Velocity map", description: "Detectamos velocity blockers y velocity accelerators con frecuencia e impacto." },
-    { name: "Choice architecture", description: "Recomendamos arquitectura de elección: opciones, mensajes, secuencias y CTAs." }
+    { name: "Reconstruir la decisión", description: "Leemos cómo la gente decide, qué compara y qué necesita antes de avanzar." },
+    { name: "Ubicar momentos de duda", description: "Detectamos en qué etapa aparece la fricción: antes del click, durante la compra o después." },
+    { name: "Ver qué acelera", description: "Identificamos pruebas, mensajes o señales que hacen avanzar la decisión." },
+    { name: "Ver qué bloquea", description: "Separamos dudas que frenan por riesgo, esfuerzo, precio, confianza o exceso de información." },
+    { name: "Reordenar la elección", description: "Recomendamos qué información debe aparecer antes para que la decisión avance." }
   ],
   "journey-friction-mapping": [
-    { name: "Etapas reales", description: "Reconstruimos el journey tal como el consumidor lo vive, no como el equipo lo diseñó." },
-    { name: "Codificación por fricción", description: "Inercia, esfuerzo, emoción y reactancia codificadas por etapa y touchpoint." },
-    { name: "Break points", description: "Detectamos los puntos donde la fricción es más densa o más decisiva en el abandono." },
-    { name: "Cruce con touchpoints", description: "Cruzamos fricciones detectadas con los touchpoints bajo control de la marca." },
-    { name: "Priorización", description: "Por frecuencia, capacidad de abortar la decisión y costo de eliminación." }
+    { name: "Reconstruir el camino real", description: "Vemos cómo la gente vive el recorrido, no solo cómo aparece en el mapa interno." },
+    { name: "Nombrar fricciones", description: "Clasificamos dudas, esfuerzo, inercia, enojo o confusión por etapa." },
+    { name: "Ubicar quiebres", description: "Detectamos dónde la intención se cae antes de convertirse en acción." },
+    { name: "Cruzar con touchpoints", description: "Vemos cuáles fricciones puede corregir la marca y cuáles requieren otra estrategia." },
+    { name: "Priorizar mejoras", description: "Ordenamos qué remover primero según impacto y costo de resolverlo." }
   ],
   "influence-architecture": [
-    { name: "Comunidades", description: "Mapeamos las comunidades de conversación relevantes alrededor de la categoría." },
-    { name: "Centralidad", description: "Calculamos centralidad de grado, betweenness y eigenvector para cada nodo." },
-    { name: "Tipificación", description: "Innovator, early adopter, validator, connector, dissenter y gatekeeper asignados por evidencia." },
-    { name: "Propagación", description: "Reconstruimos cómo se propagan narrativas reales para entender qué nodos mueven significado." },
-    { name: "Priorización estratégica", description: "Nodos a activar, monitorear o investigar según la pregunta del cliente." }
+    { name: "Mapear comunidades", description: "Identificamos dónde se conversa la categoría y qué grupos conectan entre sí." },
+    { name: "Encontrar voces clave", description: "No buscamos solo audiencia; buscamos voces que cambian significado o validan ideas." },
+    { name: "Clasificar roles", description: "Separamos validadores, conectores, detractores, especialistas y comunidades puente." },
+    { name: "Leer propagación", description: "Vemos cómo viajan narrativas entre grupos y quién las vuelve creíbles." },
+    { name: "Priorizar acción", description: "Definimos qué voces conviene activar, escuchar o monitorear." }
   ]
 };
 
-// Techy deliverables — el tier diferenciador. Igual para todas las metodologías.
 const techDeliverables = [
   {
-    name: "Dashboard interactivo",
-    description: "Un panel propio de Noisia donde tu equipo navega el corpus, filtra por dimensión y ve el output vivo, no congelado en un PDF.",
-    chip: "Web app"
+    name: "Lectura navegable",
+    description: "Un espacio para revisar hallazgos, fuentes, tags y recomendaciones sin perder el hilo de la decisión.",
+    chip: "Reporte vivo"
   },
   {
-    name: "Corpus tagueado en JSON",
-    description: "Cada señal etiquetada por dimensión, polaridad, fuente y peso. Listo para que tus pipelines internas lo consuman.",
-    chip: "JSON estructurado"
+    name: "Evidencia ordenada",
+    description: "Cada señal queda etiquetada por fuente, tema, peso y relación con la pregunta.",
+    chip: "Base de evidencia"
   },
   {
-    name: "AI-Brief (.md)",
-    description: "Briefing markdown denso, escrito para que las IAs de tu equipo lo carguen como contexto y respondan con criterio Noisia.",
-    chip: ".md / context"
+    name: "Brief listo para equipo",
+    description: "Un resumen estructurado para alinear estrategia, marketing, producto o investigación.",
+    chip: "Brief listo"
   },
   {
-    name: "Webhooks de actualización",
-    description: "Eventos en tiempo real cuando el corpus cambia o aparecen señales nuevas. Tu stack se entera, no tu equipo.",
-    chip: "Webhook / API"
+    name: "Actualizaciones si cambia la señal",
+    description: "Si aparecen señales nuevas, la lectura puede actualizarse sin empezar desde cero.",
+    chip: "Seguimiento"
   }
 ];
 
-const traditionalFormats = ["PDF dossier", "Deck presentable", "Notion playbook", "Figjam colaborable", "Sheet priorizado"];
+const traditionalFormats = ["PDF dossier", "Deck presentable", "Documento colaborable", "Mapa de trabajo", "Sheet priorizado"];
 
 const whenToUse: Record<string, { yes: string[]; no: string[] }> = {
   "triggers-y-barriers": {
     yes: [
       "Lanzamiento de producto donde la categoría ya existe",
-      "Optimización de funnel cuando ya tienes tracción",
+      "Optimización de conversión cuando ya tienes tracción",
       "Comunicación que necesita activar comportamiento",
       "Defensa competitiva cuando estás perdiendo share",
-      "Repositioning motivacional"
+      "Reposicionamiento motivacional"
     ],
     no: [
-      "Necesitas tamaño de mercado → encuesta cuanti",
-      "Necesitas testear concepto específico → testing",
-      "La categoría no existe aún → market entry + cultural codes",
-      "Quieres entender el journey, no la decisión → Journey Friction Mapping"
+      "Necesitas tamaño de mercado → encuesta cuantitativa",
+      "Necesitas testear un concepto específico → testing",
+      "La categoría aún no existe → primero hay que entender el mercado",
+      "Quieres entender la experiencia completa → conviene mapear fricción"
     ]
   },
   "value-perception-matrix": {
@@ -152,59 +150,59 @@ const whenToUse: Record<string, { yes: string[]; no: string[] }> = {
       "Expansión de portafolio en categoría conocida"
     ],
     no: [
-      "Necesitas elasticidad de precio → conjoint o test cuanti",
-      "Entrando a categoría nueva → Cultural Codes primero",
-      "Necesitas share y tamaño de mercado → datos secundarios o cuanti"
+      "Necesitas elasticidad de precio → estudio cuantitativo",
+      "Entrando a categoría nueva → primero hay que leer el código local",
+      "Necesitas share y tamaño de mercado → datos secundarios o cuantitativo"
     ]
   },
   "cultural-codes-decoding": {
     yes: [
       "Entrada a mercado donde la categoría opera con código local",
-      "Repositioning profundo de marca con herencia cargada",
+      "Reposicionamiento profundo de marca con herencia cargada",
       "Transferibilidad de campañas globales a mercados locales",
       "Lanzamiento en categoría con carga simbólica alta"
     ],
     no: [
-      "Necesitas números de adopción → cuanti",
-      "El código es irrelevante para tu categoría → Triggers & Barriers es más directo",
+      "Necesitas números de adopción → cuantitativo",
+      "El código es irrelevante para tu categoría → conviene leer motivadores y barreras",
       "Buscas resultados sin lectura cualitativa → método incompatible"
     ]
   },
   "decision-velocity": {
     yes: [
-      "Optimización de checkout o funnel de conversión",
+      "Optimización de checkout o conversión",
       "Diseño de UX para decisiones de alto esfuerzo",
       "Lanzamientos en categorías con velocidad inusual",
       "Comparadores de precio o configuradores complejos"
     ],
     no: [
-      "Necesitas validar hipótesis con A/B → esta metodología genera hipótesis, no las valida",
-      "La fricción es del producto, no de la decisión → Journey Friction Mapping",
+      "Necesitas validar hipótesis con A/B → esta lectura genera hipótesis, no las valida",
+      "La fricción está en la experiencia → conviene mapear el recorrido",
       "La velocidad del mercado no es el problema central"
     ]
   },
   "journey-friction-mapping": {
     yes: [
-      "Optimización de conversión con datos de abandono sin causa",
+      "Optimización de conversión cuando sabes dónde caen, pero no por qué",
       "Rediseño de experiencia de onboarding o compra",
-      "Defensa de share cuando el journey de la competencia es mejor",
+      "Defensa de share cuando la experiencia del competidor se siente mejor",
       "Expansión a canales nuevos"
     ],
     no: [
-      "Necesitas usability testing observacional → fricciones invisibles requieren otro método",
-      "La fricción es de motivación, no de experiencia → Triggers & Barriers primero",
-      "Ya tienes el journey mapeado y solo necesitas priorizar → Process Trace directo"
+      "Necesitas observar uso en vivo → conviene usability testing",
+      "La fricción es de motivación → conviene leer motivadores y barreras",
+      "Ya tienes el recorrido mapeado y solo necesitas priorizar → basta una revisión operativa"
     ]
   },
   "influence-architecture": {
     yes: [
       "Estrategia de lanzamiento en categoría con nodos especializados",
       "Defensa reputacional con crisis de narrativa activa",
-      "Detección de tendencias emergentes antes de mainstream",
-      "Campañas de influencia con ROI de activación real"
+      "Detección de tendencias antes de que sean obvias",
+      "Campañas de influencia que necesitan más que alcance"
     ],
     no: [
-      "Necesitas solo métricas de engagement → herramientas de listening estándar",
+      "Necesitas solo métricas de engagement → herramienta de listening estándar",
       "La influencia de tu categoría es masiva y obvia → ahí el mapa no aporta",
       "No tienes recursos para activar los nodos que identifiques"
     ]
@@ -212,12 +210,12 @@ const whenToUse: Record<string, { yes: string[]; no: string[] }> = {
 };
 
 const foundationsSubtitle: Record<string, string> = {
-  "triggers-y-barriers": "Lo que la psicología de la decisión y la teoría del cambio ya validaron.",
-  "value-perception-matrix": "La tradición intelectual del valor percibido, prospect theory y brand equity.",
-  "cultural-codes-decoding": "Semiótica estructural, mitologías y descripción densa aplicadas al consumo.",
-  "decision-velocity": "Dual-Process, choice architecture y decision fatigue como sistema operativo.",
-  "journey-friction-mapping": "Friction theory, behavioral inhibition y diseño centrado en abandono.",
-  "influence-architecture": "Análisis de redes sociales y diffusion of innovations sobre conversación real."
+  "triggers-y-barriers": "Se apoya en psicología de la decisión y teorías de cambio de comportamiento.",
+  "value-perception-matrix": "Se apoya en teoría de valor percibido, riesgo y beneficios de marca.",
+  "cultural-codes-decoding": "Se apoya en semiótica, antropología cultural y lectura contextual.",
+  "decision-velocity": "Se apoya en teorías de decisión, arquitectura de elección y carga cognitiva.",
+  "journey-friction-mapping": "Se apoya en teoría de fricción, experiencia de cliente y abandono.",
+  "influence-architecture": "Se apoya en redes, difusión de ideas y roles de influencia."
 };
 
 export default async function MethodologyDetailPage({ params }: MethodologyDetailProps) {
@@ -228,7 +226,7 @@ export default async function MethodologyDetailPage({ params }: MethodologyDetai
   const stats = heroStats[slug] ?? [];
   const protocol = protocolSteps[slug] ?? methodology.protocol.map((p, i) => ({ name: `Movimiento ${i + 1}`, description: p }));
   const when = whenToUse[slug];
-  const foundationLead = foundationsSubtitle[slug] ?? "El criterio académico que sostiene el rigor de esta metodología.";
+  const foundationLead = foundationsSubtitle[slug] ?? "Las referencias que sostienen el criterio de esta lectura.";
 
   const relatedCases = useCases.filter((uc) =>
     uc.methodologies.some((m) => m.toLowerCase().includes(methodology.name.split(" ")[0].toLowerCase()))
@@ -280,16 +278,15 @@ export default async function MethodologyDetailPage({ params }: MethodologyDetai
           <div className="method-protocol-grid">
             <aside className="method-protocol-intro">
               <span className="eyebrow">CÓMO FUNCIONA, PASO A PASO</span>
-              <h2>El protocolo en {protocol.length} movimientos.</h2>
+              <h2>La lectura en {protocol.length} movimientos.</h2>
               <p>
-                Cada movimiento está diseñado para que la lectura no dependa del intérprete: el corpus,
-                la codificación y la traducción a decisión son trazables hasta la fuente original.
+                Cada paso existe para que el hallazgo no dependa de intuición: la señal, la interpretación y la
+                recomendación se mantienen conectadas.
               </p>
               <div className="method-protocol-meta">
-                <strong>TRAZABILIDAD TOTAL</strong>
+                <strong>EVIDENCIA A LA VISTA</strong>
                 <span>
-                  Cada output regresa a la cita original. Nada se pierde entre el dato y la decisión que
-                  termina en presentación de cliente.
+                  Cada recomendación puede volver a la cita original que la sostiene.
                 </span>
               </div>
             </aside>
@@ -305,11 +302,9 @@ export default async function MethodologyDetailPage({ params }: MethodologyDetai
         <div className="section__inner">
           <header className="method-section-header">
             <span className="eyebrow">QUÉ TE LLEVAS</span>
-            <h2>El output no es un PDF. Es un sistema vivo.</h2>
+            <h2>Una lectura que tu equipo puede usar.</h2>
             <p>
-              Cada metodología termina en un dashboard propietario, un corpus que tu stack puede leer y un brief
-              estructurado para que tus IAs internas tengan contexto Noisia. Lo tradicional sigue disponible — solo
-              dejó de ser el centro.
+              El entregable combina recomendación, evidencia y formatos prácticos para presentar, discutir o bajar a ejecución.
             </p>
           </header>
 
@@ -347,7 +342,7 @@ export default async function MethodologyDetailPage({ params }: MethodologyDetai
             <header className="method-section-header method-section-header--centered">
               <span className="eyebrow">CUÁNDO ENTRA Y CUÁNDO NO</span>
               <h2>Honestidad metodológica.</h2>
-              <p>No todo brief necesita {methodology.name}. Esta es la línea editorial.</p>
+              <p>No toda pregunta necesita {methodology.name}. Aquí marcamos cuándo sí ayuda y cuándo no.</p>
             </header>
             <div className="when-block">
               <div className="when-block__col when-block__col--yes glass">
@@ -377,8 +372,8 @@ export default async function MethodologyDetailPage({ params }: MethodologyDetai
           <div className="section__inner">
             <header className="method-section-header">
               <span className="eyebrow">DONDE YA SE APLICÓ</span>
-              <h2>Casos que entraron por esta puerta.</h2>
-              <p>Tres situaciones reales donde {methodology.name} fue la lente primaria del protocolo.</p>
+              <h2>Preguntas donde este método suele ayudar.</h2>
+              <p>Situaciones donde {methodology.name} aporta una lectura clara para decidir.</p>
             </header>
             <ol className="method-cases-list">
               {relatedCases.map((uc, idx) => {
@@ -415,7 +410,7 @@ export default async function MethodologyDetailPage({ params }: MethodologyDetai
         <div className="section__inner">
           <header className="method-section-header">
             <span className="eyebrow">BASES TEÓRICAS</span>
-            <h2>De dónde viene el rigor.</h2>
+            <h2>De dónde viene el criterio.</h2>
             <p>{foundationLead}</p>
           </header>
           <dl className="method-foundations-list">
@@ -446,8 +441,8 @@ export default async function MethodologyDetailPage({ params }: MethodologyDetai
             <div className="no-method-cta__copy">
               <h2>¿Esta es tu pregunta?</h2>
               <p>
-                Si lo que tienes enfrente se parece a esto, el diagnóstico define el corpus, las fuentes y el
-                alcance — y si {methodology.name} entra sola o en combinación con otra metodología.
+                Si lo que tienes enfrente se parece a esto, el diagnóstico define si este método entra solo,
+                combinado o si conviene otro camino.
               </p>
             </div>
             <Button href="/diagnostico" variant="primary">

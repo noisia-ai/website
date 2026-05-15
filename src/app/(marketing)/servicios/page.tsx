@@ -7,7 +7,7 @@ import { ProcessTrace, type ProcessStep } from "@/components/marketing/ProcessTr
 
 export const metadata = {
   title: "Servicios",
-  description: "Foundation, Intelligence y Strategy: tres niveles de proyecto diseñados para la complejidad de tu decisión."
+  description: "Foundation, Intelligence y Strategy: tres formas de convertir conversación en decisiones claras."
 };
 
 type Tier = {
@@ -23,75 +23,72 @@ const tiers: Tier[] = [
   {
     number: "01",
     name: "Foundation",
-    tagline: "Diagnóstico inicial",
+    tagline: "Validar antes de invertir",
     trigger: "Para validar o descartar una hipótesis antes de comprometer presupuesto.",
     features: [
-      "1–2 metodologías aplicadas",
-      "Corpus construido por pregunta",
-      "Equipo de 2 personas",
-      "Entrega: diagnóstico trazable",
-      "Modalidad proyecto puntual",
+      "Una pregunta de negocio",
+      "Lectura rápida con evidencia",
+      "Recomendación de siguiente paso",
+      "Ideal para briefs, hipótesis o go/no-go",
     ],
   },
   {
     number: "02",
     name: "Intelligence",
-    tagline: "Lectura operativa",
-    trigger: "Para decisiones que ya vienen encima y necesitan playbook, no solo validación.",
+    tagline: "Decidir con más profundidad",
+    trigger: "Para decisiones que ya vienen encima y necesitan recomendaciones, no solo validación.",
     features: [
-      "3–4 metodologías combinadas",
-      "Corpus multicanal + enriquecido",
-      "Equipo de 3–4 personas",
-      "Entrega: playbook accionable",
-      "Evidencia trazable + actualizable",
-      "Modalidad proyecto puntual",
+      "Lectura profunda por pregunta",
+      "Fuentes combinadas según el caso",
+      "Recomendaciones priorizadas",
+      "Evidencia lista para comité",
+      "Ideal para lanzamientos o defensa competitiva",
     ],
     featured: true,
   },
   {
     number: "03",
     name: "Strategy",
-    tagline: "Capacidad continua",
-    trigger: "Para portafolios complejos que necesitan inteligencia social instalada como función permanente.",
+    tagline: "Instalar la capacidad",
+    trigger: "Para equipos que toman decisiones recurrentes en categorías que se mueven rápido.",
     features: [
-      "Las 6 metodologías + custom",
-      "Corpus vivo y actualizable",
-      "Equipo de 4–6 + lead",
-      "Protocolo evolutivo propio",
-      "Alertas y decisiones recurrentes",
-      "Modalidad retainer evolutivo",
+      "Sistema vivo de señales",
+      "Lecturas recurrentes",
+      "Acompañamiento estratégico",
+      "Alertas cuando cambia la conversación",
+      "Ideal para portafolios o varios mercados",
     ],
   },
 ];
 
 const specRows = [
   { attribute: "Pregunta de negocio", foundation: "Una", intelligence: "Una principal + derivadas", strategy: "Múltiples, recurrentes" },
-  { attribute: "Metodologías", foundation: "1–2", intelligence: "3–4", strategy: "Las 6 + custom" },
-  { attribute: "Output", foundation: "Diagnóstico", intelligence: "Playbook accionable", strategy: "Capacidad continua" },
+  { attribute: "Métodos", foundation: "1–2", intelligence: "3–4", strategy: "Sistema completo" },
+  { attribute: "Salida", foundation: "Lectura clara", intelligence: "Recomendaciones priorizadas", strategy: "Capacidad continua" },
   { attribute: "Evidencia", foundation: "Trazable", intelligence: "Trazable + actualizable", strategy: "Trazable + alertas" },
   { attribute: "Modalidad", foundation: "Proyecto", intelligence: "Proyecto", strategy: "Retainer" },
-  { attribute: "Equipo Noisia", foundation: "2 personas", intelligence: "3–4 personas", strategy: "4–6 + lead" },
+  { attribute: "Acompañamiento", foundation: "Puntual", intelligence: "Por proyecto", strategy: "Continuo" },
 ];
 
 const proposalSteps: ProcessStep[] = [
-  { name: "Pregunta estratégica real", description: "La que quita el sueño, no la que suena bien en un brief. Si esa pregunta no es nítida, no hay propuesta — hay diagnóstico previo." },
-  { name: "Metodologías aplicables", description: "De las seis metodologías propietarias, elegimos las que responden esa pregunta específica. No las que están de moda." },
-  { name: "Fuentes a orquestar", description: "Definidas por la pregunta y el mercado, no por default. La conversación relevante rara vez vive donde el corpus genérico la busca." },
-  { name: "Alcance, equipo y modalidad", description: "De ahí — y solo de ahí — salen alcance, equipo y modalidad. La propuesta es consecuencia, no punto de partida." },
+  { name: "Pregunta real", description: "Aterrizamos qué decisión necesita tomar tu equipo y qué evidencia la haría defendible." },
+  { name: "Tipo de lectura", description: "Elegimos el método o combinación de métodos que responde esa pregunta." },
+  { name: "Fuentes útiles", description: "Definimos dónde escuchar: redes, reviews, foros, búsquedas, marketplaces u otras fuentes relevantes." },
+  { name: "Alcance claro", description: "Con eso definimos profundidad, equipo, salida y forma de acompañamiento." },
 ];
 
 const noList: OutOfScopeItem[] = [
-  { headline: "Licencias de software revendidas.", body: "No somos integradores de listening tools. La infraestructura es nuestra; el corpus se arma por pregunta." },
-  { headline: "Dashboards permanentes sin decisión asociada.", body: "Un panel sin pregunta detrás es ruido bonito. Cada dashboard que entregamos vive amarrado a una decisión específica." },
-  { headline: "Retainers genéricos de horas sueltas.", body: "Strategy es retainer evolutivo, no bolsa de horas. La capacidad se factura contra protocolo, no contra disponibilidad." },
-  { headline: "Reportes de volumen y sentiment como sustituto de insight.", body: "Sentiment score solo no responde decisiones de negocio. Si esa es la entrega esperada, hay otras agencias que la hacen mejor y más barato." },
+  { headline: "Licencias de software revendidas.", body: "No somos integradores de herramientas de listening. Entregamos lectura y decisión." },
+  { headline: "Dashboards sin pregunta.", body: "Un panel sin decisión detrás solo agrega ruido. Cada salida vive amarrada a una pregunta." },
+  { headline: "Bolsas de horas sueltas.", body: "Strategy no es disponibilidad genérica. Es acompañamiento sobre decisiones recurrentes." },
+  { headline: "Reportes de volumen como respuesta final.", body: "El volumen da contexto. La decisión necesita explicación, evidencia y recomendación." },
 ];
 
 const faqItems: FAQItem[] = [
   {
     question: "¿Cuánto cuesta un proyecto?",
     answer:
-      "El precio depende de la pregunta, las fuentes necesarias, las metodologías aplicables y el alcance. No tenemos pricing fijo porque cada protocolo se diseña para la decisión específica. El diagnóstico inicial define el alcance y de ahí sale la propuesta.",
+      "Depende de la pregunta, las fuentes necesarias y la profundidad de lectura. El diagnóstico inicial define el alcance y de ahí sale la propuesta.",
   },
   {
     question: "¿En qué mercados pueden operar?",
@@ -101,7 +98,7 @@ const faqItems: FAQItem[] = [
   {
     question: "¿Necesitamos tener nuestras propias herramientas?",
     answer:
-      "No. Noisia opera con infraestructura propia. No vendemos licencias de software ni dependemos de que el cliente tenga acceso a plataformas específicas. El corpus se construye por pregunta.",
+      "No. Noisia opera con infraestructura propia. No vendemos licencias ni dependemos de que el cliente tenga una herramienta específica.",
   },
   {
     question: "¿Pueden integrarse a nuestro equipo de research?",
@@ -111,17 +108,17 @@ const faqItems: FAQItem[] = [
   {
     question: "¿Es un retainer o un proyecto?",
     answer:
-      "Foundation e Intelligence son proyectos puntuales con inicio, entregables y cierre. Strategy opera como retainer evolutivo con protocolo vivo y corpus actualizable.",
+      "Foundation e Intelligence son proyectos puntuales con inicio, entregables y cierre. Strategy es acompañamiento continuo para decisiones recurrentes.",
   },
   {
     question: "¿Qué pasa con la evidencia después del proyecto?",
     answer:
-      "Todo el corpus, codificación y evidencia es del cliente. Al cierre, el cliente recibe el grafo de evidencia completo — corpus, JSON tagueado y AI-Brief — no solo el reporte final. La trazabilidad no se queda en Noisia.",
+      "La evidencia se entrega con la lectura. No te quedas solo con conclusiones: también recibes las fuentes y señales que sostienen la recomendación.",
   },
   {
     question: "¿Pueden firmar NDA estándar?",
     answer:
-      "Sí. Firmamos NDA estándar antes de cualquier diagnóstico. La confidencialidad de la pregunta estratégica y del corpus es no-negociable.",
+      "Sí. Firmamos NDA antes de cualquier diagnóstico cuando la pregunta o el contexto lo requieren.",
   },
 ];
 
@@ -134,11 +131,11 @@ export default function ServicesPage() {
           <div className="hero-copy">
             <span className="eyebrow">SERVICIOS</span>
             <h1 className="display-lg">
-              Foundation. Intelligence. Strategy.<br />La decisión te dice cuál.
+              Tres formas de trabajar según el tamaño de la decisión.
             </h1>
             <p className="body-lg">
-              No vendemos paquetes cerrados. Diseñamos el alcance después del diagnóstico, cuando
-              entendemos la decisión, las fuentes a orquestar y la metodología que realmente hace falta.
+              No vendemos paquetes cerrados. Primero entendemos qué necesitas decidir; después definimos la profundidad
+              correcta: validar, profundizar o instalar una capacidad continua.
             </p>
             <div className="hero-actions">
               <Button href="/diagnostico" variant="primary">
@@ -152,7 +149,7 @@ export default function ServicesPage() {
 
           <aside className="page-hero-panel glass">
             <span className="chip">Cómo elegimos el nivel</span>
-            <h2>No empieza en precios. Empieza en la complejidad de la decisión.</h2>
+            <h2>El nivel correcto no lo define el presupuesto. Lo define el riesgo.</h2>
             <ul className="page-hero-list">
               <li>
                 <b>Foundation</b>
@@ -160,7 +157,7 @@ export default function ServicesPage() {
               </li>
               <li>
                 <b>Intelligence</b>
-                <span>Una decisión cerca, con riesgo real y necesidad de playbook.</span>
+                <span>Una decisión cerca, con riesgo real y necesidad de recomendaciones.</span>
               </li>
               <li>
                 <b>Strategy</b>
@@ -176,7 +173,7 @@ export default function ServicesPage() {
         <div className="section__inner">
           <header className="method-section-header">
             <span className="eyebrow">PLANES</span>
-            <h2>Tres niveles de proyecto. Elige el que corresponde a tu decisión.</h2>
+            <h2>Tres niveles para llegar a una respuesta útil.</h2>
             <p>
               El nivel correcto no lo define el presupuesto — lo define la complejidad de la
               pregunta. El diagnóstico inicial es siempre el primer paso, y es gratuito.
@@ -230,7 +227,7 @@ export default function ServicesPage() {
           <header className="method-section-header">
             <span className="eyebrow">COMPARATIVA</span>
             <h2>Qué cambia entre cada nivel.</h2>
-            <p>Especificaciones operativas: alcance, equipo y tipo de output.</p>
+            <p>La diferencia está en profundidad, acompañamiento y frecuencia de decisión.</p>
           </header>
           <div className="services-spec">
             <div className="services-spec__head">
@@ -259,14 +256,12 @@ export default function ServicesPage() {
               <span className="eyebrow">PROPUESTA</span>
               <h2>Cómo construimos el alcance.</h2>
               <p>
-                Cuatro movimientos. La propuesta es consecuencia del diagnóstico, no punto de
-                partida — por eso no hay rate cards ni tablas genéricas de horas.
+                La propuesta sale de la pregunta. Así evitamos venderte una solución más grande o más chica de lo que necesitas.
               </p>
               <div className="method-protocol-meta">
-                <strong>SIN PRICING POR DEFAULT</strong>
+                <strong>ALCANCE A LA MEDIDA</strong>
                 <span>
-                  Cada propuesta se construye contra la pregunta específica. Si tu equipo necesita
-                  rate card antes de hablar, probablemente no somos la firma correcta.
+                  Primero entendemos la decisión. Luego definimos fuentes, profundidad y salida.
                 </span>
               </div>
             </aside>
@@ -283,7 +278,7 @@ export default function ServicesPage() {
           <article className="services-no-block">
             <header className="services-no-block__head">
               <span className="eyebrow">FUERA DEL ALCANCE</span>
-              <h2>Lo que no hacemos. Por convicción, no por falta de capacidad.</h2>
+              <h2>Lo que no hacemos, para que la lectura siga siendo útil.</h2>
             </header>
             <OutOfScope items={noList} />
           </article>
@@ -308,8 +303,7 @@ export default function ServicesPage() {
             <div className="no-method-cta__copy">
               <h2>¿Sabes qué nivel necesita la decisión?</h2>
               <p>
-                El diagnóstico es gratuito, dura 8–10 minutos y lo lee uno de nuestros arquitectos
-                antes de cualquier llamada. De ahí sale la propuesta — alcance, equipo, modalidad.
+                El diagnóstico dura 8–10 minutos y nos da suficiente contexto para recomendarte el nivel correcto.
               </p>
             </div>
             <Button href="/diagnostico" variant="primary">

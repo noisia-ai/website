@@ -2,7 +2,7 @@ import { DiagnosticWizard } from "@/components/forms/DiagnosticWizard";
 
 export const metadata = {
   title: "Diagnóstico",
-  description: "Cuestionario de discovery para convertir una pregunta de negocio en protocolo Noisia.",
+  description: "Cuestionario breve para entender qué decisión necesitas tomar.",
 };
 
 export default function DiagnosticPage() {
@@ -11,9 +11,9 @@ export default function DiagnosticPage() {
       <div className="section__inner diag-page-inner">
         <header className="diag-page-header">
           <span className="eyebrow">DIAGNÓSTICO</span>
-          <h1 className="display-md">Empieza por la pregunta.<br />La metodología viene después.</h1>
+          <h1 className="display-md">Empecemos por la decisión. El método viene después.</h1>
           <p className="body-lg">
-            8–10 minutos. Un arquitecto lee tus respuestas antes de cualquier llamada.
+            8–10 minutos. Leemos tus respuestas antes de cualquier llamada para recomendar el siguiente paso correcto.
           </p>
         </header>
         <DiagnosticWizard />

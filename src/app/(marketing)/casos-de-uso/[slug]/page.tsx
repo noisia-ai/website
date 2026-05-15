@@ -33,13 +33,13 @@ type VignetteStep = {
 const VIGNETTES: Record<string, VignetteStep[]> = {
   "lanzamiento-de-campana": [
     { num: "01", label: "La pregunta", text: "La marca llegó con tres territorios creativos y sin criterio para elegir.", callout: "Aspiracional / Cómplice / Funcional" },
-    { num: "02", label: "La conversación", text: "El corpus testó cuál territorio tenía permiso cultural real en la categoría.", callout: "Cómplice — 67% de respaldo" },
+    { num: "02", label: "La conversación", text: "La lectura mostró cuál territorio sí tenía permiso real en la categoría.", callout: "Cómplice — 67% de respaldo" },
     { num: "03", label: "El hallazgo", text: "Solo uno convertía frustración cotidiana en lenguaje que la categoría podía sostener.", callout: "Permiso narrativo confirmado" },
     { num: "04", label: "La decisión", text: "El brief se reescribió. La inversión se redirigió en cinco días.", callout: "5 días → brief aprobado" }
   ],
   "defensa-competitiva": [
     { num: "01", label: "La situación", text: "La marca perdía share. El precio no explicaba la migración.", callout: "“No me voy por el precio. Me voy porque no me escuchan.”" },
-    { num: "02", label: "El corpus", text: "1,840 señales de migración codificadas por tipo de fricción.", callout: "Soporte 64% · Transparencia 72%" },
+    { num: "02", label: "La lectura", text: "1,840 señales explicaron qué empujaba a la gente a cambiarse.", callout: "Soporte 64% · Transparencia 72%" },
     { num: "03", label: "La defensa", text: "La respuesta fue credibilidad narrativa. No descuento.", callout: "Comunicación directa, sin cupones" }
   ],
   reposicionamiento: [
@@ -51,9 +51,9 @@ const VIGNETTES: Record<string, VignetteStep[]> = {
 
 function buildVignette(useCase: UseCase): VignetteStep[] {
   return [
-    { num: "01", label: "La pregunta", text: "El cliente llegó con una decisión activa y sin evidencia conversacional suficiente.", callout: useCase.methodologies.slice(0, 2).join(" + ") },
-    { num: "02", label: "El corpus", text: "La conversación pública reveló patrones invisibles para encuesta o focus group.", callout: useCase.vignette.split(".")[0].trim() + "." },
-    { num: "03", label: "El output", text: "Evidencia trazable que respaldó la decisión con fuentes a la vista.", callout: useCase.deliverables[0] ?? "Brief defendible" }
+    { num: "01", label: "La pregunta", text: "El equipo llegó con una decisión activa y dudas sobre qué camino defender.", callout: useCase.methodologies.slice(0, 2).join(" + ") },
+    { num: "02", label: "La lectura", text: "La conversación pública mostró patrones que no estaban claros en el brief inicial.", callout: useCase.vignette.split(".")[0].trim() + "." },
+    { num: "03", label: "La salida", text: "La evidencia se tradujo en una recomendación clara para presentar y ejecutar.", callout: useCase.deliverables[0] ?? "Brief defendible" }
   ];
 }
 
@@ -62,12 +62,12 @@ const PROCESS_STEPS: Record<string, ProcessStep[]> = {
   "lanzamiento-de-campana": [
     { name: "Mapeo de tensiones", description: "Identificamos tensiones simbólicas activas en la categoría por mercado." },
     { name: "Territorios con permiso", description: "Separamos qué territorios tienen permiso cultural real vs. aspiracional.", metric: "3 territorios evaluados" },
-    { name: "Validación conversacional", description: "Contrastamos cada territorio contra corpus de menciones espontáneas." },
-    { name: "Brief estratégico", description: "Entregamos angle defensible con evidencia vinculada a cada decisión.", metric: "100% trazable" }
+    { name: "Validación conversacional", description: "Contrastamos cada territorio contra menciones espontáneas de la categoría." },
+    { name: "Brief estratégico", description: "Entregamos un ángulo defendible con evidencia vinculada a cada decisión.", metric: "Fuentes a la vista" }
   ],
   "defensa-competitiva": [
-    { name: "Corpus de migración", description: "Extraemos y codificamos narrativas de churn: razones, frames y actores.", metric: "1,840+ señales" },
-    { name: "Análisis de triggers", description: "Clasificamos disparadores de migración: precio, fricción, narrativa competidora." },
+    { name: "Señales de migración", description: "Leemos por qué la gente se cambia: razones, frases y actores que influyen.", metric: "1,840+ señales" },
+    { name: "Disparadores de cambio", description: "Separamos precio, fricción, confianza y promesas del competidor." },
     { name: "Mapa de fricción", description: "Visualizamos dónde se rompe la lealtad y qué capitaliza el competidor." },
     { name: "Brief de defensa", description: "Recomendamos respuesta según tipo de migración — no hay una sola estrategia.", metric: "Accionable inmediato" }
   ]
@@ -75,21 +75,20 @@ const PROCESS_STEPS: Record<string, ProcessStep[]> = {
 
 function buildProcessSteps(useCase: UseCase): ProcessStep[] {
   return [
-    { name: "Diseño del protocolo", description: "Definimos fuentes, preguntas de codificación y alcance temporal para esta pregunta específica." },
-    { name: "Corpus e ingesta", description: "Orquestamos fuentes relevantes por categoría y mercado. El corpus responde a la pregunta, no al default.", metric: "500–5,000 señales" },
-    { name: "Análisis y codificación", description: useCase.approach },
-    { name: "Output y trazabilidad", description: "Todo el corpus, codificación y evidencia es del cliente. La trazabilidad no queda en Noisia.", metric: "100% fuentes documentadas" }
+    { name: "Aterrizar la pregunta", description: "Definimos qué decisión necesita tomar el equipo y qué evidencia la haría defendible." },
+    { name: "Elegir fuentes útiles", description: "Escuchamos donde la conversación puede responder la pregunta, no donde hay más volumen.", metric: "500–5,000 señales" },
+    { name: "Leer patrones", description: useCase.approach },
+    { name: "Traducir a acción", description: "La salida conecta hallazgo, fuente y recomendación para que el equipo pueda decidir.", metric: "Fuentes documentadas" }
   ];
 }
 
-// Techy-first deliverables, mismo lenguaje que metodología pages
 const techDeliverables = [
-  { name: "Dashboard interactivo", description: "Panel propio para navegar el corpus por dimensión, fuente y polaridad.", chip: "Web app" },
-  { name: "Corpus tagueado en JSON", description: "Cada señal etiquetada por dimensión, polaridad, fuente y peso.", chip: "JSON estructurado" },
-  { name: "AI-Brief (.md)", description: "Briefing markdown denso para que las IAs del equipo cliente carguen contexto Noisia.", chip: ".md / context" }
+  { name: "Lectura navegable", description: "Panel para revisar hallazgos, evidencia y recomendaciones sin perder el hilo de la decisión.", chip: "Reporte vivo" },
+  { name: "Evidencia ordenada", description: "Señales etiquetadas por fuente, tema, peso y relación con la pregunta.", chip: "Base de evidencia" },
+  { name: "Brief listo para equipo", description: "Resumen claro para alinear estrategia, marketing, producto o investigación.", chip: "Brief listo" }
 ];
 
-const traditionalFormats = ["PDF dossier", "Deck presentable", "Notion playbook", "FigJam colaborable", "Sheet priorizado"];
+const traditionalFormats = ["PDF dossier", "Deck presentable", "Documento colaborable", "Mapa de trabajo", "Sheet priorizado"];
 
 // Anonymized real-case data
 type CaseReal = {
@@ -111,7 +110,7 @@ const CASE_REAL: Record<string, CaseReal> = {
       "El territorio ganador era el menos aspiracional pero el más arraigado en frustración cotidiana.",
       "El territorio 'aspiracional' aparecía en publicidad de la categoría pero no en conversación orgánica."
     ],
-    output: "Campaign angle brief con evidencia en 47 fuentes directamente citadas.",
+    output: "Brief de ángulo de campaña con 47 fuentes citadas.",
     outcome: "Brief aprobado sin revisión. Campaña lanzada sobre territorio evidenciado."
   },
   "defensa-competitiva": {
@@ -123,7 +122,7 @@ const CASE_REAL: Record<string, CaseReal> = {
       "El competidor había convertido soporte en narrativa de marca, no solo función.",
       "Las fricciones de comunicación duplicaban en volumen a las fricciones de precio."
     ],
-    output: "Migration narrative map + Competitive defense brief con acción por tipo de fricción.",
+    output: "Mapa de migración y brief de defensa con acción por tipo de fricción.",
     outcome: "Plan de comunicación rediseñado en 3 semanas. Retención mejoró 12% en Q3."
   },
   reposicionamiento: {
@@ -135,7 +134,7 @@ const CASE_REAL: Record<string, CaseReal> = {
       "El código 'cuidado + confianza' estaba disponible — ningún competidor lo ocupaba con evidencia.",
       "El cambio de código no requería cambio de producto, solo de ángulo narrativo."
     ],
-    output: "Symbolic position map + 3 rutas de reposicionamiento con riesgo por ruta.",
+    output: "Mapa de posición y tres rutas de reposicionamiento con riesgo por ruta.",
     outcome: "Ruta seleccionada basada en evidencia. Campaña de reposicionamiento lanzada en Q2."
   }
 };
@@ -145,12 +144,12 @@ const FALLBACK_CASE_REAL: CaseReal = {
   question: "La pregunta estratégica llegó como hipótesis. La evidencia la confirmó — o la corrigió.",
   corpus: "1,500–4,000 señales · 4-6 fuentes · 4-8 semanas",
   findings: [
-    "El corpus mostró patrones que la encuesta no capturaba.",
+    "La conversación mostró patrones que la encuesta no capturaba.",
     "Los hallazgos redefinieron el alcance de la decisión inicial.",
-    "La evidencia fue trazable: cada hallazgo vinculado a fuente original."
+    "Cada hallazgo quedó conectado con la fuente que lo sostenía."
   ],
-  output: "Entregable con evidencia completa y trazabilidad a fuente original.",
-  outcome: "La decisión se tomó con evidencia. El brief se respaldó con corpus real."
+  output: "Entregable con evidencia completa y fuentes a la vista.",
+  outcome: "La decisión se tomó con evidencia. El brief quedó respaldado por conversación real."
 };
 
 function methodologySlug(name: string): string {
@@ -209,8 +208,8 @@ export default async function UseCaseDetailPage({ params }: UseCaseDetailProps) 
         <div className="section__inner">
           <header className="method-section-header">
             <span className="eyebrow">EN LA PRÁCTICA</span>
-            <h2>Cómo se ve esto, paso a paso.</h2>
-            <p>Un caso anonimizado que muestra el flujo real de pregunta a decisión.</p>
+            <h2>Cómo pasa de pregunta a decisión.</h2>
+            <p>Un ejemplo anonimizado para mostrar qué se lee, qué cambia y qué se decide.</p>
           </header>
           <ol className="case-vignette-flow">
             {vignette.map((step) => (
@@ -235,20 +234,20 @@ export default async function UseCaseDetailPage({ params }: UseCaseDetailProps) 
           <article className="case-why-block">
             <header className="case-why-block__head">
               <span className="eyebrow">POR QUÉ IMPORTA</span>
-              <h2>Lo que la conversación pública revela.</h2>
+              <h2>Lo que la conversación puede revelar antes de decidir.</h2>
             </header>
             <dl className="case-why-block__list">
               <div className="case-why-row">
                 <dt>Motivaciones reales</dt>
-                <dd>Las que no aparecen en encuesta porque el consumidor no las articula así. Aparecen cuando habla sin saber que alguien lo va a leer.</dd>
+                <dd>Motivos que aparecen cuando la gente habla en sus propios términos, no cuando contesta un cuestionario.</dd>
               </div>
               <div className="case-why-row">
                 <dt>Fricciones invisibles</dt>
-                <dd>Los puntos donde la conversación se interrumpe antes de llegar a decisión. La encuesta los oculta. La conversación pública los expone.</dd>
+                <dd>Puntos donde la intención se cae antes de llegar a compra, registro, recomendación o confianza.</dd>
               </div>
               <div className="case-why-row">
                 <dt>Códigos culturales</dt>
-                <dd>Las reglas no escritas que definen qué tiene permiso en la categoría y qué no. Lo que tu marca puede decir sin sonar prestada.</dd>
+                <dd>Reglas no escritas que definen qué tiene permiso en la categoría y qué suena forzado.</dd>
               </div>
             </dl>
           </article>
@@ -262,10 +261,10 @@ export default async function UseCaseDetailPage({ params }: UseCaseDetailProps) 
             <aside className="method-protocol-intro">
               <span className="eyebrow">PROCESO</span>
               <h2>Cómo Noisia la aborda.</h2>
-              <p>Cuatro fases. Cada paso entrega evidencia trazable al siguiente. Nada se pierde entre la hipótesis y el output.</p>
+              <p>Cuatro pasos: pregunta, fuentes, lectura y recomendación. La evidencia acompaña todo el recorrido.</p>
               <div className="method-protocol-meta">
-                <strong>EL CORPUS ES TUYO</strong>
-                <span>Todo el corpus, la codificación y la evidencia se entrega al cliente al cierre del proyecto.</span>
+                <strong>EVIDENCIA A LA VISTA</strong>
+                <span>La recomendación conserva las fuentes que la sostienen.</span>
               </div>
             </aside>
             <div className="method-protocol-trace glass">
@@ -280,8 +279,8 @@ export default async function UseCaseDetailPage({ params }: UseCaseDetailProps) 
         <div className="section__inner">
           <header className="method-section-header">
             <span className="eyebrow">QUÉ TE LLEVAS</span>
-            <h2>Output sistémico, no documento.</h2>
-            <p>El corpus regresa al cliente como sistema vivo. Lo tradicional sigue exportable — solo dejó de ser el centro.</p>
+            <h2>Una salida lista para presentar y accionar.</h2>
+            <p>El entregable combina recomendación, evidencia y formatos prácticos para que el equipo pueda decidir.</p>
           </header>
 
           <div className="deliverables-tier deliverables-tier--primary">
@@ -317,7 +316,7 @@ export default async function UseCaseDetailPage({ params }: UseCaseDetailProps) 
           <article className="case-applied">
             <header className="case-applied__head">
               <span className="eyebrow">CASO APLICADO</span>
-              <h2>Anonimizado. Real.</h2>
+              <h2>Ejemplo aplicado, anonimizado.</h2>
               <p className="case-applied__industry">{caseReal.industry}</p>
             </header>
 
@@ -327,7 +326,7 @@ export default async function UseCaseDetailPage({ params }: UseCaseDetailProps) 
                 <p>{caseReal.question}</p>
               </div>
               <div className="case-applied__q">
-                <span className="case-applied__label">Corpus reunido</span>
+                <span className="case-applied__label">Señales revisadas</span>
                 <p className="case-applied__corpus">{caseReal.corpus}</p>
               </div>
             </div>
@@ -343,11 +342,11 @@ export default async function UseCaseDetailPage({ params }: UseCaseDetailProps) 
 
             <div className="case-applied__qa">
               <div className="case-applied__q">
-                <span className="case-applied__label">Output principal</span>
+                <span className="case-applied__label">Salida principal</span>
                 <p>{caseReal.output}</p>
               </div>
               <div className="case-applied__q case-applied__q--outcome">
-                <span className="case-applied__label">Outcome</span>
+                <span className="case-applied__label">Resultado</span>
                 <p>{caseReal.outcome}</p>
               </div>
             </div>
@@ -367,7 +366,7 @@ export default async function UseCaseDetailPage({ params }: UseCaseDetailProps) 
           <div className="section__inner">
             <header className="method-section-header">
               <span className="eyebrow">METODOLOGÍAS APLICADAS</span>
-              <h2>El protocolo combinó {linkedMethodologies.length} {linkedMethodologies.length === 1 ? "lente" : "lentes"}.</h2>
+              <h2>La lectura usó {linkedMethodologies.length} {linkedMethodologies.length === 1 ? "método" : "métodos"}.</h2>
             </header>
             <ul className="case-methods-list">
               {linkedMethodologies.map(({ name, slug: mSlug }, idx) => (
@@ -381,7 +380,7 @@ export default async function UseCaseDetailPage({ params }: UseCaseDetailProps) 
                     </div>
                     <div className="case-methods-row__body">
                       <strong>{name}</strong>
-                      <span>Estudiar la metodología en profundidad</span>
+                      <span>Ver cómo se aplica</span>
                     </div>
                     <span className="case-methods-row__arrow" aria-hidden="true">→</span>
                   </Link>

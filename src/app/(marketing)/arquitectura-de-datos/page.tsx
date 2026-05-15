@@ -7,40 +7,40 @@ import { SourcesConstellation } from "@/components/marketing/SourcesConstellatio
 
 export const metadata = {
   title: "Arquitectura de datos",
-  description: "La infraestructura de Noisia: corpus comparable, evidence graph y salida trazable."
+  description: "Cómo Noisia construye evidencia confiable antes de recomendar una decisión."
 };
 
 const runtimeNotes = [
   {
     title: "La señal entra con contexto",
-    detail: "Fuente, fecha, mercado, formato y criterio de inclusión acompañan cada unidad desde el ingreso."
+    detail: "Cada mención conserva fuente, fecha, mercado y razón por la que importa."
   },
   {
-    title: "El método corre sobre corpus",
-    detail: "Las seis metodologías operan sobre evidencia comparable. No sobre screenshots, dashboards ni ruido agregado."
+    title: "Todo se puede comparar",
+    detail: "Convertimos formatos distintos en una base común para no mezclar ruido con señal."
   },
   {
     title: "La salida conserva la cita",
-    detail: "Cada insight puede volver a la fuente que lo sostiene y conservar criterio, etiqueta y trazabilidad."
+    detail: "Cada hallazgo puede volver a la frase original que lo sostiene."
   },
   {
-    title: "La infraestructura se adapta a la pregunta",
-    detail: "No usamos una cobertura por default. Armamos el corpus que la decisión necesita y descartamos lo que distrae."
+    title: "La muestra responde a la pregunta",
+    detail: "No escuchamos todo por default. Elegimos las fuentes que ayudan a decidir."
   }
 ];
 
 const traceProof = [
   {
-    label: "Corpus comparable",
-    detail: "Lo que entra desde marketplaces, audio, texto largo o comunidades termina respondiendo al mismo esquema."
+    label: "Base comparable",
+    detail: "Reviews, redes, audio, texto largo o comunidades terminan bajo el mismo criterio."
   },
   {
-    label: "Evidence graph",
-    detail: "La narrativa no se despega de la cita. El método deja relaciones, no solo hallazgos sueltos."
+    label: "Evidencia conectada",
+    detail: "La recomendación no se despega de las citas, tags y fuentes que la explican."
   },
   {
-    label: "Output verificable",
-    detail: "Dashboard, source drawer, chat con data y export comparten el mismo rastro de evidencia."
+    label: "Salida verificable",
+    detail: "Reporte, source drawer y export comparten el mismo rastro de evidencia."
   }
 ];
 
@@ -61,24 +61,20 @@ const sourceFamilies = [
 
 const principios = [
   {
-    icon: "✗",
     title: "No hackeamos plataformas cerradas",
     detail: "Operamos solo sobre fuentes accesibles bajo sus términos de servicio."
   },
   {
-    icon: "✗",
-    title: "No scrapeamos contra ToS",
+    title: "No forzamos accesos",
     detail: "Si una plataforma cierra el acceso, buscamos el mismo tipo de señal en otro lugar."
   },
   {
-    icon: "✗",
     title: "No comprometemos privacidad personal",
-    detail: "El corpus es conversación pública, no datos personales identificables."
+    detail: "Trabajamos con conversación pública, no con datos personales identificables."
   },
   {
-    icon: "✗",
-    title: "No operamos sobre datos identificables sin justificación legal",
-    detail: "Ningún proyecto procesa PII sin base legal explícita."
+    title: "No procesamos datos sensibles sin base clara",
+    detail: "Si un proyecto requiere otro tipo de dato, se revisa legalmente antes de avanzar."
   }
 ];
 
@@ -88,18 +84,18 @@ export default function DataArchitecturePage() {
       <section className="hero-experience page-hero page-hero--architecture">
         <div className="hero-experience__inner page-hero__inner">
           <div className="hero-copy">
-            <span className="eyebrow">INFRAESTRUCTURA</span>
-            <h1 className="display-lg">La inteligencia empieza antes del modelo.</h1>
+            <span className="eyebrow">ARQUITECTURA DE DATOS</span>
+            <h1 className="display-lg">La evidencia tiene que estar ordenada antes de convertirse en recomendación.</h1>
             <p className="body-lg">
-              Noisia arma un corpus comparable, lo enriquece con contexto y conserva trazabilidad hasta el output. La
-              metodología corre sobre evidencia normalizada, con fuente, tag y razón de inclusión.
+              Aquí mostramos cómo cuidamos la muestra: qué entra, por qué entra, cómo se compara y cómo cada hallazgo
+              puede volver a su fuente.
             </p>
             <div className="hero-actions">
               <Button href="/diagnostico" variant="primary">
-                Diseñar protocolo
+                Diseñar una lectura
               </Button>
               <Button href="#architecture-runtime" variant="secondary">
-                Ver runtime
+                Ver cómo funciona
               </Button>
             </div>
             <ArchitectureCounters />
@@ -107,19 +103,19 @@ export default function DataArchitecturePage() {
 
           <aside className="page-hero-panel glass">
             <span className="chip">Qué hace el sistema</span>
-            <h2>El moat no es una fuente. Es un corpus que sigue siendo defendible al final del recorrido.</h2>
+            <h2>La confianza no nace del volumen. Nace de poder explicar de dónde salió cada lectura.</h2>
             <ul className="page-hero-list">
               <li>
-                <b>Cada señal entra con contexto</b>
-                <span>Fuente, fecha, mercado, formato y criterio de inclusión no se pierden a mitad del pipeline.</span>
+                <b>Cada señal conserva contexto</b>
+                <span>Fuente, fecha, mercado y formato acompañan la evidencia.</span>
               </li>
               <li>
-                <b>Todo pasa por el mismo esquema</b>
-                <span>Normalizamos para comparar plataformas, idiomas y formatos sin mezclar señales incompatibles.</span>
+                <b>Todo se vuelve comparable</b>
+                <span>Comparamos plataformas y formatos bajo el mismo criterio.</span>
               </li>
               <li>
-                <b>La salida vuelve a la evidencia</b>
-                <span>Dashboard, source drawer y export comparten el mismo rastro verificable.</span>
+                <b>La recomendación vuelve a la fuente</b>
+                <span>La lectura no queda separada de las citas que la sostienen.</span>
               </li>
             </ul>
           </aside>
@@ -129,21 +125,20 @@ export default function DataArchitecturePage() {
       <section className="section">
         <div className="section__inner">
           <div className="section-heading">
-            <span className="eyebrow">RUNTIME</span>
-            <h2 className="display-md">Lo que normalmente queda oculto es justo lo que sostiene la decisión.</h2>
+            <span className="eyebrow">CÓMO FUNCIONA</span>
+            <h2 className="display-md">Lo importante no es solo escuchar. Es ordenar bien lo escuchado.</h2>
             <p className="body-lg">
-              El pipeline no existe para verse sofisticado. Existe para que una lectura narrativa, un source drawer y
-              un export compartan el mismo corpus vivo y no tres versiones distintas de la realidad.
+              El sistema evita que el reporte, las citas y el export cuenten tres versiones distintas de la realidad.
             </p>
           </div>
 
           <div className="data-architecture-home" id="architecture-runtime">
             <div className="detail-block accent-panel architecture-runtime-copy">
-              <span className="chip">Pipeline operativo</span>
-              <h2>Primero compactamos señal. Luego corremos método sobre evidencia comparable.</h2>
+              <span className="chip">Sistema operativo</span>
+              <h2>Primero limpiamos la señal. Luego la convertimos en una base que se puede defender.</h2>
               <p>
-                Si cambias el orden, la inteligencia se contamina: comparas formatos incompatibles, tomas sentimiento
-                plano por explicación y terminas con dashboards bonitos pero decisiones débiles.
+                Si el orden falla, el análisis también falla: terminas comparando formatos incompatibles o tomando
+                una métrica suelta como si fuera explicación.
               </p>
               <ul className="architecture-runtime-list">
                 {runtimeNotes.map((note) => (
@@ -165,10 +160,10 @@ export default function DataArchitecturePage() {
           <div className="architecture-trace-layout">
             <div className="architecture-trace-copy">
               <span className="eyebrow">TRAZABILIDAD</span>
-              <h2 className="display-md">Una respuesta defendible puede volver a la fuente que la sostiene.</h2>
+              <h2 className="display-md">Una respuesta seria puede volver a la fuente que la sostiene.</h2>
               <p className="body-lg">
-                Noisia no separa la narrativa de la evidencia. La pregunta entra al sistema, se transforma en corpus,
-                se enriquece, corre por método y vuelve a salir como cita, patrón y decisión explicable.
+                No separamos narrativa y evidencia. La lectura final conserva citas, patrones y razones para que el
+                equipo pueda discutir la decisión con respaldo.
               </p>
               <div className="architecture-trace-proof">
                 {traceProof.map((item) => (
@@ -190,10 +185,10 @@ export default function DataArchitecturePage() {
           <div className="architecture-source-layout">
             <div className="architecture-source-copy">
               <span className="eyebrow">COBERTURA ORQUESTADA</span>
-              <h2 className="display-md">La conversación que decide una categoría nunca vive en un solo lugar.</h2>
+              <h2 className="display-md">La conversación que importa rara vez vive en un solo lugar.</h2>
               <p className="body-lg">
-                Noisia orquesta plataformas cuando sirven, las complementa cuando faltan y descarta las que solo meten
-                volumen sin explicación. La mezcla cambia por pregunta, no por costumbre.
+                Combinamos fuentes cuando aportan señal y descartamos las que solo agregan volumen. La mezcla cambia
+                por pregunta, no por costumbre.
               </p>
               <div className="architecture-source-families">
                 {sourceFamilies.map((family) => (
@@ -210,7 +205,7 @@ export default function DataArchitecturePage() {
                 <span className="chip">Tipos de fuente</span>
                 <p>
                   El set final depende de la pregunta. Esto es lo que podemos orquestar hoy sin comprometer
-                  sostenibilidad ni trazabilidad.
+                  calidad ni acceso responsable.
                 </p>
               </div>
               <SourcesConstellation />
@@ -230,17 +225,16 @@ export default function DataArchitecturePage() {
               <ShieldCheck size={26} strokeWidth={1.6} />
               <div>
                 <span className="eyebrow">GUARDRAILS OPERATIVOS</span>
-                <h2>La infraestructura también se define por sus límites.</h2>
+                <h2>También importa lo que decidimos no hacer.</h2>
               </div>
             </div>
             <p className="architecture-guardrails__intro">
-              La calidad del corpus depende de cómo se construye. La sostenibilidad depende de cómo se accede. Ambas
-              cosas son parte de la arquitectura, no una nota legal al pie.
+              La calidad de una lectura depende de cómo se construye la muestra y de cómo se accede a las fuentes.
             </p>
             <div className="architecture-guardrails__grid">
               {principios.map((p) => (
                 <div className="architecture-guardrail-card" key={p.title}>
-                  <span className="architecture-guardrail-card__icon" aria-hidden="true">{p.icon}</span>
+                  <span className="architecture-guardrail-card__icon" aria-hidden="true">No</span>
                   <div>
                     <strong>{p.title}</strong>
                     <p>{p.detail}</p>
@@ -250,11 +244,11 @@ export default function DataArchitecturePage() {
             </div>
             <div className="architecture-guardrails__footer">
               <p>
-                Si la pregunta requiere una mezcla distinta de fuentes, el protocolo se rediseña. Lo que no cambia es
-                el estándar: corpus comparable, acceso sostenible y salida trazable.
+                Si la pregunta requiere otra mezcla de fuentes, la diseñamos. Lo que no cambia es el estándar:
+                evidencia comparable, acceso responsable y salida verificable.
               </p>
               <Button href="/diagnostico" variant="secondary">
-                Diseñar un protocolo
+                Diseñar una lectura
               </Button>
             </div>
           </div>

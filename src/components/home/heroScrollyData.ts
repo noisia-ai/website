@@ -105,14 +105,14 @@ export const heroVoiceCards: VoiceCard[] = [
     market: "AR",
     age: "hace 1 d",
     quote: "Me gusta, pero necesito entender por qué vale más que la opción simple.",
-    position: { x: "clamp(-380px, -22vw, -250px)", y: "clamp(145px, 18vh, 210px)", rotate: "6deg" }
+    position: { x: "clamp(-580px, -36vw, -430px)", y: "clamp(150px, 19vh, 220px)", rotate: "6deg" }
   },
   {
     platform: "Google Reviews",
     market: "MX",
     age: "hace 7 h",
     quote: "La compra fue fácil. La explicación después fue donde me perdí.",
-    position: { x: "clamp(240px, 22vw, 380px)", y: "clamp(155px, 19vh, 220px)", rotate: "-4deg" }
+    position: { x: "clamp(430px, 36vw, 580px)", y: "clamp(155px, 20vh, 230px)", rotate: "-4deg" }
   },
   {
     platform: "TikTok",
@@ -146,79 +146,77 @@ export const heroVoiceCards: VoiceCard[] = [
 
 export const heroPipelineSteps: PipelineStep[] = [
   {
-    label: "Recolectando",
+    label: "Escuchando",
     detail: "Reviews · foros · redes · marketplaces",
     metric: "2,847 señales",
     fill: "100%"
   },
   {
-    label: "Normalizando",
-    detail: "1 esquema · 12 idiomas · deduplicación",
+    label: "Limpiando",
+    detail: "Duplicados fuera · contexto dentro",
     metric: "1,932 únicas",
     fill: "94%"
   },
   {
-    label: "Enriqueciendo",
-    detail: "Sarcasmo · tono · entidades · jobs",
+    label: "Entendiendo",
+    detail: "Tono · intención · dudas · necesidades",
     metric: "8 capas",
     fill: "88%"
   },
   {
-    label: "Codificando",
-    detail: "Triggers · barriers · velocidad · valor",
+    label: "Separando",
+    detail: "Lo que empuja · lo que frena",
     metric: "1,247 expresiones",
     fill: "78%"
   },
   {
-    label: "Cuantificando",
-    detail: "Frecuencia · intensidad · poder explicativo",
+    label: "Priorizando",
+    detail: "Tamaño · urgencia · impacto",
     metric: "12 fuerzas",
     fill: "68%"
   },
   {
     label: "Traduciendo",
-    detail: "Insight → recomendación defendible",
+    detail: "Lectura → movimiento recomendado",
     metric: "3 movimientos",
     fill: "58%"
   }
 ];
 
-// Caso ilustrativo: banca digital LATAM. Triggers (signal) y barriers (tension) mezclados
-// para mostrar la matriz que la metodología produce.
 export const heroMethodologyMetrics: ForceMetric[] = [
-  { label: "depósito inmediato sin papeleo", value: "47.3%", tone: "signal" },
-  { label: "miedo a fraude en lo digital", value: "36.4%", tone: "tension" },
-  { label: "control 24/7 desde el celular", value: "31.8%", tone: "signal" },
-  { label: "comisiones que no entiendo", value: "27.6%", tone: "tension" }
+  { label: "señales de intención clara", value: "47.3%", tone: "signal" },
+  { label: "dudas que frenan compra", value: "36.4%", tone: "tension" },
+  { label: "pruebas de confianza pedidas", value: "31.8%", tone: "signal" },
+  { label: "mensajes repetidos sin efecto", value: "27.6%", tone: "tension" }
 ];
 
 export const heroStateRead = [
-  { state: "México", share: "62", label: "prioriza estabilidad antes que features" },
-  { state: "Colombia", share: "47", label: "lealtad si hay sucursal accesible" },
-  { state: "Argentina", share: "41", label: "comparación constante con dólar" },
-  { state: "Chile", share: "35", label: "rotación por cashback diferencial" }
+  { state: "Activa", share: "62", label: "motivos que conviene amplificar" },
+  { state: "Frena", share: "47", label: "barreras que necesitan prueba" },
+  { state: "Compara", share: "41", label: "alternativas presentes en la mente" },
+  { state: "Mueve", share: "35", label: "acciones prioritarias para negocio" }
 ];
 
 export const heroRecommendations: Recommendation[] = [
   {
-    title: "Visibilizar costos antes de signup",
-    body: "El barrier dominante no es producto digital. Es no entender qué se paga. Mostrar el desglose completo antes de pedir datos cierra el miedo más reportado.",
-    move: "Reescribir flujo de signup"
+    title: "Aterrizar la pregunta correcta",
+    body: "No empezamos por métricas sueltas. Convertimos la duda del equipo en una pregunta de negocio clara: qué decisión se necesita tomar y qué evidencia la haría defendible.",
+    move: "Antes de escuchar"
   },
   {
-    title: "Segmentar el mensaje por mercado",
-    body: "En México defender estabilidad y backing institucional. En Chile competir por incentivo concreto. La misma campaña en ambos mercados convierte 0.4x.",
-    move: "Diseñar copy por país"
+    title: "Separar señal de ruido",
+    body: "Leemos conversaciones abiertas para distinguir lo que se repite, lo que pesa y lo que realmente cambia una decisión. Menos volumen bruto, más lectura útil.",
+    move: "Durante la lectura"
   },
   {
-    title: "Construir presencia híbrida en Colombia",
-    body: "El barrier territorial pide sucursal física. Una alianza local con presencia visible reduce desconfianza donde el digital puro no escala todavía.",
-    move: "Plan de cobertura híbrida"
+    title: "Traducir evidencia a acción",
+    body: "Cada salida termina en movimientos concretos: qué decir, qué ajustar, qué priorizar y qué puede presentar tu equipo con respaldo.",
+    move: "Después del análisis"
   }
 ];
 
 export const heroSignature = [
-  { value: "150+", label: "fuentes normalizadas" },
-  { value: "6", label: "metodologías propietarias" },
-  { value: "1", label: "decisión defendible por lectura" }
+  { value: "Pregunta", label: "partimos de una decisión real" },
+  { value: "Señales", label: "leemos conversaciones con contexto" },
+  { value: "Acción", label: "cerramos con un movimiento defendible" }
 ];

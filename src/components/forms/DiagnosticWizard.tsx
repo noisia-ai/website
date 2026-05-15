@@ -544,7 +544,7 @@ function SuccessScreen({ name }: { name: string }) {
       </p>
       <p className="diag-success__body">
         No hay demo, no hay pitch. Solo una conversación para entender si la pregunta que tienes
-        es la pregunta que debería guiar el protocolo.
+        es la pregunta correcta para empezar la lectura.
       </p>
       <Link className="diag-btn diag-btn--primary" href="/">
         Volver al inicio

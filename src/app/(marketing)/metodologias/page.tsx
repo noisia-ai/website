@@ -6,7 +6,7 @@ import { methodologies } from "@/content/site";
 
 export const metadata = {
   title: "Metodologías",
-  description: "Las seis metodologías propietarias de Noisia para convertir conversación social en decisión de negocio."
+  description: "Los métodos de Noisia para convertir conversación social en decisiones claras."
 };
 
 export default function MethodologiesPage() {
@@ -17,44 +17,43 @@ export default function MethodologiesPage() {
           <div className="hero-copy">
             <span className="eyebrow">METODOLOGÍAS PROPIETARIAS</span>
             <h1 className="display-lg">
-              Seis metodologías.<br />Una por tipo de incertidumbre.
+              Seis métodos para responder preguntas difíciles sin ahogarte en data.
             </h1>
             <p className="body-lg">
-              No empezamos por la herramienta favorita. Empezamos por el tipo de incertidumbre:
-              qué hay que explicar, qué fricción hay que aislar, qué valor hay que defender,
-              qué código cultural hay que decodificar o qué nodo mueve la conversación.
+              No necesitas memorizar nombres técnicos. Cada método existe para resolver una duda concreta:
+              qué activa compra, qué frena confianza, dónde hay valor o qué voces vuelven creíble una idea.
             </p>
             <div className="method-stats-strip">
               <div className="method-stat glass">
                 <strong>6</strong>
-                <span>metodologías propietarias</span>
+                <span>métodos propios</span>
               </div>
               <div className="method-stat glass">
                 <strong>2–3</strong>
-                <span>suelen convivir por proyecto</span>
+                <span>suelen combinarse por lectura</span>
               </div>
               <div className="method-stat glass">
                 <strong>150+</strong>
-                <span>fuentes potenciales según la pregunta</span>
+                <span>fuentes posibles según la pregunta</span>
               </div>
             </div>
           </div>
 
           <aside className="page-hero-panel glass">
             <span className="chip">Cómo opera el sistema</span>
-            <h2>No son herramientas sueltas. Son protocolos que se activan cuando la pregunta lo exige.</h2>
+            <h2>La pregunta elige el método, no al revés.</h2>
             <ul className="page-hero-list">
               <li>
-                <b>Se elige por tipo de decisión</b>
-                <span>No por moda metodológica ni por formato de entregable.</span>
+                <b>Empieza por la decisión</b>
+                <span>Elegimos el método según lo que necesitas resolver.</span>
               </li>
               <li>
-                <b>Entran solas o en combinación</b>
-                <span>Cuando una sola lectura no basta para sostener la decisión, se combinan.</span>
+                <b>Puede combinarse</b>
+                <span>Si una lectura necesita más ángulos, unimos métodos.</span>
               </li>
               <li>
-                <b>Siempre terminan en output defendible</b>
-                <span>La metodología solo vale si deja evidencia, narrativa y acción trazable.</span>
+                <b>Termina en acción</b>
+                <span>El método solo importa si deja una recomendación clara.</span>
               </li>
             </ul>
           </aside>
@@ -92,7 +91,7 @@ export default function MethodologiesPage() {
                         <span className="chip" key={output}>{output}</span>
                       ))}
                     </div>
-                    <b className="link-arrow">Estudiar metodología <span>→</span></b>
+                    <b className="link-arrow">Ver cómo se aplica <span>→</span></b>
                   </div>
                 </div>
               </Link>
@@ -107,8 +106,7 @@ export default function MethodologiesPage() {
             <div className="no-method-cta__copy">
               <h2>¿No sabes por dónde empezar?</h2>
               <p>
-                Las metodologías rara vez vienen solas. La mayoría de proyectos combinan dos o tres. El diagnóstico
-                define cuáles, en qué orden y sobre qué corpus.
+                No tienes que escoger método. Cuéntanos la decisión y armamos la lectura que la sostiene.
               </p>
             </div>
             <Button href="/diagnostico" variant="primary">

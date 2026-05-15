@@ -260,14 +260,14 @@ h4 {
 }
 
 .display-lg {
-  font-size: clamp(1.7rem, 2.3vw, 2.7rem);
+  font-size: clamp(1.62rem, 2.05vw, 2.42rem);
   font-weight: 500;
   line-height: 1.08;
   letter-spacing: 0;
 }
 
 .display-md {
-  font-size: clamp(1.3rem, 1.8vw, 1.85rem);
+  font-size: clamp(1.25rem, 1.55vw, 1.72rem);
   font-weight: 500;
   line-height: 1.15;
   letter-spacing: 0;
@@ -426,12 +426,15 @@ h4 {
 }
 
 .site-header {
-  position: sticky;
+  position: fixed;
   top: 12px;
+  left: 50%;
   z-index: 20;
   width: min(100% - 28px, var(--max-content));
-  margin: 12px auto -86px;
+  margin: 0;
   pointer-events: none;
+  transform: translate3d(-50%, 0, 0);
+  will-change: transform;
 }
 
 .site-header__inner {
@@ -822,15 +825,19 @@ h4 {
 .section-heading {
   display: grid;
   gap: 14px;
-  max-width: 720px;
+  max-width: 860px;
   margin-bottom: clamp(22px, 3vw, 38px);
 }
 
 .section-heading--center {
   justify-items: center;
-  max-width: 760px;
+  max-width: 860px;
   margin-inline: auto;
   text-align: center;
+}
+
+.section-heading p {
+  max-width: 760px;
 }
 
 /* Eyebrow always left-anchored regardless of parent alignment */
@@ -903,7 +910,7 @@ h4 {
 }
 
 .hero-experience {
-  padding: 104px 20px clamp(52px, 7svh, 96px);
+  padding: 100px 20px clamp(46px, 6svh, 84px);
 }
 
 .hero-experience__inner {
@@ -918,12 +925,12 @@ h4 {
 .hero-copy {
   display: grid;
   align-content: center;
-  gap: 24px;
-  max-width: 980px;
+  gap: 18px;
+  max-width: 900px;
 }
 
 .hero-copy h1 {
-  max-width: 940px;
+  max-width: 840px;
   text-wrap: balance;
 }
 
@@ -985,8 +992,8 @@ h4 {
 
 .page-hero-panel h2 {
   color: var(--ink);
-  font-size: clamp(1.45rem, 2.3vw, 2.2rem);
-  line-height: 1.08;
+  font-size: clamp(1.22rem, 1.65vw, 1.68rem);
+  line-height: 1.16;
 }
 
 .page-hero-list {
@@ -1038,13 +1045,13 @@ h4 {
 }
 
 .product-preview-section__inner .section-heading {
-  max-width: 1120px;
+  max-width: 860px;
   margin-inline: auto;
   margin-bottom: clamp(30px, 3.6vw, 42px);
 }
 
 .product-preview-section__inner .section-heading p {
-  max-width: 860px;
+  max-width: 760px;
 }
 
 .product-console-showcase {
@@ -1445,11 +1452,11 @@ h4 {
 
 .use-case-selector {
   display: grid;
-  grid-template-columns: minmax(248px, 0.32fr) minmax(0, 1fr);
+  grid-template-columns: minmax(220px, 0.3fr) minmax(0, 1fr);
   align-items: start;
   gap: 16px;
-  padding: 18px;
-  border-radius: var(--radius-xxl);
+  padding: 16px;
+  border-radius: 30px;
 }
 
 .use-case-selector--mobile {
@@ -1464,17 +1471,17 @@ h4 {
 
 .use-case-selector__tabs button {
   display: grid;
-  grid-template-columns: 34px 1fr;
+  grid-template-columns: 32px 1fr;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   width: 100%;
-  min-height: 50px;
-  padding: 8px 14px;
+  min-height: 46px;
+  padding: 8px 12px;
   border: 1px solid rgba(230, 230, 230, 0.76);
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.56);
   color: var(--neutral-10);
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   font-weight: 700;
   line-height: 1.15;
   text-align: left;
@@ -1488,7 +1495,7 @@ h4 {
 
 .use-case-selector__tabs button span {
   color: var(--neutral-09);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1513,10 +1520,10 @@ h4 {
 .use-case-selector__panel {
   display: grid;
   align-content: center;
-  gap: 20px;
-  min-height: 440px;
-  padding: clamp(22px, 4vw, 42px);
-  border-radius: var(--radius-xl);
+  gap: 18px;
+  min-height: 390px;
+  padding: clamp(24px, 3.5vw, 40px);
+  border-radius: 28px;
   animation: tab-panel-in 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -1534,7 +1541,7 @@ h4 {
 .use-case-selector__panel h3 {
   max-width: 760px;
   color: var(--ink);
-  font-size: clamp(1.6rem, 3.5vw, 2.8rem);
+  font-size: clamp(1.55rem, 3vw, 2.55rem);
   line-height: 1.05;
 }
 
@@ -1696,8 +1703,8 @@ h4 {
   display: grid;
   align-content: space-between;
   gap: 14px;
-  min-height: 280px;
-  padding: clamp(18px, 2.2vw, 26px);
+  min-height: 232px;
+  padding: clamp(18px, 2vw, 24px);
   overflow: hidden;
   border-radius: var(--radius-xl);
   text-decoration: none;
@@ -1709,18 +1716,18 @@ h4 {
 }
 
 .methodology-card:hover {
-  transform: translateY(-8px) scale(1.018);
-  box-shadow: 0 36px 88px rgba(43, 43, 43, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.94);
+  transform: translateY(-6px) scale(1.014);
+  box-shadow: 0 30px 76px rgba(43, 43, 43, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.94);
   border-color: rgba(0, 171, 181, 0.28);
   background: rgba(255, 255, 255, 0.78);
 }
 
 .methodology-card__art {
   position: absolute;
-  top: 22px;
-  right: 22px;
-  width: 92px;
-  height: 92px;
+  top: 18px;
+  right: 18px;
+  width: 78px;
+  height: 78px;
   border: 1px solid rgba(230, 230, 230, 0.75);
   border-radius: 50%;
   background:
@@ -1730,7 +1737,7 @@ h4 {
 
 .methodology-card__art-icon {
   position: absolute;
-  inset: 26px;
+  inset: 22px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -1740,64 +1747,69 @@ h4 {
 }
 
 .methodology-card__art-icon svg {
-  width: 24px;
-  height: 24px;
+  width: 21px;
+  height: 21px;
 }
 
 .methodology-card__art span {
   position: absolute;
-  right: -8px;
-  bottom: 8px;
+  right: -7px;
+  bottom: 7px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 34px;
-  min-height: 34px;
-  padding: 0 10px;
+  min-width: 30px;
+  min-height: 30px;
+  padding: 0 8px;
   border: 1px solid rgba(230, 230, 230, 0.76);
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.82);
   color: var(--signal-dark);
-  font-size: 0.86rem;
+  font-size: 0.76rem;
   font-weight: 700;
 }
 
 .methodology-card__art i {
   position: absolute;
-  inset: 14px;
+  inset: 12px;
   border: 1px solid rgba(0, 138, 138, 0.18);
   border-radius: 50%;
 }
 
 .methodology-card__art i:last-child {
-  inset: 28px;
+  inset: 24px;
   border-color: rgba(238, 11, 0, 0.16);
 }
 
 .methodology-card__body {
   display: grid;
-  gap: 14px;
-  max-width: 88%;
+  gap: 12px;
+  max-width: 86%;
 }
 
 .methodology-card h3 {
   max-width: 460px;
   color: var(--ink);
-  font-size: clamp(1.15rem, 1.75vw, 1.6rem);
+  font-size: clamp(1.08rem, 1.55vw, 1.45rem);
   line-height: 1.1;
+}
+
+.methodology-card p {
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 .methodology-card blockquote {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(1.05rem, 1.5vw, 1.22rem);
+  font-size: clamp(0.96rem, 1.22vw, 1.12rem);
   font-weight: 700;
   line-height: 1.3;
 }
 
 .methodology-card b {
   color: var(--ink);
-  font-size: 0.88rem;
+  font-size: 0.8rem;
 }
 
 .methodology-card--1 {
@@ -1806,19 +1818,19 @@ h4 {
 
 .methodology-card--2 {
   grid-column: span 7;
-  min-height: 240px;
+  min-height: 210px;
 }
 
 .methodology-card--3,
 .methodology-card--4,
 .methodology-card--5 {
   grid-column: span 4;
-  min-height: 260px;
+  min-height: 224px;
 }
 
 .methodology-card--6 {
   grid-column: span 12;
-  min-height: 220px;
+  min-height: 204px;
 }
 
 .thesis-panel {
@@ -2419,21 +2431,21 @@ h4 {
 .tier-card {
   display: grid;
   align-content: start;
-  gap: 22px;
-  min-height: 460px;
-  padding: clamp(22px, 3vw, 30px);
+  gap: 20px;
+  min-height: 410px;
+  padding: clamp(22px, 2.8vw, 30px);
   border-radius: var(--radius-xxl);
   transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 300ms ease;
 }
 
 .tier-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 32px 80px rgba(43, 43, 43, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.94);
+  transform: translateY(-4px);
+  box-shadow: 0 24px 60px rgba(43, 43, 43, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.94);
 }
 
 .tier-card h3 {
   color: var(--ink);
-  font-size: clamp(1.15rem, 1.7vw, 1.55rem);
+  font-size: clamp(1.08rem, 1.45vw, 1.4rem);
   line-height: 1.15;
 }
 
@@ -2449,13 +2461,15 @@ h4 {
   display: flex;
   gap: 9px;
   color: var(--neutral-11);
+  font-size: 0.92rem;
   font-weight: 700;
+  line-height: 1.42;
 }
 
 .tier-card li::before {
   width: 7px;
   height: 7px;
-  margin-top: 9px;
+  margin-top: 8px;
   border-radius: var(--radius-pill);
   background: var(--signal-dark);
   content: "";
@@ -2464,6 +2478,14 @@ h4 {
 
 .tier-card p {
   color: var(--neutral-10);
+  font-size: 0.94rem;
+  line-height: 1.52;
+}
+
+.tier-card .button {
+  align-self: end;
+  width: fit-content;
+  margin-top: auto;
 }
 
 .tier-card:nth-child(2) {
@@ -3569,6 +3591,16 @@ h4 {
     line-height: 0.98;
   }
 
+  .display-lg {
+    font-size: clamp(1.85rem, 7.4vw, 2.58rem);
+    line-height: 1.04;
+  }
+
+  .display-md {
+    font-size: clamp(1.32rem, 5.2vw, 1.85rem);
+    line-height: 1.12;
+  }
+
   .page-intro {
     padding: 126px 16px 34px;
   }
@@ -3576,7 +3608,6 @@ h4 {
   .site-header {
     top: 8px;
     width: min(100% - 16px, var(--max-wide));
-    margin-top: 8px;
   }
 
   .site-header__inner {
@@ -3703,7 +3734,7 @@ h4 {
 
   .hero-experience {
     min-height: auto;
-    padding: clamp(176px, 28vh, 300px) 16px 48px;
+    padding: clamp(118px, 18vh, 172px) 16px 44px;
   }
 
   .hero-experience__inner,
@@ -3723,17 +3754,20 @@ h4 {
   }
 
   .hero-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-top: 8px;
+    max-width: 320px;
   }
 
   .hero-actions .button {
+    width: 100%;
     min-width: 0;
-    padding-inline: 15px;
-    font-size: 0.88rem;
-    white-space: nowrap;
+    padding-inline: 18px;
+    font-size: 0.95rem;
+    white-space: normal;
   }
 
   /* Pre-footer closing-panel: stack buttons (one below other, auto width) */
@@ -3778,6 +3812,7 @@ h4 {
     min-width: 0;
     max-width: 100%;
     width: 100%;
+    gap: 14px;
   }
 
   .product-preview-section {
@@ -3850,9 +3885,9 @@ h4 {
   .product-console {
     width: 100%;
     margin-inline: 0;
-    gap: 13px;
-    padding: 18px;
-    border-radius: var(--radius-xl);
+    gap: 12px;
+    padding: 14px;
+    border-radius: 22px;
   }
 
   .chat-export-row {
@@ -3871,8 +3906,8 @@ h4 {
 
   .product-console__top h2 {
     max-width: 100%;
-    font-size: clamp(1.42rem, 7vw, 2rem);
-    line-height: 1.08;
+    font-size: clamp(1.12rem, 5.2vw, 1.38rem);
+    line-height: 1.12;
   }
 
   .console-method-icons {
@@ -3880,13 +3915,13 @@ h4 {
   }
 
   .console-method-icon {
-    width: 34px;
-    height: 34px;
+    width: 30px;
+    height: 30px;
   }
 
   .console-method-icon svg {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
   }
 
   .console-methods {
@@ -3906,10 +3941,10 @@ h4 {
 
   .prompt-bar {
     min-height: auto;
-    padding: 16px;
-    font-size: 0.9rem;
+    padding: 12px 13px;
+    font-size: 0.84rem;
     line-height: 1.32;
-    border-radius: var(--radius-xl);
+    border-radius: 18px;
   }
 
   .prompt-bar svg {
@@ -3923,8 +3958,8 @@ h4 {
   }
 
   .narrative-card h3 {
-    font-size: clamp(1.58rem, 7.2vw, 2.28rem);
-    line-height: 1.08;
+    font-size: clamp(1.24rem, 5.4vw, 1.52rem);
+    line-height: 1.12;
   }
 
   .narrative-card p {
@@ -3932,7 +3967,8 @@ h4 {
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 4;
-    font-size: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.48;
   }
 
   .metric-row {
@@ -3941,11 +3977,12 @@ h4 {
   }
 
   .metric-row div {
-    padding: 12px;
+    padding: 10px;
+    border-radius: 16px;
   }
 
   .metric-row strong {
-    font-size: clamp(1.8rem, 10vw, 2.65rem);
+    font-size: clamp(1.45rem, 7vw, 1.85rem);
   }
 
   .source-drawer {
@@ -3992,7 +4029,9 @@ h4 {
     width: 100%;
     min-height: auto;
     margin-bottom: 0;
-    padding: 22px;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 24px;
     text-align: left;
     scroll-snap-align: center;
   }
@@ -4002,17 +4041,17 @@ h4 {
   }
 
   .use-case-card h3 {
-    font-size: clamp(1.72rem, 8.2vw, 2.45rem);
-    line-height: 1.06;
+    font-size: clamp(1.26rem, 5.4vw, 1.55rem);
+    line-height: 1.12;
   }
 
   .use-case-card p {
     display: -webkit-box;
     overflow: hidden;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 5;
-    font-size: 1rem;
-    line-height: 1.52;
+    -webkit-line-clamp: 4;
+    font-size: 0.92rem;
+    line-height: 1.48;
   }
 
   .use-case-card .tag-list {
@@ -4024,7 +4063,7 @@ h4 {
   }
 
   .use-case-card .mini-output span {
-    font-size: 0.98rem;
+    font-size: 0.9rem;
     line-height: 1.42;
   }
 
@@ -4041,11 +4080,41 @@ h4 {
   .methodology-card--6 {
     grid-column: auto;
     min-height: auto;
+    padding: 18px;
+    border-radius: 24px;
   }
 
   .methodology-card__body {
-    max-width: 100%;
-    padding-top: 72px;
+    max-width: calc(100% - 96px);
+    padding-top: 0;
+  }
+
+  .methodology-card__art {
+    top: 16px;
+    right: 16px;
+    width: 72px;
+    height: 72px;
+  }
+
+  .methodology-card__art-icon {
+    inset: 21px;
+  }
+
+  .methodology-card h3 {
+    font-size: clamp(1.12rem, 5vw, 1.35rem);
+  }
+
+  .methodology-card p,
+  .methodology-card blockquote {
+    font-size: 0.9rem;
+  }
+
+  .methodology-card .tag-list {
+    gap: 6px;
+  }
+
+  .methodology-card .chip {
+    font-size: 0.7rem;
   }
 
   .methodology-mark {
@@ -4945,7 +5014,7 @@ h4 {
 
 .arch-counter-item strong {
   color: var(--ink);
-  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-size: clamp(1.24rem, 2.4vw, 1.72rem);
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -6216,9 +6285,9 @@ h4 {
 .methodology-catalog-card h3 {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(1.32rem, 2.1vw, 1.78rem);
-  line-height: 1.06;
-  letter-spacing: -0.01em;
+  font-size: clamp(1.18rem, 1.7vw, 1.42rem);
+  line-height: 1.12;
+  letter-spacing: 0;
 }
 
 .methodology-catalog-card__body > p {
@@ -6391,9 +6460,9 @@ h4 {
 .method-section-header h2 {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(1.7rem, 3.4vw, 2.65rem);
-  line-height: 1.04;
-  letter-spacing: -0.01em;
+  font-size: clamp(1.45rem, 2.4vw, 2.15rem);
+  line-height: 1.1;
+  letter-spacing: 0;
 }
 
 .method-section-header p {
@@ -6407,7 +6476,7 @@ h4 {
 .method-problem {
   display: grid;
   gap: 14px;
-  padding: clamp(28px, 4vw, 48px);
+  padding: clamp(22px, 3vw, 34px);
 }
 
 .method-problem .eyebrow {
@@ -6417,10 +6486,10 @@ h4 {
 .method-problem h2 {
   margin: 0;
   color: var(--signal-dark);
-  font-size: clamp(1.7rem, 3.4vw, 2.55rem);
-  line-height: 1.06;
-  letter-spacing: -0.01em;
-  max-width: 22ch;
+  font-size: clamp(1.28rem, 2.1vw, 1.78rem);
+  line-height: 1.14;
+  letter-spacing: 0;
+  max-width: 32ch;
 }
 
 .method-problem p {
@@ -6451,9 +6520,9 @@ h4 {
 .method-protocol-intro h2 {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(1.65rem, 3.2vw, 2.5rem);
-  line-height: 1.04;
-  letter-spacing: -0.01em;
+  font-size: clamp(1.32rem, 2.1vw, 1.82rem);
+  line-height: 1.14;
+  letter-spacing: 0;
 }
 
 .method-protocol-intro p {
@@ -6616,6 +6685,20 @@ h4 {
 }
 
 @media (max-width: 760px) {
+  .method-section-header {
+    gap: 9px;
+    margin-bottom: 22px;
+  }
+
+  .method-section-header h2 {
+    font-size: clamp(1.3rem, 5.6vw, 1.75rem);
+    line-height: 1.12;
+  }
+
+  .method-section-header p {
+    font-size: 0.98rem;
+  }
+
   .deliverables-tier--secondary {
     grid-template-columns: 1fr;
     gap: 14px;
@@ -6720,7 +6803,7 @@ h4 {
 
 .services-pricing-name {
   margin: 0;
-  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  font-size: clamp(1.24rem, 1.7vw, 1.54rem);
   font-weight: 800;
   line-height: 1;
   color: var(--ink);
@@ -7370,9 +7453,9 @@ h4 {
 .case-why-block__head h2 {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(1.7rem, 3.2vw, 2.5rem);
-  line-height: 1.04;
-  letter-spacing: -0.012em;
+  font-size: clamp(1.32rem, 2.1vw, 1.82rem);
+  line-height: 1.14;
+  letter-spacing: 0;
   text-wrap: balance;
 }
 
@@ -7446,9 +7529,9 @@ h4 {
 .case-applied__head h2 {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(1.6rem, 3vw, 2.3rem);
-  line-height: 1.04;
-  letter-spacing: -0.012em;
+  font-size: clamp(1.28rem, 2vw, 1.7rem);
+  line-height: 1.14;
+  letter-spacing: 0;
 }
 
 .case-applied__industry {
@@ -7727,10 +7810,10 @@ h4 {
 .method-case-row__title {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(1.32rem, 2.4vw, 1.78rem);
+  font-size: clamp(1.12rem, 1.7vw, 1.34rem);
   font-weight: 700;
-  line-height: 1.08;
-  letter-spacing: -0.01em;
+  line-height: 1.16;
+  letter-spacing: 0;
   text-wrap: balance;
 }
 

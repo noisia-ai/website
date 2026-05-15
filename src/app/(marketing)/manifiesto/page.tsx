@@ -12,7 +12,8 @@ export default function ManifestoPage() {
     <>
       <PageIntro
         eyebrow="MANIFIESTO"
-        title="Por qué construimos una agencia de inteligencia social en una industria saturada de plataformas."
+        title="Más datos no son más claridad."
+        lead="Construimos Noisia para ayudar a equipos que ya escuchan mucho, pero todavía necesitan decidir mejor."
       />
       <section className="section">
         <article className="manifesto-body">
@@ -23,7 +24,7 @@ export default function ManifestoPage() {
             </section>
           ))}
           <div className="manifesto-cta glass">
-            <h2>Si esto te resuena, probablemente tienes una pregunta que las herramientas no están respondiendo.</h2>
+            <h2>Si esto te resuena, probablemente tienes una decisión que tus reportes actuales no están resolviendo.</h2>
             <Button href="/diagnostico">Iniciemos un diagnóstico</Button>
           </div>
         </article>

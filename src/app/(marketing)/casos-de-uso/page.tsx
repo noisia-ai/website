@@ -9,49 +9,49 @@ export const metadata = {
 
 const heroCases = [
   {
-    timing: "2-4 sem",
+    timing: "Respuesta",
     title: "Crisis",
-    summary: "Decodificar qué sostiene la crisis antes de responder por volumen."
+    summary: "Entender qué alimenta la conversación antes de amplificarla."
   },
   {
-    timing: "4-8 sem",
+    timing: "Defensa",
     title: "Defensa competitiva",
-    summary: "Entender por qué migran al competidor y dónde se quiebra la lealtad."
+    summary: "Ver qué promesa del competidor se volvió más creíble."
   },
   {
-    timing: "6-10 sem",
+    timing: "Entrada",
     title: "Nuevo mercado",
-    summary: "Reconstruir el código local antes de entrar con una hipótesis importada."
+    summary: "Encontrar el permiso local antes de salir a comunicar."
   }
 ];
 
 const decisionArchetypes = [
   {
     label: "Lanzar con permiso",
-    title: "Cuando el riesgo no es salir tarde, sino salir con un territorio que la categoría no te concede.",
-    text: "Aquí importan los códigos culturales, la tensión activa y el ángulo que la conversación ya acepta como legítimo. No es creatividad primero. Es permiso primero.",
-    methods: "Cultural Codes + Triggers & Barriers",
+    title: "Cuando necesitas saber qué historia sí te cree la categoría.",
+    text: "Leemos qué frustraciones, deseos y permisos ya existen para elegir un ángulo que no se sienta prestado.",
+    methods: "Código cultural + motivadores",
     route: "/casos-de-uso/lanzamiento-de-campana"
   },
   {
     label: "Defender o reparar",
-    title: "Cuando la fuga ya empezó y necesitas entender qué rompe la confianza antes de reaccionar por volumen.",
-    text: "Estos casos suelen exigir leer fricción, migración o crisis estructural. La pregunta correcta no es quién gritó más, sino qué narrativa se volvió creíble y por qué.",
-    methods: "Journey Friction + Influence Architecture",
+    title: "Cuando la fuga ya empezó y necesitas saber qué rompió la confianza.",
+    text: "No buscamos quién hizo más ruido. Buscamos qué narrativa se volvió creíble y qué respuesta puede bajarle fuerza.",
+    methods: "Fricción + voces clave",
     route: "/casos-de-uso/defensa-competitiva"
   },
   {
     label: "Mover la categoría",
-    title: "Cuando necesitas entrar a un mercado, reposicionar la marca o detectar una tendencia antes de que se vuelva obvia.",
-    text: "Aquí la conversación no se usa para medir awareness. Se usa para reconstruir el sistema simbólico local y detectar qué se está moviendo antes de que aparezca en dashboards.",
-    methods: "Cultural Codes + Influence Architecture",
+    title: "Cuando quieres entrar, reposicionar o leer una señal antes de que sea obvia.",
+    text: "La conversación muestra qué lenguaje está cambiando, quién lo valida y qué espacio puede ocupar tu marca.",
+    methods: "Códigos + influencia",
     route: "/casos-de-uso/entrada-a-nuevo-mercado"
   },
   {
     label: "Encontrar oportunidad",
-    title: "Cuando el problema no es de comunicación, sino de producto, valor o jobs que siguen mal resueltos.",
-    text: "Estos casos sirven para separar deseo declarado de oportunidad real. No buscan ideas sueltas: buscan qué decisión de portafolio, roadmap o propuesta de valor sí resiste evidencia.",
-    methods: "Triggers & Barriers + Value Perception Matrix",
+    title: "Cuando la oportunidad está en producto, valor o experiencia.",
+    text: "Separamos deseos bonitos de necesidades mal resueltas para decidir qué mover en roadmap, portafolio o propuesta de valor.",
+    methods: "Motivadores + valor percibido",
     route: "/casos-de-uso/desarrollo-de-producto"
   }
 ];
@@ -63,11 +63,10 @@ export default function UseCasesPage() {
         <div className="hero-experience__inner page-hero__inner">
           <div className="hero-copy">
             <span className="eyebrow">CASOS DE USO</span>
-            <h1 className="display-lg">No entramos por industria. Entramos por la decisión que tienes enfrente.</h1>
+            <h1 className="display-lg">Encuentra la pregunta que más se parece a la tuya.</h1>
             <p className="body-lg">
-              Cada caso arranca con una pregunta de negocio real. Lo que cambia no es solo el tema: cambian las
-              fuentes, la combinación metodológica, la profundidad del corpus y la forma del output que termina
-              defendiendo la decisión.
+              Noisia no se organiza por industrias rígidas. Se organiza por decisiones: lanzar, defender, entrar,
+              reposicionar, optimizar o detectar una señal antes de que sea tarde.
             </p>
             <div className="hero-actions">
               <Button href="/diagnostico" variant="primary">
@@ -80,22 +79,22 @@ export default function UseCasesPage() {
             <div className="hero-proof">
               <div className="glass">
                 <strong>10</strong>
-                <span>preguntas ya resueltas con protocolo propio</span>
+                <span>preguntas de negocio estructuradas</span>
               </div>
               <div className="glass">
                 <strong>2-10</strong>
-                <span>semanas según la urgencia y el riesgo</span>
+                <span>niveles de profundidad posible</span>
               </div>
               <div className="glass">
                 <strong>6</strong>
-                <span>metodologías combinables según el tipo de decisión</span>
+                <span>métodos combinables por pregunta</span>
               </div>
             </div>
           </div>
 
           <aside className="page-hero-panel glass">
             <span className="chip">Preguntas ya calibradas</span>
-            <h2>Esto no es un catálogo. Es un mapa de decisiones que ya hemos estructurado.</h2>
+            <h2>No tienes que saber la metodología. Solo reconocer la decisión.</h2>
             <ul className="page-hero-list">
               {heroCases.map((item) => (
                 <li key={item.title}>
@@ -113,10 +112,10 @@ export default function UseCasesPage() {
         <div className="section__inner">
           <div className="section-heading">
             <span className="eyebrow">PRIMERO, UBICA EL TIPO DE DECISIÓN</span>
-            <h2 className="display-md">Antes de filtrar por caso, ubica qué clase de problema tienes enfrente.</h2>
+            <h2 className="display-md">Empieza por el tipo de movimiento que necesitas hacer.</h2>
             <p className="body-lg">
-              Los casos no cambian solo por industria. Cambian por la estructura de la decisión: lanzar, defender,
-              reinscribir la categoría o encontrar una oportunidad todavía mal resuelta.
+              Algunas decisiones piden permiso cultural. Otras piden reparar confianza, encontrar oportunidad o leer
+              una señal que todavía no aparece en los reportes de siempre.
             </p>
           </div>
 
@@ -144,8 +143,7 @@ export default function UseCasesPage() {
             <span className="eyebrow">DESPUÉS, COMPARA LOS CASOS</span>
             <h2 className="display-md">Encuentra la pregunta que más se parece a la que estás enfrentando.</h2>
             <p className="body-lg">
-              Ahora sí: filtra por tipo de decisión y por velocidad esperada. Cada tarjeta resume qué había que
-              entender, qué metodología entró y qué forma tomó la respuesta.
+              Cada tarjeta resume la pregunta, qué había que entender y qué tipo de salida ayuda a tomar la decisión.
             </p>
           </div>
           <div id="casos-grid">

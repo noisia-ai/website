@@ -45,10 +45,17 @@ const desktopDrift = [
 ];
 
 const mobilePositions = [
-  { x: "-29vw", y: "-30vh", r: "-7deg" },
-  { x: "28vw", y: "-24vh", r: "7deg" },
-  { x: "-30vw", y: "-5vh", r: "-6deg" },
-  { x: "30vw", y: "1vh", r: "6deg" }
+  { x: "-22vw", y: "-28vh", r: "-6deg" },
+  { x: "22vw", y: "-24vh", r: "6deg" },
+  { x: "-23vw", y: "-15vh", r: "-5deg" },
+  { x: "23vw", y: "-11vh", r: "5deg" }
+];
+
+const mobileDrift = [
+  { x: -20, y: -92, r: -4 },
+  { x: 22, y: -88, r: 4 },
+  { x: -16, y: -78, r: -3 },
+  { x: 18, y: -74, r: 3 }
 ];
 
 const channelStyles = {
@@ -121,13 +128,19 @@ export function HeroScrollytelling() {
 
       const mm = gsap.matchMedia();
 
-      // Universal: hero behaves like the rest of the site.
-      // - Intro noise cards: slow theatrical idle reveal on page load, then scroll-coupled drift outward.
-      // - Acts 02, 03, 04: one-shot onEnter timelines. Reveal forward, stay revealed (like data-reveal sections).
       mm.add("all", () => {
-        // Initial states
+        const isMobileIntro = window.matchMedia("(max-width: 760px)").matches;
+        const activeNoiseSelector = isMobileIntro
+          ? ".scrollyNoiseCard[data-mobile-noise='true']"
+          : ".scrollyNoiseCard[data-intro-noise='true']";
+        const inactiveNoiseSelector = isMobileIntro
+          ? ".scrollyNoiseCard:not([data-mobile-noise='true'])"
+          : ".scrollyNoiseCard:not([data-intro-noise='true'])";
+        const drift = isMobileIntro ? mobileDrift : desktopDrift;
+
         gsap.set(".scrollyScene", { clearProps: "opacity,y,scale,filter,position,transform" });
-        gsap.set(".scrollyNoiseCard", { autoAlpha: 0, scale: 0.94, filter: "blur(5px)" });
+        gsap.set(inactiveNoiseSelector, { autoAlpha: 0 });
+        gsap.set(activeNoiseSelector, { autoAlpha: 0, scale: isMobileIntro ? 0.98 : 0.94, filter: "blur(5px)" });
         gsap.set(".scrollyScene:not(.scrollyIntro)", { opacity: 0, y: 32, filter: "blur(4px)" });
         gsap.set(".scrollyFill", { scaleX: 0, transformOrigin: "left center" });
         gsap.set(".scrollyPipelineRailFill", { scaleY: 0, transformOrigin: "top center" });
@@ -138,43 +151,37 @@ export function HeroScrollytelling() {
         gsap.set(".scrollySignalChip", { opacity: 0, y: 22, scale: 0.94 });
         gsap.set(".scrollyPipelineOutcome", { opacity: 0, y: 20 });
 
-        // 1) Theatrical idle reveal of noise cards — one by one from center outward.
-        // Total reveal time ≈ 1.0s delay + (12 cards × 0.5s stagger) ≈ 6.5s
-        const idleReveal = gsap.to(".scrollyNoiseCard", {
+        const idleReveal = gsap.to(activeNoiseSelector, {
           autoAlpha: 1,
           scale: 1,
           filter: "blur(0px)",
-          duration: 0.85,
-          delay: 1.0,
-          stagger: { each: 0.5, from: "center" },
+          duration: isMobileIntro ? 0.58 : 0.78,
+          delay: isMobileIntro ? 0.46 : 0.76,
+          stagger: { each: isMobileIntro ? 0.14 : 0.18, from: isMobileIntro ? "start" : "center" },
           ease: "power2.out"
         });
 
         const triggers: ScrollTrigger[] = [];
 
-        // 2) Scroll-coupled drift — cards fly OUTWARD from origin on scroll down,
-        //    return INWARD on scroll up. Bidirectional scrub. Amplified ~4x for visibility.
         triggers.push(
           ScrollTrigger.create({
             trigger: ".scrollyIntro",
             start: "top top",
-            end: "bottom 30%",
+            end: isMobileIntro ? "bottom 55%" : "bottom 30%",
             scrub: 1.0,
-            animation: gsap.to(".scrollyNoiseCard", {
-              x: (index) => desktopDrift[index % desktopDrift.length].x * 4.5,
-              y: (index) => desktopDrift[index % desktopDrift.length].y * 4.5,
-              rotate: (index) => desktopDrift[index % desktopDrift.length].r * 2,
+            animation: gsap.to(activeNoiseSelector, {
+              x: (index) => drift[index % drift.length].x * (isMobileIntro ? 1 : 4.5),
+              y: (index) => drift[index % drift.length].y * (isMobileIntro ? 1 : 4.5),
+              rotate: (index) => drift[index % drift.length].r * (isMobileIntro ? 1 : 2),
               autoAlpha: 0,
-              filter: "blur(8px)",
-              scale: 0.82,
-              stagger: { each: 0.012, from: "center" },
+              filter: isMobileIntro ? "blur(5px)" : "blur(8px)",
+              scale: isMobileIntro ? 0.92 : 0.82,
+              stagger: { each: isMobileIntro ? 0.018 : 0.012, from: "center" },
               ease: "none"
             })
           })
         );
 
-        // 3) Acts 02, 03, 04: one-shot onEnter reveals. Plays forward at fixed pace,
-        //    no scrub, no reverse. Mirrors how `[data-reveal]` sections enter.
         const buildSceneTimeline = (sceneSel: string) => {
           const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
           tl.to(sceneSel, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.65 });
@@ -264,6 +271,8 @@ export function HeroScrollytelling() {
               return (
                 <article
                   className={`${styles.noiseCard} scrollyNoiseCard glass`}
+                  data-intro-noise={index < 8 ? "true" : "false"}
+                  data-mobile-noise={index < 4 ? "true" : "false"}
                   key={`${voice.platform}-${voice.quote}`}
                   style={
                     {
@@ -298,12 +307,12 @@ export function HeroScrollytelling() {
           </div>
 
           <div className={styles.introContent}>
-            <span className={`${styles.eyebrow} scrollyIntroCopy`}>ACTO 01 · INTELIGENCIA SOCIAL APLICADA</span>
+            <span className={`${styles.eyebrow} scrollyIntroCopy`}>Inteligencia social para decidir</span>
             <h1 className={`display-xl ${styles.heroTitle} scrollyIntroCopy`}>
-              Convertimos ruido social en decisiones que defiendes con evidencia.
+              Decide qué hacer con lo que tu audiencia ya está diciendo.
             </h1>
             <p className={`body-lg ${styles.heroLead} scrollyIntroCopy`}>
-              Diseñamos un protocolo a la medida de tu pregunta. Construimos el corpus, codificamos con seis metodologías propietarias y entregamos trazabilidad de cada hallazgo hasta la fuente. Foundation, Intelligence o Strategy — el tier lo define la decisión.
+              Noisia convierte conversación pública en lectura estratégica: qué mueve la decisión, qué la frena y qué acción conviene defender con evidencia.
             </p>
             <div className={`${styles.heroActions} scrollyIntroActions`}>
               <Button href="/diagnostico" icon={<ArrowRight size={17} strokeWidth={1.8} />}>
@@ -319,10 +328,10 @@ export function HeroScrollytelling() {
 
         <div className={`${styles.scene} ${styles.pipelineScene} scrollyScene scrollyPipeline`}>
           <div className={styles.storyHeading}>
-            <span className={styles.eyebrow}>ACTO 02 · EL SISTEMA</span>
-            <h2 className="display-lg">Tu equipo no necesita más datos. Necesita un sistema.</h2>
+            <span className={styles.eyebrow}>De ruido a respuesta</span>
+            <h2 className="display-lg">Ordenamos conversaciones dispersas hasta que aparece la decisión.</h2>
             <p className="body-lg">
-              Cada señal entra con contexto, se compacta en un corpus comparable y avanza por seis pasos que dejan rastro.
+              Reunimos redes, reviews, foros y búsquedas para mostrar qué importa, por qué importa y qué mover primero.
             </p>
           </div>
 
@@ -390,8 +399,8 @@ export function HeroScrollytelling() {
 
               <div className={`${styles.pipelineOutcome} scrollyPipelineOutcome`}>
                 <span>Decisión lista</span>
-                <strong>Insight trazable</strong>
-                <p>La conversación deja de ser volumen y se vuelve una base defendible para aplicar método.</p>
+                <strong>Lectura defendible</strong>
+                <p>La conversación deja de ser volumen y se vuelve una respuesta que negocio puede usar.</p>
               </div>
             </div>
           </div>
@@ -399,15 +408,12 @@ export function HeroScrollytelling() {
 
         <div className={`${styles.scene} ${styles.methodScene} scrollyScene scrollyMethod`}>
           <div className={styles.methodologyHead}>
-            <span className={styles.eyebrow}>ACTO 03 · LA METODOLOGÍA EN ACCIÓN</span>
-            <span className={styles.methodologyKicker}>
-              Triggers &amp; Barriers · Banca digital LATAM
-            </span>
+            <span className={styles.eyebrow}>Método aplicado</span>
             <h2 className={`display-lg ${styles.methodologyTitle}`}>
-              Lo que mueve la decisión y lo que la frena no es lo mismo en cada mercado.
+              No todas las señales pesan igual.
             </h2>
             <p className={`body-lg ${styles.methodologyLead}`}>
-              Aplicamos Triggers &amp; Barriers sobre un caso ilustrativo. Cada cifra apunta a evidencia codificable; cada lectura territorial revela dónde la fricción se organiza primero — y por tanto dónde conviene mover el mensaje, el producto o el precio.
+              Separamos deseo, fricción, valor y confianza para encontrar el movimiento que sí vale la pena presentar.
             </p>
             <div className={styles.methodologyChips}>
               <MethodologyChip identifier="Triggers & Barriers" />
@@ -435,8 +441,8 @@ export function HeroScrollytelling() {
 
             <div className={styles.statePanel}>
               <div className={styles.stateHeader}>
-                <strong>Lectura territorial</strong>
-                <span>Dónde la fricción se organiza más rápido</span>
+                <strong>Lectura de decisión</strong>
+                <span>Qué parte de la conversación conviene mover primero</span>
               </div>
               <div className={styles.stateList}>
                 {heroStateRead.map((item) => (
@@ -457,10 +463,10 @@ export function HeroScrollytelling() {
 
         <div className={`${styles.scene} ${styles.decisionScene} scrollyScene scrollyDecision`}>
           <div className={styles.decisionTop}>
-            <span className={styles.eyebrow}>ACTO 04 · LA DECISIÓN</span>
-            <h2 className="display-lg">Vemos lo que tu marca dice. Lo organizamos. Lo convertimos en decisión.</h2>
+            <span className={styles.eyebrow}>Decisión defendible</span>
+            <h2 className="display-lg">Tres movimientos claros, no treinta slides difíciles de vender.</h2>
             <p className={`body-lg ${styles.decisionCopy}`}>
-              Lo que empieza como ruido termina como tres movimientos que un comité puede ejecutar con evidencia.
+              Cada lectura termina en acciones priorizadas, evidencia detrás y lenguaje listo para comité.
             </p>
           </div>
 
