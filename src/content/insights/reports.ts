@@ -96,6 +96,7 @@ export type Methodology = {
 
 export type InsightReport = {
   slug: string;
+  aliases?: string[];
   indexLabel: string;
   ctaHref: string;
   meta: {
@@ -118,7 +119,8 @@ const futureHumanReport = rawFutureHumanReport as unknown as Omit<InsightReport,
 
 export const mexicoForesight2026Report: InsightReport = {
   ...foresightReport,
-  slug: "mexico-esta-cansado-de-performar",
+  slug: "cultural-foresight-mexico-2026",
+  aliases: ["mexico-esta-cansado-de-performar"],
   indexLabel: "Cultural Foresight México 2026",
   ctaHref: "/diagnostico"
 };
@@ -133,5 +135,5 @@ export const futureIsHumanReport: InsightReport = {
 export const insightsReports = [futureIsHumanReport, mexicoForesight2026Report];
 
 export function getInsightReport(slug: string) {
-  return insightsReports.find((reportItem) => reportItem.slug === slug);
+  return insightsReports.find((reportItem) => reportItem.slug === slug || reportItem.aliases?.includes(slug));
 }

@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { InsightReportPage } from "@/components/insights/InsightsPages";
 import { getInsightReport, insightsReports } from "@/content/insights/reports";
 
@@ -7,7 +7,7 @@ type InsightDetailPageProps = {
 };
 
 export function generateStaticParams() {
-  return insightsReports.map((report) => ({ slug: report.slug }));
+  return insightsReports.flatMap((report) => [report.slug, ...(report.aliases ?? [])].map((slug) => ({ slug })));
 }
 
 export async function generateMetadata({ params }: InsightDetailPageProps) {
@@ -26,6 +26,10 @@ export default async function InsightDetailPage({ params }: InsightDetailPagePro
 
   if (!report) {
     notFound();
+  }
+
+  if (slug !== report.slug) {
+    redirect(`/insights/${report.slug}`);
   }
 
   return <InsightReportPage report={report} />;

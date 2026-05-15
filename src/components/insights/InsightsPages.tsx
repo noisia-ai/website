@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowRight, Info } from "lucide-react";
@@ -263,28 +264,6 @@ function displayCopy(input: string) {
     .replaceAll("performance comunicacional", "presión por sonar perfecto");
 }
 
-function heroMetaLabel(label: string) {
-  const normalized = label.toLowerCase();
-
-  if (normalized.includes("líneas escaneadas")) {
-    return "menciones totales";
-  }
-
-  if (normalized.includes("menciones procesadas")) {
-    return "menciones totales";
-  }
-
-  if (normalized.includes("contexto de marca")) {
-    return "menciones con marca";
-  }
-
-  if (normalized.includes("culturales detectadas")) {
-    return "detectadas";
-  }
-
-  return normalized.includes("menciones") ? "menciones" : label;
-}
-
 function platformName(input: string) {
   const map: Record<string, string> = {
     tiktok: "TikTok",
@@ -320,16 +299,30 @@ function makeSectionLinks(report: InsightReport) {
   ];
 }
 
-function heroMetaStatOrder(report: InsightReport) {
-  const preferred = isFutureHumanReport(report)
-    ? ["corpus_scope", "period", "sources", "signals", "evidence"]
-    : ["period", "sources", "signals", "evidence"];
-
-  return preferred.map((key) => report.hero_numbers[key]).filter(Boolean);
-}
-
 function methodologyChipItems(report: InsightReport) {
   return isFutureHumanReport(report) ? noisiaMethodologies : report.methodology.lenses_applied;
+}
+
+function heroVisualAsset(report: InsightReport) {
+  if (isFutureHumanReport(report)) {
+    return {
+      src: "/assets/insights/future-is-human-hero-v2.png",
+      alt: `Visual editorial para ${report.meta.study}`
+    };
+  }
+
+  return {
+    src: "/assets/insights/cultural-foresight-hero-v2.png",
+    alt: `Visual editorial para ${report.meta.study}`
+  };
+}
+
+function heroSummaryChips() {
+  return [
+    "17 meses de escucha",
+    "7 plataformas",
+    "+15M menciones"
+  ];
 }
 
 function detectBrand(text: string) {
@@ -585,32 +578,35 @@ function ChartFigure({
   );
 }
 
-function KeyInsightsSection({ report, copy }: { report: InsightReport; copy: ReturnType<typeof getReportCopy> }) {
+function UmbrellaSection({
+  report,
+  printTotal,
+  page
+}: {
+  report: InsightReport;
+  printTotal: string;
+  page: string;
+}) {
   return (
-    <section className={styles.keyInsightsSection} aria-label="Key insights">
-      <div className={styles.keyInsightsIntro}>
-        <h2>{copy.keyInsightsTitle}</h2>
-        <p>{copy.keyInsightsLead}</p>
-        <a className={styles.keyInsightsButton} href="#radar">
-          Ir a los insights <ArrowRight size={16} strokeWidth={1.8} />
-        </a>
+    <aside className={`${styles.umbrellaPanel} ${styles.printDeckPage}`}>
+      <PrintChrome page={page} label="hipótesis paraguas" total={printTotal} />
+      <span className="eyebrow">Hipótesis paraguas</span>
+      <h2>{displayCopy(report.narrative_umbrella.title)}</h2>
+      <p>{displayCopy(report.narrative_umbrella.description)}</p>
+      <div className={styles.umbrellaGrid}>
+        {report.narrative_umbrella.umbrella_logic.map((tier) => (
+          <article key={tier.tier}>
+            <h3>{tier.tier}</h3>
+            <p>{displayCopy(tier.theme)}</p>
+            <div>
+              {tier.signals.map((id) => (
+                <SignalChip report={report} id={id} key={id} />
+              ))}
+            </div>
+          </article>
+        ))}
       </div>
-      <ol className={styles.keyInsightsList}>
-        {report.signals.map((signal) => {
-          const headline = signal.cultural_headlines[0];
-
-          return (
-            <li key={signal.id} style={{ ["--signal-color" as string]: signal.color }}>
-              <a href={`#signal-${signal.order}`}>
-                <span>{padOrder(signal.order)}</span>
-                <strong>{headline ? `${headline.value} ${headline.label}` : signal.commercial_name}</strong>
-                <p>{headline ? headlineDetailCopy(headline.detail) : signal.one_liner}</p>
-              </a>
-            </li>
-          );
-        })}
-      </ol>
-    </section>
+    </aside>
   );
 }
 
@@ -978,7 +974,6 @@ export function InsightsIndexPage() {
 
 export function InsightReportPage({ report }: { report: InsightReport }) {
   const heroNumbers = heroNumberOrder.map((key) => report.hero_numbers[key]).filter(Boolean);
-  const heroMetaStats = heroMetaStatOrder(report);
   const methodLimitations = report.methodology.limitations.map((item) =>
     item.includes("Mundial") ? "Los eventos de calendario masivo se trataron como contexto externo; no se analizaron como señal." : item
   );
@@ -988,6 +983,8 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
   const hasBrandSeeds = Boolean(report.methodology.corpus.brand_seeds?.length);
   const printPagesTotal = String(report.signals.length + 10);
   const printPage = (page: number) => padOrder(page);
+  const heroVisual = heroVisualAsset(report);
+  const heroChips = heroSummaryChips();
 
   return (
     <div className="printScope">
@@ -998,23 +995,31 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
             <span className="eyebrow">NOISIA · INTELIGENCIA SOCIAL</span>
             <h1>{report.meta.study}</h1>
             <p>{report.meta.subtitle}</p>
+          </div>
+
+          <aside className={styles.heroVisual} aria-label="Imagen editorial del reporte">
+            <Image
+              src={heroVisual.src}
+              alt={heroVisual.alt}
+              fill
+              priority
+              sizes="(max-width: 980px) 100vw, 34vw"
+              className={styles.heroVisualImage}
+            />
+          </aside>
+
+          <div className={styles.heroFooter}>
             <div className={styles.heroMeta}>
-              <span>Mayo 2026</span>
-              {heroMetaStats.map((item) => (
-                <span className={styles.heroMetaStat} key={item.label}>
-                  <strong>{item.value}</strong>
-                  {heroMetaLabel(item.label)}
+              {heroChips.map((item) => (
+                <span className={styles.heroMetaChip} key={item}>
+                  {item}
                 </span>
               ))}
+            </div>
+            <div className={styles.heroCtaRow}>
               <DownloadPrintButton />
             </div>
           </div>
-
-          <aside className={styles.heroVisual} aria-label="Visual editorial del reporte">
-            <span>{copy.heroVisualKicker}</span>
-            <strong>{copy.heroVisualTitle}</strong>
-            <p>{copy.heroVisualBody}</p>
-          </aside>
         </div>
       </section>
 
@@ -1039,10 +1044,10 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
           </div>
         </section>
 
-        <KeyInsightsSection report={report} copy={copy} />
+        <UmbrellaSection report={report} printTotal={printPagesTotal} page="03" />
 
         <section className={styles.contractSection} id="looked-for">
-          <PrintChrome page="03" label="contrato de lectura" total={printPagesTotal} />
+          <PrintChrome page="04" label="contrato de lectura" total={printPagesTotal} />
           <SectionIntro
             eyebrow={copy.contractEyebrow}
             title={copy.contractTitle}
@@ -1084,7 +1089,7 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
 
         <section className={styles.radarSection} id="radar">
           <div className={styles.printDeckPage}>
-            <PrintChrome page="04" label="radar cultural" total={printPagesTotal} />
+            <PrintChrome page="05" label="radar cultural" total={printPagesTotal} />
             <SectionIntro
               eyebrow={copy.radarEyebrow}
               title={copy.radarTitle}
@@ -1120,7 +1125,7 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
           </div>
 
           <div className={`${styles.chartGrid} ${styles.printDeckPage}`}>
-            <PrintChrome page="05" label="lectura visual" total={printPagesTotal} />
+            <PrintChrome page="06" label="lectura visual" total={printPagesTotal} />
             <ChartFigure
               label={copy.chartMixLabel}
               title={copy.maturityChartTitle}
@@ -1140,7 +1145,7 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
           </div>
 
           <div className={`${styles.chartGrid} ${styles.chartGridSingle} ${styles.printDeckPage}`}>
-            <PrintChrome page="06" label="evidencia comparada" total={printPagesTotal} />
+            <PrintChrome page="07" label="evidencia comparada" total={printPagesTotal} />
             <ChartFigure
               label={copy.scatterLabel}
               title={copy.scatterTitle}
@@ -1151,26 +1156,6 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
               <SignalEvidenceScatter signals={report.signals} axisLabel={isFutureHuman ? "Nivel de instalación" : undefined} />
             </ChartFigure>
           </div>
-
-          <aside className={`${styles.umbrellaPanel} ${styles.printDeckPage}`}>
-            <PrintChrome page="07" label="hipótesis paraguas" total={printPagesTotal} />
-            <span className="eyebrow">Hipótesis paraguas</span>
-            <h2>{displayCopy(report.narrative_umbrella.title)}</h2>
-            <p>{displayCopy(report.narrative_umbrella.description)}</p>
-            <div className={styles.umbrellaGrid}>
-              {report.narrative_umbrella.umbrella_logic.map((tier) => (
-                <article key={tier.tier}>
-                  <h3>{tier.tier}</h3>
-                  <p>{displayCopy(tier.theme)}</p>
-                  <div>
-                    {tier.signals.map((id) => (
-                      <SignalChip report={report} id={id} key={id} />
-                    ))}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </aside>
         </section>
 
         <section className={styles.signalStack} aria-label="Señales culturales">
