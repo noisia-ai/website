@@ -23,7 +23,7 @@ export default function HomePage() {
           <SectionHeader
             eyebrow="COBERTURA"
             title="Escuchamos México donde vive la voz del cliente."
-            lead="La señal puede vivir en Amazon, Shopify, Klaviyo, Salesforce, Zendesk, reviews, tickets, foros, búsquedas, comunidades o marketplaces. La cobertura se define por tu pregunta, no por una lista fija de redes."
+            lead="La señal puede vivir en TikTok, Instagram, X, Amazon, Klaviyo, Salesforce, Zendesk, reviews, tickets, foros, búsquedas, comunidades o marketplaces. La cobertura se define por tu pregunta, no por una lista fija de redes."
           />
           <SourcesConstellation />
         </div>

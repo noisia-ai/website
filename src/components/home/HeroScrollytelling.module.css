@@ -260,6 +260,20 @@
   fill: var(--channel-accent);
 }
 
+.voiceGlyph {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--channel-accent);
+  color: #fff;
+  font-size: 0.42rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .noiseCard p {
   margin: 0;
   color: var(--ink);
@@ -432,6 +446,20 @@
   fill: var(--channel-accent);
 }
 
+.signalGlyph {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--channel-accent);
+  color: #fff;
+  font-size: 0.44rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .signalChip span {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -553,6 +581,10 @@
   background: linear-gradient(90deg, rgba(0, 171, 181, 0.92), rgba(75, 207, 222, 0.7));
 }
 
+.stateBar {
+  background: linear-gradient(90deg, rgba(238, 72, 72, 0.9), rgba(255, 152, 118, 0.72));
+}
+
 .pipelineOutcome {
   align-content: center;
   position: relative;
@@ -637,6 +669,11 @@
   width: 100%;
 }
 
+.matrixStack {
+  display: grid;
+  gap: 12px;
+}
+
 .matrixGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -645,16 +682,46 @@
 
 .matrixCard {
   display: grid;
-  gap: 12px;
+  gap: 10px;
   padding: 18px;
   border-radius: 26px;
   background: rgba(255, 255, 255, 0.48);
   border: 1px solid rgba(35, 35, 39, 0.08);
 }
 
+.matrixCardAlert {
+  border-color: rgba(238, 72, 72, 0.2);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.7), rgba(255, 243, 242, 0.5)),
+    rgba(255, 255, 255, 0.48);
+}
+
+.matrixCardStable {
+  border-color: rgba(18, 167, 122, 0.18);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.7), rgba(235, 250, 244, 0.54)),
+    rgba(255, 255, 255, 0.48);
+}
+
 .matrixCard strong {
   font-size: clamp(1.6rem, 2.1vw, 2rem);
   line-height: 1;
+}
+
+.matrixCard em {
+  color: var(--neutral-10);
+  font-size: 0.76rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.matrixNote {
+  margin: 0;
+  padding: 0 4px;
+  color: var(--neutral-10);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .metricFillSignal {

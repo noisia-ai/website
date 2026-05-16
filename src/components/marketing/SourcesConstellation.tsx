@@ -1,21 +1,17 @@
 // Platform logo cloud — visual hierarchy by size (xl → xs).
 // Uses simple-icons for brand SVGs; lucide for platforms not in the package.
 
-import { Cloud, Headphones, Mail, MessageSquare, ShoppingBag, Store } from "lucide-react";
+import { Cloud, Headphones, Mail, ShoppingBag } from "lucide-react";
 import {
   siAppstore,
-  siBigcommerce,
   siDiscourse,
   siFacebook,
   siGoogle,
   siGoogleplay,
-  siHubspot,
   siInstagram,
   siMercadopago,
   siReddit,
   siShopify,
-  siSpotify,
-  siThreads,
   siTiktok,
   siTrustpilot,
   siWhatsapp,
@@ -34,30 +30,24 @@ type Platform = {
 };
 
 const PLATFORMS: Platform[] = [
-  { name: "Amazon",          lucide: <ShoppingBag size={16} strokeWidth={2} />, size: "xl", note: "reviews + Q&A" },
-  { name: "Shopify",         si: siShopify,     size: "xl", note: "commerce data" },
+  { name: "TikTok",          si: siTiktok,      size: "xl", note: "señales culturales" },
+  { name: "Instagram",       si: siInstagram,   size: "xl", note: "social proof" },
+  { name: "X / Twitter",     si: siX,           size: "lg", note: "reputación" },
+  { name: "YouTube",         si: siYoutube,     size: "lg", note: "comentarios largos" },
+  { name: "Facebook",        si: siFacebook,    size: "lg", note: "comunidades" },
+  { name: "Reddit",          si: siReddit,      size: "md", note: "dudas profundas" },
+  { name: "Amazon",          lucide: <ShoppingBag size={16} strokeWidth={2} />, size: "lg", note: "reviews + Q&A" },
   { name: "Klaviyo",         lucide: <Mail size={16} strokeWidth={2} />, size: "lg", note: "email signals" },
   { name: "Salesforce",      lucide: <Cloud size={16} strokeWidth={2} />, size: "lg", note: "CRM context" },
   { name: "Zendesk",         lucide: <Headphones size={16} strokeWidth={2} />, size: "lg", note: "tickets" },
   { name: "Mercado Libre",   si: siMercadopago, size: "lg", note: "marketplace" },
-  { name: "Google Reviews",  si: siGoogle,      size: "lg", note: "local CX" },
+  { name: "Google Reviews",  si: siGoogle,      size: "md", note: "local CX" },
+  { name: "Shopify",         si: siShopify,     size: "md", note: "commerce data" },
   { name: "WhatsApp",        si: siWhatsapp,    size: "md", note: "care flows" },
-  { name: "App Store",       si: siAppstore,    size: "md", note: "app feedback" },
-  { name: "Google Play",     si: siGoogleplay,  size: "md", note: "ratings" },
-  { name: "BigCommerce",     si: siBigcommerce, size: "md", note: "storefront" },
-  { name: "DTC stores",      lucide: <Store size={16} strokeWidth={2} />, size: "sm", note: "checkout" },
-  { name: "Instagram",       si: siInstagram,   size: "sm", note: "culture" },
-  { name: "TikTok",          si: siTiktok,      size: "sm", note: "signals" },
-  { name: "YouTube",         si: siYoutube,     size: "sm", note: "comments" },
-  { name: "Facebook",        si: siFacebook,    size: "sm", note: "communities" },
-  { name: "X / Twitter",     si: siX,           size: "sm", note: "reputation" },
-  { name: "Reddit",          si: siReddit,      size: "sm", note: "deep doubts" },
-  { name: "HubSpot",         si: siHubspot,     size: "xs", note: "growth" },
-  { name: "Trustpilot",      si: siTrustpilot,  size: "xs", note: "proof" },
-  { name: "Threads",         si: siThreads,     size: "xs", note: "conversation" },
-  { name: "Spotify",         si: siSpotify,     size: "xs", note: "podcasts" },
+  { name: "App Store",       si: siAppstore,    size: "sm", note: "app feedback" },
+  { name: "Google Play",     si: siGoogleplay,  size: "sm", note: "ratings" },
+  { name: "Trustpilot",      si: siTrustpilot,  size: "sm", note: "proof" },
   { name: "Foros y Q&A",     si: siDiscourse,   size: "xs", note: "context" },
-  { name: "Encuestas abiertas", lucide: <MessageSquare size={16} strokeWidth={2} />, size: "xs", note: "open ends" },
 ];
 
 const SOURCE_STATS = [

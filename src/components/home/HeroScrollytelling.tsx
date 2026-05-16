@@ -9,7 +9,6 @@ import {
   siDiscourse,
   siFacebook,
   siGoogle,
-  siHubspot,
   siInstagram,
   siMercadopago,
   siReddit,
@@ -37,6 +36,13 @@ import styles from "@/components/home/HeroScrollytelling.module.css";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
+type ChannelStyle = {
+  accent: string;
+  accent2: string;
+  glyph?: string;
+  icon?: { path: string };
+};
+
 const desktopDrift = [
   { x: 52, y: 90, r: 3 },
   { x: -54, y: 76, r: -4 },
@@ -62,17 +68,17 @@ const mobileDrift = [
   { x: 14, y: -16, r: 3 }
 ];
 
-const channelStyles = {
+const channelStyles: Record<string, ChannelStyle> = {
   Amazon: { icon: siGoogle, accent: "#ff9900", accent2: "#232f3e" },
   "App Store": { icon: siAppstore, accent: "#0d96f6", accent2: "#7cc4ff" },
   Facebook: { icon: siFacebook, accent: "#1877f2", accent2: "#8cc7ff" },
   Foro: { icon: siDiscourse, accent: "#00abb5", accent2: "#67d7de" },
   "Google Reviews": { icon: siGoogle, accent: "#4285f4", accent2: "#34a853" },
   Instagram: { icon: siInstagram, accent: "#e4405f", accent2: "#f77737" },
-  Klaviyo: { icon: siHubspot, accent: "#111111", accent2: "#ff6f61" },
+  Klaviyo: { glyph: "K", accent: "#111111", accent2: "#ff6f61" },
   "Mercado Libre": { icon: siMercadopago, accent: "#00b1ea", accent2: "#ffe600" },
   Reddit: { icon: siReddit, accent: "#ff4500", accent2: "#ff9a64" },
-  Salesforce: { icon: siHubspot, accent: "#00a1e0", accent2: "#77d4ff" },
+  Salesforce: { glyph: "SF", accent: "#00a1e0", accent2: "#77d4ff" },
   Shopify: { icon: siShopify, accent: "#7ab55c", accent2: "#95bf47" },
   TikTok: { icon: siTiktok, accent: "#111111", accent2: "#00f2ea" },
   Trustpilot: { icon: siTrustpilot, accent: "#00b67a", accent2: "#73dfbd" },
@@ -301,9 +307,15 @@ export function HeroScrollytelling() {
                   <div className={styles.noiseCardInner}>
                     <div className={styles.voiceMeta}>
                       <span className={styles.voicePlatform}>
-                        <svg className={styles.voiceIcon} viewBox="0 0 24 24" aria-hidden="true">
-                          <path d={channel.icon.path} />
-                        </svg>
+                        {channel.icon ? (
+                          <svg className={styles.voiceIcon} viewBox="0 0 24 24" aria-hidden="true">
+                            <path d={channel.icon.path} />
+                          </svg>
+                        ) : (
+                          <span className={styles.voiceGlyph} aria-hidden="true">
+                            {channel.glyph}
+                          </span>
+                        )}
                         {voice.platform}
                       </span>
                       <span>
@@ -342,7 +354,7 @@ export function HeroScrollytelling() {
             <span className={styles.eyebrow}>De ruido a respuesta</span>
             <h2 className="display-lg">Ordenamos conversaciones dispersas hasta que aparece la decisión.</h2>
             <p className="body-lg">
-              En México la voz del cliente vive en Amazon, Shopify, Klaviyo, Salesforce, Zendesk, marketplaces, reviews y comunidades. La leemos completa para mostrar qué importa, por qué importa y qué mover primero.
+              En México la voz del cliente vive en TikTok, Instagram, Amazon, Klaviyo, Salesforce, Zendesk, marketplaces, reviews y comunidades. La leemos completa para mostrar qué importa, por qué importa y qué mover primero.
             </p>
           </div>
 
@@ -373,9 +385,15 @@ export function HeroScrollytelling() {
                           } as CSSProperties
                         }
                       >
-                        <svg className={styles.signalIcon} viewBox="0 0 24 24" aria-hidden="true">
-                          <path d={channel.icon.path} />
-                        </svg>
+                        {channel.icon ? (
+                          <svg className={styles.signalIcon} viewBox="0 0 24 24" aria-hidden="true">
+                            <path d={channel.icon.path} />
+                          </svg>
+                        ) : (
+                          <span className={styles.signalGlyph} aria-hidden="true">
+                            {channel.glyph}
+                          </span>
+                        )}
                         <span>{voice.platform}</span>
                       </span>
                     );
@@ -419,43 +437,52 @@ export function HeroScrollytelling() {
 
         <div className={`${styles.scene} ${styles.methodScene} scrollyScene scrollyMethod`}>
           <div className={styles.methodologyHead}>
-            <span className={styles.eyebrow}>Industrias y equipos</span>
+            <span className={styles.eyebrow}>Conversaciones negativas por industria</span>
             <h2 className={`display-lg ${styles.methodologyTitle}`}>
-              La misma escucha sirve distinto según quién tiene que decidir.
+              Casi todas las industrias tienen conversaciones que pueden mejorar.
             </h2>
             <p className={`body-lg ${styles.methodologyLead}`}>
-              Tomamos el enfoque de consumer intelligence y lo aterrizamos a México: audiencias, producto, reputación, CX y crecimiento, sin pedirle al equipo que hable en jerga técnica.
+              Cuando una queja se repite, deja de ser ruido y se vuelve una oportunidad de negocio: ajustar promesa, producto, soporte, precio o experiencia antes de que la conversación te lo cobre.
             </p>
             <div className={styles.methodologyChips}>
-              <span className="chip">Market & audience</span>
-              <span className="chip">Product & CX</span>
-              <span className="chip">Brand & reputation</span>
-              <span className="chip">Growth teams</span>
+              <span className="chip">Últimos 24 meses</span>
+              <span className="chip">México</span>
+              <span className="chip">234M menciones analizadas</span>
+              <span className="chip">Quejas + fricción + riesgo</span>
             </div>
           </div>
 
           <div className={styles.methodologyGrid}>
-            <div className={styles.matrixGrid}>
-              {heroIndustryMetrics.map((metric) => (
-                <article className={`${styles.matrixCard} scrollyMetricCard`} key={metric.label}>
-                  <span>{metric.label}</span>
-                  <strong>{metric.value}</strong>
-                  <div className={styles.metricTrack}>
-                    <span
-                      className={`${styles.metricFill} scrollyFill ${
-                        metric.tone === "tension" ? styles.metricFillTension : styles.metricFillSignal
-                      }`}
-                      style={{ width: metric.value }}
-                    />
-                  </div>
-                </article>
-              ))}
+            <div className={styles.matrixStack}>
+              <div className={styles.matrixGrid}>
+                {heroIndustryMetrics.map((metric) => (
+                  <article
+                    className={`${styles.matrixCard} ${
+                      metric.tone === "tension" ? styles.matrixCardAlert : styles.matrixCardStable
+                    } scrollyMetricCard`}
+                    key={metric.label}
+                  >
+                    <span>{metric.label}</span>
+                    <strong>{metric.value}</strong>
+                    <em>conversaciones negativas</em>
+                    <div className={styles.metricTrack}>
+                      <span
+                        className={`${styles.metricFill} scrollyFill ${
+                          metric.tone === "tension" ? styles.metricFillTension : styles.metricFillSignal
+                        }`}
+                        style={{ width: metric.value }}
+                      />
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <p className={styles.matrixNote}>Análisis últimos 24 meses · México · 234M menciones analizadas</p>
             </div>
 
             <div className={styles.statePanel}>
               <div className={styles.stateHeader}>
-                <strong>Para quién cambia la lectura</strong>
-                <span>Tipos de equipos que pueden convertir voz del cliente en decisión</span>
+                <strong>Qué dicen las quejas</strong>
+                <span>Lectura breve de los patrones que más se repiten en México</span>
               </div>
               <div className={styles.stateList}>
                 {heroRoleRead.map((item) => (
