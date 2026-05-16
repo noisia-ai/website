@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react";
 import { Suspense } from "react";
 import { HeroScrollytelling } from "@/components/home/HeroScrollytelling";
 import { EvidenceStrip } from "@/components/marketing/EvidenceStrip";
+import { HomeInsights } from "@/components/marketing/HomeInsights";
 import { MethodologyPreviewGrid } from "@/components/marketing/MethodologyPreviewGrid";
 import { SourcesConstellation } from "@/components/marketing/SourcesConstellation";
 import { UseCaseSelector } from "@/components/marketing/UseCaseSelector";
@@ -21,8 +22,8 @@ export default function HomePage() {
         <div className="section__inner">
           <SectionHeader
             eyebrow="COBERTURA"
-            title="Escuchamos donde la decisión se está formando."
-            lead="La señal puede vivir en TikTok, reviews, foros, búsquedas, noticias o marketplaces. La cobertura se define por tu pregunta, no por una lista fija de fuentes."
+            title="Escuchamos México donde vive la voz del cliente."
+            lead="La señal puede vivir en Amazon, Shopify, Klaviyo, Salesforce, Zendesk, reviews, tickets, foros, búsquedas, comunidades o marketplaces. La cobertura se define por tu pregunta, no por una lista fija de redes."
           />
           <SourcesConstellation />
         </div>
@@ -32,8 +33,8 @@ export default function HomePage() {
         <div className="section__inner product-preview-section__inner">
           <SectionHeader
             eyebrow="DEL DATO A LA DECISIÓN"
-            title="Así se ve una lectura cuando ya está lista para negocio."
-            lead="Ejemplos de salidas: una pregunta clara, una tensión visible, evidencia detrás y un movimiento recomendado."
+            title="Casos de uso: cuando la lectura ya está lista para negocio."
+            lead="Usamos preguntas reales de campaña, medios, producto, competencia y tendencias para mostrar cómo se ve una salida accionable, con evidencia y un botón para profundizar."
           />
           <Suspense fallback={<div className="glass loading-panel">Cargando lecturas...</div>}>
             <ProductConsoleShowcase />
@@ -46,11 +47,22 @@ export default function HomePage() {
           <SectionHeader
             eyebrow="LA PREGUNTA QUE TIENES ENFRENTE"
             title="Encuentra la pregunta que hoy te está frenando."
-            lead="Lanzamiento, medios, producto, mercado, competencia, tendencias o crisis. El punto de partida cambia, pero la salida siempre es una decisión defendible."
+            lead="Lanzamiento, medios, producto, entrada a México, competencia, tendencias o crisis. El punto de partida cambia, pero la salida siempre es una decisión defendible."
           />
           <Suspense fallback={<div className="glass loading-panel">Cargando preguntas...</div>}>
             <UseCaseSelector />
           </Suspense>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="section__inner">
+          <SectionHeader
+            eyebrow="INSIGHTS NOISIA"
+            title="Dos lecturas vivas sobre México para empezar la conversación."
+            lead="Los insights editoriales muestran cómo se ve una lectura Noisia cuando junta escala, evidencia y criterio cultural: no solo social listening, sino señal lista para negocio."
+          />
+          <HomeInsights />
         </div>
       </section>
 
@@ -81,7 +93,7 @@ export default function HomePage() {
           <SectionHeader
             eyebrow="SERVICIOS"
             title="Elige la profundidad según el tamaño de la decisión."
-            lead="Foundation, Intelligence y Strategy son tres formas de llegar a una respuesta útil: desde validar una hipótesis hasta sostener un sistema continuo de decisiones."
+            lead="Foundation, Intelligence y Strategy son tres formas de llegar a una respuesta útil en México: desde validar una hipótesis hasta sostener un sistema continuo de decisiones."
           />
           <div className="tier-grid">
             {serviceTiers.map((tier) => (
@@ -108,8 +120,7 @@ export default function HomePage() {
             <span className="eyebrow">LISTO PARA DECIDIR</span>
             <h2 className="display-lg">No necesitas más ruido. Necesitas una lectura que puedas defender.</h2>
             <p className="body-lg">
-              Trabajamos con la conversación pública para responder una pregunta de negocio,
-              sostenerla con evidencia trazable y traducirla en acciones que tu equipo pueda poner sobre la mesa.
+              Trabajamos con conversación pública y fuentes de voz del cliente en México para responder una pregunta de negocio, sostenerla con evidencia trazable y traducirla en acciones que tu equipo pueda poner sobre la mesa.
             </p>
             <div className="hero-actions">
               <Button href="/diagnostico" icon={<ArrowRight size={17} strokeWidth={1.8} />}>

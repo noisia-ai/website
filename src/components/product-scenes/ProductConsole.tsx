@@ -1,4 +1,5 @@
 import { ArrowUpRight, Download, MessageSquareText, Search, Share2 } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { MethodologyChip, MethodologyIcon, resolveMethodologyMeta } from "@/components/ui/MethodologyIcon";
 import { productConsoleScenes, type ProductConsoleScene } from "@/content/site";
 
@@ -57,6 +58,11 @@ export function ProductConsole({ scene = productConsoleScenes[0] }: ProductConso
               </div>
             ))}
           </div>
+          {scene.ctaHref && (
+            <Button href={scene.ctaHref} variant="secondary" icon={<ArrowUpRight size={16} strokeWidth={1.8} />}>
+              {scene.ctaLabel ?? "Ver caso"}
+            </Button>
+          )}
         </section>
 
         <aside className="source-drawer glass">

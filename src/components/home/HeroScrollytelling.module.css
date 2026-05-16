@@ -623,6 +623,13 @@
   margin-top: 6px;
 }
 
+.methodologyChips :global(.chip) {
+  min-height: 30px;
+  padding: 7px 11px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .methodologyGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.85fr);

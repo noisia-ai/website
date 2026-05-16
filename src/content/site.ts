@@ -52,6 +52,8 @@ export type ProductConsoleScene = {
     value: string;
   }>;
   chatPrompt: string;
+  ctaHref?: string;
+  ctaLabel?: string;
 };
 
 export type HomeUseCase = {
@@ -113,114 +115,124 @@ export const productSurfaces = [
 
 export const productConsoleScenes: ProductConsoleScene[] = [
   {
-    slug: "checkout-fintech",
-    tab: "Conversión",
-    label: "01 · Punto de freno",
-    title: "Lectura de conversión · wallet fintech",
-    methodologies: ["Journey Friction Mapping", "Decision Velocity"],
-    question: "¿Qué hace que alguien se frene justo antes de registrarse?",
-    insight: "La conversión cae cuando la confianza llega tarde.",
-    summary:
-      "El beneficio ya se entiende. El problema aparece cuando el usuario necesita saber qué pasa si algo sale mal. La respuesta debe llegar antes del CTA, no después.",
-    metrics: [
-      { label: "bloqueo de velocidad", value: "38.6%", tone: "tension" },
-      { label: "permiso a CTA", value: "52.4%", tone: "positive" }
-    ],
-    sourceQuote: "Sí lo usaría, pero antes quiero saber qué pasa si me equivoco o si algo no se refleja.",
-    sourceMeta: [
-      { label: "Plataforma", value: "Foro financiero" },
-      { label: "Mercado", value: "México" },
-      { label: "Tag", value: "riesgo · reversibilidad · soporte" }
-    ],
-    chatPrompt: "Resume el cambio de mensaje que aceleraría el registro."
-  },
-  {
-    slug: "beauty-jobs",
-    tab: "Producto",
-    label: "02 · Necesidad",
-    title: "Oportunidad de producto · skincare sensible",
-    methodologies: ["Triggers & Barriers", "Value Perception Matrix"],
-    question: "¿Qué necesidad sigue mal resuelta por las marcas actuales?",
-    insight: "La oportunidad no es más potencia. Es bajar el miedo a probar.",
-    summary:
-      "Los reviews muestran deseo de eficacia, pero también miedo a irritación. Una nueva línea gana si hace más fácil diagnosticar, probar y armar rutina.",
-    metrics: [
-      { label: "unmet job visible", value: "44.9%", tone: "positive" },
-      { label: "barrera de prueba", value: "29.7%", tone: "tension" }
-    ],
-    sourceQuote: "Quiero algo que funcione, pero ya me cansé de comprar productos que me dejan peor la piel.",
-    sourceMeta: [
-      { label: "Plataforma", value: "Reviews e-commerce" },
-      { label: "Mercado", value: "Colombia" },
-      { label: "Tag", value: "riesgo · rutina · sensibilidad" }
-    ],
-    chatPrompt: "Dame tres conceptos con menor riesgo percibido."
-  },
-  {
-    slug: "value-defense",
-    tab: "Valor",
-    label: "03 · Defensa de valor",
-    title: "Defensa de margen · marketplace premium",
-    methodologies: ["Value Perception Matrix", "Decision Velocity", "Journey Friction Mapping"],
-    question: "¿Qué valor sostiene margen cuando el competidor baja precio?",
-    insight: "No justifiques precio. Haz visible el costo de equivocarse.",
-    summary:
-      "El competidor gana la comparación rápida. Cuando el riesgo sube, garantía, trazabilidad y respuesta vuelven a importar. Ahí vive la defensa de margen.",
-    metrics: [
-      { label: "valor defendible", value: "49.6%", tone: "positive" },
-      { label: "presión por precio", value: "34.1%", tone: "tension" }
-    ],
-    sourceQuote: "Lo barato sirve hasta que algo falla. Ahí prefiero pagar más si sé quién responde.",
-    sourceMeta: [
-      { label: "Plataforma", value: "Q&A marketplace" },
-      { label: "Mercado", value: "Argentina" },
-      { label: "Tag", value: "garantía · riesgo · soporte" }
-    ],
-    chatPrompt: "Convierte esto en argumento para performance."
-  },
-  {
-    slug: "market-entry",
-    tab: "Mercado",
-    label: "04 · Permiso local",
-    title: "Entrada de mercado · proteína plant-based",
-    methodologies: ["Cultural Codes", "Influence Architecture"],
-    question: "¿Qué hace que la categoría se sienta local y creíble?",
-    insight: "El permiso no está en predicar bienestar. Está en resolver rendimiento cotidiano.",
-    summary:
-      "La conversación rechaza el regaño, pero acepta soluciones prácticas cuando vienen de voces técnicas y comunidades de entrenamiento. El camino es funcional, no moral.",
-    metrics: [
-      { label: "código legitimador", value: "41.3%", tone: "positive" },
-      { label: "rechazo moral", value: "26.2%", tone: "tension" }
-    ],
-    sourceQuote: "No me interesa que me regañen por comer carne. Me interesa rendir y no sentirme pesado.",
-    sourceMeta: [
-      { label: "Plataforma", value: "Comunidad fitness" },
-      { label: "Mercado", value: "Perú" },
-      { label: "Tag", value: "rendimiento · identidad · validadores" }
-    ],
-    chatPrompt: "¿Qué voces conviene escuchar antes de pauta?"
-  },
-  {
-    slug: "food-rescue",
+    slug: "lanzamiento-de-campana",
     tab: "Campaña",
-    label: "05 · Lectura",
-    title: "Campaña de adquisición · food rescue LATAM",
+    label: "01 · Caso de uso",
+    title: "Lanzamiento de campaña · México",
     methodologies: ["Cultural Codes", "Triggers & Barriers"],
-    question: "¿Qué historia convierte sin sonar oportunista?",
-    insight: "No vendas \"sobras\". Vende una compra inteligente que también ayuda.",
+    question: "¿Qué historia tiene permiso real en la categoría mexicana?",
+    insight: "No gana el territorio más aspiracional. Gana el que México ya reconoce.",
     summary:
-      "La gente entiende el ahorro. Lo que necesita es una forma de comprar sin sentirse juzgada ni rebajada. El ángulo ganador cambia culpa por utilidad cotidiana.",
+      "Probamos territorios creativos contra conversación real para elegir un ángulo que no suene prestado. La lectura separa deseo, permiso cultural y barreras antes de invertir en pauta.",
     metrics: [
-      { label: "tensión dominante", value: "47.2%", tone: "positive" },
-      { label: "fricción narrativa", value: "31.8%", tone: "tension" }
+      { label: "permiso cultural", value: "67.4%", tone: "positive" },
+      { label: "riesgo de genericidad", value: "28.9%", tone: "tension" }
     ],
-    sourceQuote: "Me gusta la idea, pero no quiero sentir que compro sobras. Si lo cuentan como rescate, cambia.",
+    sourceQuote: "Está bueno, pero si lo dicen como todas las marcas, no se siente de aquí.",
     sourceMeta: [
-      { label: "Plataforma", value: "Review pública" },
-      { label: "Mercado", value: "Chile" },
-      { label: "Tag", value: "framing · culpa · valor" }
+      { label: "Fuente", value: "TikTok + comentarios largos" },
+      { label: "Mercado", value: "México" },
+      { label: "Tag", value: "territorio · permiso · lenguaje local" }
     ],
-    chatPrompt: "Dame el ángulo para México en lenguaje de campaña."
+    chatPrompt: "Convierte esto en un brief para campaña.",
+    ctaHref: "/casos-de-uso/lanzamiento-de-campana",
+    ctaLabel: "Ver caso"
+  },
+  {
+    slug: "optimizacion-de-medios",
+    tab: "Medios",
+    label: "02 · Caso de uso",
+    title: "Optimización de medios · México",
+    methodologies: ["Journey Friction Mapping", "Decision Velocity"],
+    question: "¿Dónde se rompe el mensaje antes de que convierta?",
+    insight: "No siempre falla el canal. A veces falla la promesa en el momento equivocado.",
+    summary:
+      "Cruzamos funnel, reviews, comentarios y dudas previas a la compra para ubicar qué información falta, qué promesa confunde y qué pieza conviene corregir primero.",
+    metrics: [
+      { label: "fricción de journey", value: "46.8%", tone: "tension" },
+      { label: "mensaje reparable", value: "54.1%", tone: "positive" }
+    ],
+    sourceQuote: "Me interesaba, pero antes de pagar quería ver qué pasaba si no me funcionaba.",
+    sourceMeta: [
+      { label: "Fuente", value: "Shopify + Google Reviews" },
+      { label: "Mercado", value: "México" },
+      { label: "Tag", value: "checkout · prueba · reversibilidad" }
+    ],
+    chatPrompt: "Dame el cambio de mensaje para performance.",
+    ctaHref: "/casos-de-uso/optimizacion-de-medios",
+    ctaLabel: "Ver caso"
+  },
+  {
+    slug: "desarrollo-de-producto",
+    tab: "Producto",
+    label: "03 · Caso de uso",
+    title: "Desarrollo de producto · México",
+    methodologies: ["Triggers & Barriers", "Value Perception Matrix"],
+    question: "¿Qué necesidad real sigue mal resuelta?",
+    insight: "La oportunidad no siempre es otra feature. A veces es bajar el riesgo de probar.",
+    summary:
+      "Leemos reseñas, tickets, preguntas de marketplace y comunidades para detectar jobs que la gente ya intenta resolver mal con alternativas existentes.",
+    metrics: [
+      { label: "unmet job visible", value: "49.6%", tone: "positive" },
+      { label: "barrera de prueba", value: "34.2%", tone: "tension" }
+    ],
+    sourceQuote: "Quiero probar, pero ya me cansé de comprar cosas que prometen y luego no responden.",
+    sourceMeta: [
+      { label: "Fuente", value: "Amazon + Zendesk + App Store" },
+      { label: "Mercado", value: "México" },
+      { label: "Tag", value: "job · riesgo · confianza" }
+    ],
+    chatPrompt: "Dame tres rutas de producto con menor riesgo percibido.",
+    ctaHref: "/casos-de-uso/desarrollo-de-producto",
+    ctaLabel: "Ver caso"
+  },
+  {
+    slug: "defensa-competitiva",
+    tab: "Competencia",
+    label: "04 · Caso de uso",
+    title: "Defensa competitiva · México",
+    methodologies: ["Triggers & Barriers", "Journey Friction Mapping"],
+    question: "¿Qué promesa del competidor se volvió más creíble?",
+    insight: "La migración rara vez se explica solo por precio.",
+    summary:
+      "Identificamos cuándo se rompe la lealtad, qué narrativa de cambio usa la gente y qué fricción puede reparar la marca antes de regalar margen.",
+    metrics: [
+      { label: "narrativa de migración", value: "61.3%", tone: "tension" },
+      { label: "defensa accionable", value: "43.7%", tone: "positive" }
+    ],
+    sourceQuote: "No me fui por barato. Me fui porque allá sí explican qué pasa cuando algo sale mal.",
+    sourceMeta: [
+      { label: "Fuente", value: "Reddit + Salesforce + reseñas" },
+      { label: "Mercado", value: "México" },
+      { label: "Tag", value: "migración · soporte · transparencia" }
+    ],
+    chatPrompt: "Convierte esto en defensa competitiva.",
+    ctaHref: "/casos-de-uso/defensa-competitiva",
+    ctaLabel: "Ver caso"
+  },
+  {
+    slug: "anticipacion-de-tendencias",
+    tab: "Mercado",
+    label: "05 · Caso de uso",
+    title: "Anticipación de tendencias · México",
+    methodologies: ["Cultural Codes", "Influence Architecture"],
+    question: "¿Qué señal viene creciendo antes de volverse obvia?",
+    insight: "Una tendencia útil aparece primero como vocabulario raro, no como hashtag masivo.",
+    summary:
+      "Detectamos señales débiles en comunidades, comentarios largos y voces puente para saber qué monitorear antes de que el mercado lo nombre.",
+    metrics: [
+      { label: "vocabulario emergente", value: "37.8%", tone: "positive" },
+      { label: "pico sin profundidad", value: "22.6%", tone: "tension" }
+    ],
+    sourceQuote: "Todavía no sé cómo llamarlo, pero cada vez más gente lo está pidiendo así.",
+    sourceMeta: [
+      { label: "Fuente", value: "TikTok + foros + YouTube" },
+      { label: "Mercado", value: "México" },
+      { label: "Tag", value: "señal débil · lenguaje · validadores" }
+    ],
+    chatPrompt: "¿Qué voces conviene monitorear en México?",
+    ctaHref: "/casos-de-uso/anticipacion-de-tendencias",
+    ctaLabel: "Ver caso"
   }
 ];
 
@@ -257,12 +269,12 @@ export const homeUseCases: HomeUseCase[] = [
   },
   {
     slug: "entrada-a-nuevo-mercado",
-    shortTitle: "Nuevo mercado",
-    title: "Vamos a entrar a un mercado nuevo. ¿Qué nos daría permiso local?",
+    shortTitle: "Entrada a México",
+    title: "Vamos a entrar o crecer en México. ¿Qué nos daría permiso local?",
     methodologies: ["Cultural Codes", "Influence Architecture"],
     timing: "6-10 semanas",
     reading:
-      "Una categoría no aterriza igual en todos los países. Identificamos qué significa localmente, quién la legitima y qué narrativas la rechazan para entrar con un ángulo creíble.",
+      "Una categoría no aterriza igual en México que en otros mercados. Identificamos qué significa localmente, quién la legitima y qué narrativas la rechazan para entrar con un ángulo creíble.",
     deliverables: ["Dossier de código local", "Mapa de influencia de categoría", "Brief de entrada de mercado"]
   },
   {

@@ -31,80 +31,80 @@ export type Recommendation = {
 
 export const heroVoiceCards: VoiceCard[] = [
   {
-    platform: "Instagram",
+    platform: "Amazon",
     market: "MX",
     age: "hace 2 h",
-    quote: "Está bonito, pero no entendí por qué cuesta eso.",
+    quote: "Las reseñas dicen que llega rápido, pero varias personas reportan cambios de talla.",
     position: { x: "clamp(-620px, -35vw, -430px)", y: "clamp(-245px, -25vh, -160px)", rotate: "-8deg" }
   },
   {
-    platform: "Google Reviews",
-    market: "CO",
+    platform: "Shopify",
+    market: "MX",
     age: "hace 1 d",
-    quote: "El soporte tardó tres días y ahí se me cayó la confianza.",
+    quote: "El carrito se abandona cuando el costo de envío aparece hasta el final.",
     position: { x: "clamp(380px, 32vw, 590px)", y: "clamp(-235px, -22vh, -150px)", rotate: "7deg" }
   },
   {
-    platform: "TikTok",
+    platform: "Klaviyo",
     market: "MX",
     age: "hace 8 h",
-    quote: "Todo el mundo repite el mismo claim. Ya nadie se lo cree.",
+    quote: "Los usuarios abren el correo de reposición, pero no vuelven si no hay prueba de garantía.",
     position: { x: "clamp(-700px, -41vw, -500px)", y: "clamp(18px, 6vh, 84px)", rotate: "-5deg" }
   },
   {
-    platform: "Reddit",
-    market: "AR",
+    platform: "Salesforce",
+    market: "MX",
     age: "hace 3 d",
-    quote: "No necesito más features. Necesito saber qué pasa si falla.",
+    quote: "El ticket se cerró como resuelto, pero la duda de confianza siguió abierta.",
     position: { x: "clamp(470px, 39vw, 700px)", y: "clamp(20px, 7vh, 92px)", rotate: "6deg" }
   },
   {
-    platform: "App Store",
+    platform: "Zendesk",
     market: "MX",
     age: "hace 6 h",
-    quote: "La app hace lo que promete, pero el onboarding me perdió.",
+    quote: "Cuando soporte explica el porqué, la queja baja de tono y se vuelve reparable.",
     position: { x: "clamp(-560px, -30vw, -350px)", y: "clamp(205px, 27vh, 285px)", rotate: "-4deg" }
   },
   {
-    platform: "Foro",
-    market: "PE",
+    platform: "Mercado Libre",
+    market: "MX",
     age: "hace 2 d",
-    quote: "Si me explicaran mejor la diferencia entre planes, sí pagaba más.",
+    quote: "Las preguntas previas no son dudas menores: son el mapa de lo que impide comprar.",
     position: { x: "clamp(420px, 30vw, 620px)", y: "clamp(210px, 28vh, 300px)", rotate: "4deg" }
   },
   {
-    platform: "YouTube",
-    market: "CL",
+    platform: "Google Reviews",
+    market: "MX",
     age: "hace 5 h",
-    quote: "El demo se ve bien, pero nadie explica qué cambia en mi día a día.",
+    quote: "La sucursal con más comentarios no es la más riesgosa: es la que instala la frase más repetible.",
     position: { x: "clamp(-315px, -18vw, -210px)", y: "clamp(-305px, -34vh, -230px)", rotate: "5deg" }
   },
   {
     platform: "Trustpilot",
-    market: "ES",
+    market: "MX",
     age: "hace 4 d",
-    quote: "La promesa es fuerte, la experiencia no la sostiene igual.",
+    quote: "La promesa es fuerte, pero la experiencia no la sostiene igual.",
     position: { x: "clamp(210px, 18vw, 320px)", y: "clamp(-300px, -33vh, -220px)", rotate: "-5deg" }
   },
   {
-    platform: "X",
-    market: "BR",
+    platform: "TikTok",
+    market: "MX",
     age: "hace 3 h",
-    quote: "Todos dicen innovación, pero el problema real sigue siendo soporte.",
+    quote: "Todos repiten innovación, pero la gente pregunta si de verdad funciona en México.",
     position: { x: "clamp(-760px, -45vw, -610px)", y: "clamp(-80px, -8vh, -46px)", rotate: "4deg" }
   },
   {
-    platform: "Facebook",
-    market: "PE",
+    platform: "Reddit",
+    market: "MX",
     age: "hace 9 h",
-    quote: "Antes respondían rápido. Ahora parece que nadie se hace cargo.",
+    quote: "No necesito otra feature. Necesito saber qué pasa si falla.",
     position: { x: "clamp(610px, 45vw, 770px)", y: "clamp(-90px, -9vh, -42px)", rotate: "-6deg" }
   },
   {
-    platform: "Instagram",
-    market: "AR",
+    platform: "App Store",
+    market: "MX",
     age: "hace 1 d",
-    quote: "Me gusta, pero necesito entender por qué vale más que la opción simple.",
+    quote: "La app hace lo que promete, pero el onboarding me perdió.",
     position: { x: "clamp(-580px, -36vw, -430px)", y: "clamp(150px, 19vh, 220px)", rotate: "6deg" }
   },
   {
@@ -115,10 +115,10 @@ export const heroVoiceCards: VoiceCard[] = [
     position: { x: "clamp(430px, 36vw, 580px)", y: "clamp(155px, 20vh, 230px)", rotate: "-4deg" }
   },
   {
-    platform: "TikTok",
-    market: "CO",
+    platform: "WhatsApp",
+    market: "MX",
     age: "hace 11 h",
-    quote: "La gente no odia el precio. Odia sentir que le vendieron humo.",
+    quote: "El seguimiento por WhatsApp ayuda, pero si suena automático rompe confianza.",
     position: { x: "clamp(-680px, -39vw, -510px)", y: "clamp(170px, 23vh, 260px)", rotate: "-7deg" }
   },
   {
@@ -129,15 +129,15 @@ export const heroVoiceCards: VoiceCard[] = [
     position: { x: "clamp(560px, 38vw, 690px)", y: "clamp(175px, 24vh, 270px)", rotate: "5deg" }
   },
   {
-    platform: "App Store",
-    market: "CL",
+    platform: "YouTube",
+    market: "MX",
     age: "hace 1 h",
-    quote: "Promete ahorro, pero me hizo perder tiempo configurando todo.",
+    quote: "El demo se ve bien, pero nadie explica qué cambia en mi día a día.",
     position: { x: "clamp(-110px, -8vw, -70px)", y: "clamp(300px, 36vh, 365px)", rotate: "-3deg" }
   },
   {
-    platform: "Foro",
-    market: "CO",
+    platform: "Facebook",
+    market: "MX",
     age: "hace 6 d",
     quote: "Si hay garantía humana, pago. Si todo es bot, no me arriesgo.",
     position: { x: "clamp(96px, 10vw, 180px)", y: "clamp(302px, 36vh, 370px)", rotate: "3deg" }
@@ -146,55 +146,55 @@ export const heroVoiceCards: VoiceCard[] = [
 
 export const heroPipelineSteps: PipelineStep[] = [
   {
-    label: "Escuchando",
-    detail: "Reviews · foros · redes · marketplaces",
-    metric: "2,847 señales",
+    label: "Escucha en México",
+    detail: "Marketplaces · CRM · soporte · reviews · redes",
+    metric: "+214M señales",
     fill: "100%"
   },
   {
-    label: "Limpiando",
-    detail: "Duplicados fuera · contexto dentro",
-    metric: "1,932 únicas",
-    fill: "94%"
+    label: "Normalizando",
+    detail: "Duplicados fuera · contexto dentro · fuente clara",
+    metric: "42.8M útiles",
+    fill: "82%"
   },
   {
     label: "Entendiendo",
-    detail: "Tono · intención · dudas · necesidades",
-    metric: "8 capas",
-    fill: "88%"
+    detail: "Tono · intención · duda · experiencia · valor",
+    metric: "8.6M expresiones",
+    fill: "64%"
   },
   {
     label: "Separando",
     detail: "Lo que empuja · lo que frena",
-    metric: "1,247 expresiones",
-    fill: "78%"
+    metric: "1.3M señales",
+    fill: "46%"
   },
   {
     label: "Priorizando",
     detail: "Tamaño · urgencia · impacto",
-    metric: "12 fuerzas",
-    fill: "68%"
+    metric: "86,420 evidencias",
+    fill: "30%"
   },
   {
     label: "Traduciendo",
     detail: "Lectura → movimiento recomendado",
-    metric: "3 movimientos",
-    fill: "58%"
+    metric: "12 decisiones",
+    fill: "18%"
   }
 ];
 
-export const heroMethodologyMetrics: ForceMetric[] = [
-  { label: "señales de intención clara", value: "47.3%", tone: "signal" },
-  { label: "dudas que frenan compra", value: "36.4%", tone: "tension" },
-  { label: "pruebas de confianza pedidas", value: "31.8%", tone: "signal" },
-  { label: "mensajes repetidos sin efecto", value: "27.6%", tone: "tension" }
+export const heroIndustryMetrics: ForceMetric[] = [
+  { label: "retail, ecommerce y marketplaces", value: "58.7%", tone: "signal" },
+  { label: "fintech, telecom y servicios", value: "44.2%", tone: "tension" },
+  { label: "CPG, food, beauty y health", value: "39.6%", tone: "signal" },
+  { label: "apps, SaaS y plataformas", value: "31.4%", tone: "tension" }
 ];
 
-export const heroStateRead = [
-  { state: "Activa", share: "62", label: "motivos que conviene amplificar" },
-  { state: "Frena", share: "47", label: "barreras que necesitan prueba" },
-  { state: "Compara", share: "41", label: "alternativas presentes en la mente" },
-  { state: "Mueve", share: "35", label: "acciones prioritarias para negocio" }
+export const heroRoleRead = [
+  { state: "Brand", share: "74", label: "territorios con permiso cultural en México" },
+  { state: "Product", share: "61", label: "jobs, gaps y riesgos que entran a roadmap" },
+  { state: "CX", share: "53", label: "fricciones que soporte puede reparar primero" },
+  { state: "Strategy", share: "46", label: "señales para comité, inversión o expansión" }
 ];
 
 export const heroRecommendations: Recommendation[] = [

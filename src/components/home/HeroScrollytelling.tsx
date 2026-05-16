@@ -9,24 +9,28 @@ import {
   siDiscourse,
   siFacebook,
   siGoogle,
+  siHubspot,
   siInstagram,
+  siMercadopago,
   siReddit,
+  siShopify,
   siTiktok,
   siTrustpilot,
+  siWhatsapp,
   siX,
-  siYoutube
+  siYoutube,
+  siZendesk
 } from "simple-icons";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { Button } from "@/components/ui/Button";
-import { MethodologyChip } from "@/components/ui/MethodologyIcon";
 import {
-  heroMethodologyMetrics,
+  heroIndustryMetrics,
   heroPipelineSteps,
   heroRecommendations,
   heroSignature,
-  heroStateRead,
+  heroRoleRead,
   heroVoiceCards
 } from "@/components/home/heroScrollyData";
 import styles from "@/components/home/HeroScrollytelling.module.css";
@@ -59,16 +63,23 @@ const mobileDrift = [
 ];
 
 const channelStyles = {
+  Amazon: { icon: siGoogle, accent: "#ff9900", accent2: "#232f3e" },
   "App Store": { icon: siAppstore, accent: "#0d96f6", accent2: "#7cc4ff" },
   Facebook: { icon: siFacebook, accent: "#1877f2", accent2: "#8cc7ff" },
   Foro: { icon: siDiscourse, accent: "#00abb5", accent2: "#67d7de" },
   "Google Reviews": { icon: siGoogle, accent: "#4285f4", accent2: "#34a853" },
   Instagram: { icon: siInstagram, accent: "#e4405f", accent2: "#f77737" },
+  Klaviyo: { icon: siHubspot, accent: "#111111", accent2: "#ff6f61" },
+  "Mercado Libre": { icon: siMercadopago, accent: "#00b1ea", accent2: "#ffe600" },
   Reddit: { icon: siReddit, accent: "#ff4500", accent2: "#ff9a64" },
+  Salesforce: { icon: siHubspot, accent: "#00a1e0", accent2: "#77d4ff" },
+  Shopify: { icon: siShopify, accent: "#7ab55c", accent2: "#95bf47" },
   TikTok: { icon: siTiktok, accent: "#111111", accent2: "#00f2ea" },
   Trustpilot: { icon: siTrustpilot, accent: "#00b67a", accent2: "#73dfbd" },
+  WhatsApp: { icon: siWhatsapp, accent: "#25d366", accent2: "#7ee6a6" },
   X: { icon: siX, accent: "#111111", accent2: "#777777" },
-  YouTube: { icon: siYoutube, accent: "#ff0033", accent2: "#ff8a8a" }
+  YouTube: { icon: siYoutube, accent: "#ff0033", accent2: "#ff8a8a" },
+  Zendesk: { icon: siZendesk, accent: "#03363d", accent2: "#78a300" }
 };
 
 function getChannelStyle(platform: string) {
@@ -309,10 +320,10 @@ export function HeroScrollytelling() {
           <div className={styles.introContent}>
             <span className={`${styles.eyebrow} scrollyIntroCopy`}>Inteligencia social para decidir</span>
             <h1 className={`display-xl ${styles.heroTitle} scrollyIntroCopy`}>
-              Decide qué hacer con lo que tu audiencia ya está diciendo.
+              Decide qué hacer con lo que México ya está diciendo.
             </h1>
             <p className={`body-lg ${styles.heroLead} scrollyIntroCopy`}>
-              Noisia convierte conversación pública en lectura estratégica: qué mueve la decisión, qué la frena y qué acción conviene defender con evidencia.
+              Noisia convierte conversación pública y voz del cliente en México en lectura estratégica: qué mueve la decisión, qué la frena y qué acción conviene defender con evidencia.
             </p>
             <div className={`${styles.heroActions} scrollyIntroActions`}>
               <Button href="/diagnostico" icon={<ArrowRight size={17} strokeWidth={1.8} />}>
@@ -331,14 +342,14 @@ export function HeroScrollytelling() {
             <span className={styles.eyebrow}>De ruido a respuesta</span>
             <h2 className="display-lg">Ordenamos conversaciones dispersas hasta que aparece la decisión.</h2>
             <p className="body-lg">
-              Reunimos redes, reviews, foros y búsquedas para mostrar qué importa, por qué importa y qué mover primero.
+              En México la voz del cliente vive en Amazon, Shopify, Klaviyo, Salesforce, Zendesk, marketplaces, reviews y comunidades. La leemos completa para mostrar qué importa, por qué importa y qué mover primero.
             </p>
           </div>
 
           <div className={`${styles.pipelinePanel} glass`}>
             <div className={styles.pipelinePanelHeader}>
-              <span>Pipeline Noisia</span>
-              <strong>Procesando 2,847 señales · México</strong>
+              <span>Toolstack Noisia</span>
+              <strong>Escucha en México · +214M señales ordenadas</strong>
             </div>
 
             <div className={styles.pipelineNarrative}>
@@ -408,22 +419,24 @@ export function HeroScrollytelling() {
 
         <div className={`${styles.scene} ${styles.methodScene} scrollyScene scrollyMethod`}>
           <div className={styles.methodologyHead}>
-            <span className={styles.eyebrow}>Método aplicado</span>
+            <span className={styles.eyebrow}>Industrias y equipos</span>
             <h2 className={`display-lg ${styles.methodologyTitle}`}>
-              No todas las señales pesan igual.
+              La misma escucha sirve distinto según quién tiene que decidir.
             </h2>
             <p className={`body-lg ${styles.methodologyLead}`}>
-              Separamos deseo, fricción, valor y confianza para encontrar el movimiento que sí vale la pena presentar.
+              Tomamos el enfoque de consumer intelligence y lo aterrizamos a México: audiencias, producto, reputación, CX y crecimiento, sin pedirle al equipo que hable en jerga técnica.
             </p>
             <div className={styles.methodologyChips}>
-              <MethodologyChip identifier="Triggers & Barriers" />
-              <MethodologyChip identifier="Decision Velocity" />
+              <span className="chip">Market & audience</span>
+              <span className="chip">Product & CX</span>
+              <span className="chip">Brand & reputation</span>
+              <span className="chip">Growth teams</span>
             </div>
           </div>
 
           <div className={styles.methodologyGrid}>
             <div className={styles.matrixGrid}>
-              {heroMethodologyMetrics.map((metric) => (
+              {heroIndustryMetrics.map((metric) => (
                 <article className={`${styles.matrixCard} scrollyMetricCard`} key={metric.label}>
                   <span>{metric.label}</span>
                   <strong>{metric.value}</strong>
@@ -441,11 +454,11 @@ export function HeroScrollytelling() {
 
             <div className={styles.statePanel}>
               <div className={styles.stateHeader}>
-                <strong>Lectura de decisión</strong>
-                <span>Qué parte de la conversación conviene mover primero</span>
+                <strong>Para quién cambia la lectura</strong>
+                <span>Tipos de equipos que pueden convertir voz del cliente en decisión</span>
               </div>
               <div className={styles.stateList}>
-                {heroStateRead.map((item) => (
+                {heroRoleRead.map((item) => (
                   <div className={`${styles.stateRow} scrollyStateRow`} key={item.state}>
                     <div>
                       <strong>{item.state}</strong>
