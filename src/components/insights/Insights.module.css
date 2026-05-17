@@ -1,5 +1,5 @@
 .indexHero {
-  padding-bottom: clamp(60px, 8vw, 108px);
+  padding-bottom: var(--editorial-section-y);
 }
 
 .indexHero,
@@ -10,8 +10,18 @@
   --report-glass-soft: rgba(250, 250, 247, 0.48);
   --report-line: rgba(255, 255, 255, 0.72);
   --report-line-dark: rgba(26, 26, 26, 0.08);
-  --report-shadow: 0 28px 86px rgba(43, 43, 43, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.86);
-  --report-shadow-soft: 0 16px 54px rgba(43, 43, 43, 0.075), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  --report-shadow: var(--editorial-shadow);
+  --report-shadow-soft: 0 14px 42px rgba(43, 43, 43, 0.065), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  --report-radius-panel: var(--editorial-radius-panel);
+  --report-radius-card: var(--editorial-radius-card);
+  --report-radius-inner: var(--editorial-radius-inner);
+  --report-pad-card: var(--editorial-card-pad);
+  --report-display-hero: var(--editorial-display-hero);
+  --report-display-xl: var(--editorial-display-xl);
+  --report-display-lg: var(--editorial-display-lg);
+  --report-display-md: var(--editorial-display-md);
+  --report-body-lg: var(--editorial-body-lg);
+  --report-body: var(--editorial-body);
 }
 
 .reportMain,
@@ -36,9 +46,9 @@
   display: grid;
   gap: 18px;
   align-content: start;
-  padding: clamp(24px, 3vw, 38px);
+  padding: var(--report-pad-card);
   border: 1px solid var(--report-line);
-  border-radius: 28px;
+  border-radius: var(--report-radius-panel);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.42)),
     radial-gradient(circle at top right, rgba(0, 238, 238, 0.14), transparent 34%);
@@ -49,8 +59,8 @@
 .indexAside h2,
 .indexFeatureCard h3 {
   color: var(--ink);
-  font-size: clamp(1.6rem, 3vw, 2.5rem);
-  line-height: 1.02;
+  font-size: var(--report-display-lg);
+  line-height: 1.08;
   text-wrap: balance;
 }
 
@@ -108,7 +118,7 @@
 
 .reportHero {
   position: relative;
-  padding: clamp(84px, 11vw, 150px) 20px clamp(52px, 7vw, 90px);
+  padding: 100px var(--editorial-page-x) clamp(46px, 6svh, 84px);
   background: transparent;
   overflow: hidden;
 }
@@ -119,7 +129,7 @@
 
 .reportHeroInner,
 .reportMain {
-  width: min(100%, 1280px);
+  width: min(100%, var(--editorial-max));
   margin: 0 auto;
 }
 
@@ -127,11 +137,11 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1.22fr) minmax(300px, 0.78fr);
+  grid-template-columns: minmax(0, 0.95fr) minmax(420px, 0.85fr);
   grid-template-areas:
     "intro visual"
     "footer footer";
-  gap: clamp(28px, 4vw, 56px);
+  gap: clamp(28px, 4vw, 40px);
   align-items: end;
 }
 
@@ -144,18 +154,18 @@
 .heroText h1 {
   max-width: 840px;
   color: #1a1a1a;
-  font-size: clamp(3.5rem, 8vw, 7.4rem);
+  font-size: var(--report-display-hero);
   font-weight: 800;
-  letter-spacing: -0.055em;
-  line-height: 0.88;
+  letter-spacing: 0;
+  line-height: 0.96;
   text-wrap: balance;
 }
 
 .heroText p {
-  max-width: 740px;
+  max-width: 690px;
   color: #5c5c5c;
-  font-size: clamp(1.3rem, 2.3vw, 2rem);
-  line-height: 1.18;
+  font-size: var(--report-body-lg);
+  line-height: 1.5;
   text-wrap: balance;
 }
 
@@ -198,7 +208,7 @@
   position: relative;
   display: grid;
   place-items: center;
-  min-height: 420px;
+  min-height: clamp(430px, 30vw, 520px);
   padding: 0;
   background: transparent;
   overflow: visible;
@@ -228,6 +238,8 @@
   z-index: 0;
   object-fit: contain;
   object-position: center;
+  transform: scale(1.08);
+  transform-origin: center;
 }
 
 .heroStats {
@@ -237,7 +249,7 @@
   padding: 7px;
   margin: 0;
   border: 1px solid var(--report-line);
-  border-radius: 30px;
+  border-radius: var(--report-radius-panel);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.34)),
     radial-gradient(circle at top right, rgba(0, 238, 238, 0.12), transparent 38%);
@@ -250,10 +262,10 @@
 .heroStats li {
   display: grid;
   gap: 4px;
-  min-height: 98px;
+  min-height: 76px;
   padding: clamp(10px, 1.2vw, 14px);
   border: 1px solid rgba(255, 255, 255, 0.68);
-  border-radius: 22px;
+  border-radius: var(--report-radius-inner);
   background: rgba(255, 255, 255, 0.42);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62);
   align-content: space-between;
@@ -261,7 +273,7 @@
 
 .heroStats strong {
   color: #1a1a1a;
-  font-size: clamp(1.22rem, 1.85vw, 1.9rem);
+  font-size: clamp(1.08rem, 1.45vw, 1.4rem);
   font-weight: 800;
   letter-spacing: -0.045em;
   line-height: 0.95;
@@ -289,7 +301,7 @@
 
 .methodStats {
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  border-radius: 26px;
+  border-radius: var(--report-radius-panel);
   box-shadow: var(--report-shadow-soft);
 }
 
@@ -315,7 +327,7 @@
 .stickyNavTrack {
   display: flex;
   gap: 8px;
-  width: min(100%, 1280px);
+  width: min(100%, var(--editorial-max));
   margin: 0 auto;
   padding: 8px;
   border: 1px solid var(--report-line);
@@ -352,8 +364,8 @@
 
 .reportMain {
   display: grid;
-  gap: clamp(86px, 10vw, 138px);
-  padding: clamp(44px, 6vw, 80px) 20px clamp(80px, 10vw, 140px);
+  gap: var(--editorial-section-gap);
+  padding: var(--editorial-section-y) var(--editorial-page-x) clamp(64px, 8vw, 104px);
   overflow: visible;
 }
 
@@ -365,17 +377,17 @@
 
 .sectionIntro h2 {
   color: #1a1a1a;
-  font-size: clamp(2.2rem, 4.8vw, 4.5rem);
+  font-size: var(--report-display-xl);
   font-weight: 800;
-  letter-spacing: -0.045em;
-  line-height: 0.98;
+  letter-spacing: 0;
+  line-height: 1.02;
   text-wrap: balance;
 }
 
 .sectionIntro p {
   color: #5c5c5c;
-  font-size: clamp(1.08rem, 1.7vw, 1.32rem);
-  line-height: 1.48;
+  font-size: var(--report-body-lg);
+  line-height: 1.5;
 }
 
 .openingSection {
@@ -401,17 +413,17 @@
 .keyInsightsIntro h2 {
   max-width: 620px;
   color: #1a1a1a;
-  font-size: clamp(2rem, 4vw, 3.6rem);
+  font-size: var(--report-display-lg);
   font-weight: 850;
-  letter-spacing: -0.05em;
-  line-height: 0.96;
+  letter-spacing: 0;
+  line-height: 1.08;
   text-wrap: balance;
 }
 
 .keyInsightsIntro p {
   max-width: 560px;
   color: #5c5c5c;
-  font-size: clamp(1rem, 1.45vw, 1.2rem);
+  font-size: var(--report-body-lg);
   line-height: 1.5;
 }
 
@@ -486,24 +498,24 @@
 
 .editorialColumn {
   display: grid;
-  gap: 24px;
+  gap: 20px;
   max-width: 900px;
 }
 
 .editorialColumn p {
   color: #303030;
   max-width: 760px;
-  font-size: clamp(1.02rem, 1.35vw, 1.28rem);
+  font-size: var(--report-body-lg);
   line-height: 1.58;
   text-wrap: pretty;
 }
 
 .editorialColumn .openingLead {
   color: #1a1a1a;
-  font-size: clamp(2.5rem, 6vw, 5.8rem);
+  font-size: var(--report-display-xl);
   font-weight: 800;
-  letter-spacing: -0.055em;
-  line-height: 0.92;
+  letter-spacing: 0;
+  line-height: 1.02;
 }
 
 .contractSection,
@@ -512,7 +524,7 @@
 .methodSection,
 .ctaSection {
   display: grid;
-  gap: clamp(28px, 4vw, 52px);
+  gap: clamp(24px, 3vw, 38px);
   scroll-margin-top: 152px;
 }
 
@@ -522,7 +534,7 @@
   gap: 10px;
   padding: 10px;
   border: 1px solid var(--report-line);
-  border-radius: 28px;
+  border-radius: var(--report-radius-panel);
   background: var(--report-glass);
   box-shadow: var(--report-shadow-soft);
   backdrop-filter: blur(22px) saturate(132%);
@@ -534,7 +546,7 @@
 .maturityFrameworkCards article,
 .brandCard {
   border: 1px solid rgba(255, 255, 255, 0.62);
-  border-radius: 20px;
+  border-radius: var(--report-radius-card);
   background: rgba(255, 255, 255, 0.48);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
   backdrop-filter: blur(18px) saturate(126%);
@@ -542,8 +554,8 @@
 
 .contractGrid article {
   display: grid;
-  gap: 22px;
-  padding: clamp(24px, 3.4vw, 44px);
+  gap: 20px;
+  padding: var(--report-pad-card);
 }
 
 .contractGrid h3,
@@ -551,10 +563,10 @@
 .limitations h3,
 .brandCard h3 {
   color: #1a1a1a;
-  font-size: clamp(1.3rem, 2vw, 1.8rem);
+  font-size: var(--report-display-md);
   font-weight: 800;
-  letter-spacing: -0.025em;
-  line-height: 1.08;
+  letter-spacing: 0;
+  line-height: 1.15;
 }
 
 .contractGrid ul,
@@ -602,9 +614,9 @@
 .radarColumn {
   display: grid;
   gap: 18px;
-  padding: clamp(20px, 2.2vw, 28px);
+  padding: var(--report-pad-card);
   border: 1px solid var(--report-line);
-  border-radius: 28px;
+  border-radius: var(--report-radius-panel);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.36));
   box-shadow: var(--report-shadow-soft);
@@ -771,9 +783,9 @@
   display: grid;
   gap: 24px;
   min-width: 0;
-  padding: clamp(22px, 2.6vw, 34px);
+  padding: var(--report-pad-card);
   border: 1px solid var(--report-line);
-  border-radius: 30px;
+  border-radius: var(--report-radius-panel);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.38)),
     radial-gradient(circle at top right, rgba(0, 238, 238, 0.1), transparent 34%);
@@ -795,10 +807,10 @@
 .chartFigureHeader h3 {
   margin-top: 10px;
   color: #1a1a1a;
-  font-size: clamp(1.28rem, 2.1vw, 1.9rem);
+  font-size: var(--report-display-md);
   font-weight: 800;
-  letter-spacing: -0.025em;
-  line-height: 1.08;
+  letter-spacing: 0;
+  line-height: 1.15;
 }
 
 .chartFigureHeader p {
@@ -918,7 +930,7 @@
   min-height: 220px;
   padding: 12px;
   border: 1px solid rgba(255, 255, 255, 0.68);
-  border-radius: 26px;
+  border-radius: var(--report-radius-card);
   background:
     linear-gradient(90deg, rgba(201, 137, 46, 0.08), rgba(45, 106, 159, 0.08), rgba(29, 122, 85, 0.08)),
     linear-gradient(rgba(26, 26, 26, 0.035) 1px, transparent 1px);
@@ -931,9 +943,9 @@
   position: relative;
   display: grid;
   gap: 8px;
-  padding: 18px;
+  padding: 16px;
   border: 1px solid color-mix(in srgb, var(--segment-color) 32%, #ffffff);
-  border-radius: 20px;
+  border-radius: var(--report-radius-inner);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.34)),
     radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--segment-color) 13%, transparent), transparent 50%);
@@ -973,7 +985,7 @@
 
 .lifecycleStage strong {
   color: #1a1a1a;
-  font-size: clamp(2rem, 4vw, 3.8rem);
+  font-size: var(--report-display-xl);
   font-weight: 900;
   line-height: 0.9;
   margin-top: 28px;
@@ -1097,7 +1109,7 @@
   position: relative;
   height: clamp(320px, 44vw, 460px);
   border: 1px solid rgba(255, 255, 255, 0.68);
-  border-radius: 28px;
+  border-radius: var(--report-radius-panel);
   background:
     linear-gradient(rgba(26, 26, 26, 0.055) 1px, transparent 1px),
     linear-gradient(90deg, rgba(26, 26, 26, 0.045) 1px, transparent 1px),
@@ -1208,7 +1220,7 @@
   position: relative;
   height: clamp(390px, 48vw, 560px);
   border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: 30px;
+  border-radius: var(--report-radius-panel);
   background:
     linear-gradient(rgba(26, 26, 26, 0.055) 1px, transparent 1px),
     linear-gradient(90deg, rgba(26, 26, 26, 0.045) 1px, transparent 1px),
@@ -1366,7 +1378,7 @@
   width: min(330px, 34%);
   padding: 18px;
   border: 1px solid rgba(26, 26, 26, 0.09);
-  border-radius: 24px;
+  border-radius: var(--report-radius-card);
   background: rgba(255, 255, 255, 0.82);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
   backdrop-filter: blur(16px) saturate(120%);
@@ -1414,8 +1426,8 @@
 .umbrellaPanel {
   display: grid;
   gap: 22px;
-  padding: clamp(26px, 4vw, 52px);
-  border-radius: 32px;
+  padding: var(--editorial-panel-pad);
+  border-radius: var(--report-radius-panel);
   border: 1px solid var(--report-line);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.7), rgba(250, 250, 247, 0.42)),
@@ -1426,16 +1438,16 @@
 
 .umbrellaPanel h2 {
   color: #1a1a1a;
-  font-size: clamp(2.1rem, 4.8vw, 4.6rem);
+  font-size: var(--report-display-xl);
   font-weight: 800;
-  letter-spacing: -0.05em;
-  line-height: 0.96;
+  letter-spacing: 0;
+  line-height: 1.02;
 }
 
 .umbrellaPanel > p {
   max-width: 820px;
   color: #5c5c5c;
-  font-size: clamp(1.05rem, 1.7vw, 1.3rem);
+  font-size: var(--report-body-lg);
   line-height: 1.5;
 }
 
@@ -1479,14 +1491,20 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  min-width: 0;
+}
+
+.umbrellaGrid .signalChip {
+  max-width: 100%;
 }
 
 .signalChip {
   display: inline-flex;
   align-items: center;
   max-width: min(100%, 320px);
+  min-width: 0;
   min-height: 30px;
-  padding: 0 10px;
+  padding: 6px 10px;
   border: 1px solid color-mix(in srgb, var(--signal-color) 42%, #ffffff);
   border-radius: 999px;
   color: var(--signal-color);
@@ -1494,28 +1512,29 @@
   font-weight: 800;
   line-height: 1.2;
   text-decoration: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
 }
 
 .signalStack {
   display: grid;
-  gap: clamp(82px, 10vw, 132px);
+  gap: var(--editorial-section-gap);
 }
 
 .signalCard {
   display: grid;
-  gap: clamp(34px, 5vw, 64px);
-  padding-top: clamp(34px, 5vw, 64px);
-  border-top: 4px solid var(--signal-color);
+  gap: clamp(24px, 3.4vw, 42px);
+  padding-top: var(--editorial-section-y);
+  border-top: 2px solid var(--signal-color);
   scroll-margin-top: 178px;
 }
 
 .signalHeader {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
-  gap: clamp(22px, 4vw, 52px);
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: clamp(18px, 3vw, 36px);
   align-items: start;
 }
 
@@ -1525,10 +1544,10 @@
 
 .signalNumber {
   color: var(--signal-color);
-  font-size: clamp(4.2rem, 9vw, 7.2rem);
+  font-size: clamp(2.8rem, 5vw, 4.8rem);
   font-weight: 900;
-  letter-spacing: -0.06em;
-  line-height: 0.82;
+  letter-spacing: 0;
+  line-height: 0.9;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1551,10 +1570,10 @@
 .signalHeader h2 {
   max-width: 860px;
   color: #1a1a1a;
-  font-size: clamp(2.4rem, 5.2vw, 5.25rem);
+  font-size: var(--report-display-xl);
   font-weight: 850;
-  letter-spacing: -0.055em;
-  line-height: 0.94;
+  letter-spacing: 0;
+  line-height: 1.02;
   text-wrap: balance;
   overflow-wrap: anywhere;
 }
@@ -1568,18 +1587,18 @@
 
 .signalHeader p {
   max-width: 800px;
-  margin-top: 22px;
+  margin-top: 16px;
   color: #5c5c5c;
-  font-size: clamp(1.35rem, 2.4vw, 2.2rem);
-  line-height: 1.2;
+  font-size: var(--report-body-lg);
+  line-height: 1.5;
   text-wrap: balance;
 }
 
 .signalTension {
   display: grid;
   gap: 18px;
-  padding: clamp(24px, 3vw, 36px);
-  border-radius: 26px;
+  padding: var(--report-pad-card);
+  border-radius: var(--report-radius-panel);
   border: 1px solid var(--report-line);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.38)),
@@ -1591,16 +1610,16 @@
 .signalTension div {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  gap: clamp(14px, 3vw, 34px);
+  gap: clamp(12px, 2vw, 24px);
   align-items: center;
 }
 
 .signalTension strong {
   color: #1a1a1a;
-  font-size: clamp(1.2rem, 2.6vw, 2.3rem);
+  font-size: var(--report-display-md);
   font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
+  letter-spacing: 0;
+  line-height: 1.15;
   text-wrap: balance;
 }
 
@@ -1608,8 +1627,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   background: var(--signal-color);
   color: #ffffff;
@@ -1623,11 +1642,11 @@
   position: relative;
   display: grid;
   gap: 18px;
-  max-width: 980px;
-  padding: clamp(28px, 4vw, 52px);
+  max-width: 860px;
+  padding: var(--report-pad-card);
   margin: 0;
   border: 1px solid color-mix(in srgb, var(--signal-color) 36%, #ffffff);
-  border-radius: 30px;
+  border-radius: var(--report-radius-panel);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.38)),
     radial-gradient(circle at 6% 4%, color-mix(in srgb, var(--signal-color) 16%, transparent), transparent 38%);
@@ -1656,11 +1675,11 @@
 .leadQuote p {
   position: relative;
   color: #1a1a1a;
-  max-width: 22ch;
-  font-size: clamp(1.34rem, 2.35vw, 2.45rem);
+  max-width: 28ch;
+  font-size: clamp(1.18rem, 1.85vw, 2rem);
   font-weight: 850;
-  letter-spacing: -0.025em;
-  line-height: 1.08;
+  letter-spacing: 0;
+  line-height: 1.12;
 }
 
 .quoteGlyph {
@@ -1682,6 +1701,118 @@
   text-transform: uppercase;
 }
 
+.signalEvolution {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  padding: var(--report-pad-card);
+  border: 1px solid color-mix(in srgb, var(--signal-color) 24%, #ffffff);
+  border-radius: var(--report-radius-card);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0.34)),
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--signal-color) 9%, transparent), transparent 42%);
+  box-shadow: var(--report-shadow-soft);
+  backdrop-filter: blur(20px) saturate(128%);
+}
+
+.signalEvolutionHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 14px;
+  align-items: center;
+}
+
+.signalEvolutionHeader strong {
+  color: color-mix(in srgb, var(--signal-color) 82%, #1a1a1a);
+  font-size: 0.9rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.signalEvolutionCanvas {
+  position: relative;
+  min-height: 188px;
+}
+
+.signalEvolutionCanvas svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.signalEvolutionSvgMobile {
+  display: none !important;
+}
+
+.signalEvolutionGuide line {
+  stroke: rgba(26, 26, 26, 0.08);
+  stroke-width: 1;
+}
+
+.signalEvolutionGuide text,
+.signalEvolutionXAxis {
+  fill: #8b8b8b;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.signalEvolutionGuide text {
+  text-anchor: end;
+}
+
+.signalEvolutionXAxis {
+  text-anchor: middle;
+}
+
+.signalEvolutionArea {
+  pointer-events: none;
+}
+
+.signalEvolutionLine {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 4;
+  vector-effect: non-scaling-stroke;
+}
+
+.signalEvolutionPoint {
+  fill: transparent;
+  stroke: transparent;
+  cursor: crosshair;
+}
+
+.signalEvolutionPoint:hover,
+.signalEvolutionPoint:focus {
+  fill: #ffffff;
+  stroke: var(--signal-color);
+  stroke-width: 3;
+  outline: none;
+}
+
+.signalEvolutionTooltip {
+  position: absolute;
+  left: var(--tooltip-x);
+  top: var(--tooltip-y);
+  z-index: 2;
+  max-width: min(260px, calc(100% - 20px));
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--signal-color) 34%, #ffffff);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 28px rgba(43, 43, 43, 0.1);
+  color: #303030;
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 1.1;
+  white-space: nowrap;
+  transform: translate(-50%, calc(-100% - 12px));
+  pointer-events: none;
+}
+
 .signalReading {
   display: grid;
   gap: 14px;
@@ -1690,7 +1821,7 @@
 
 .signalReading p {
   color: #303030;
-  font-size: clamp(1.08rem, 1.5vw, 1.28rem);
+  font-size: var(--report-body-lg);
   line-height: 1.65;
 }
 
@@ -1700,7 +1831,7 @@
   gap: 10px;
   padding: 10px;
   border: 1px solid var(--report-line);
-  border-radius: 24px;
+  border-radius: var(--report-radius-card);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.34)),
     radial-gradient(circle at top left, color-mix(in srgb, var(--signal-color) 9%, transparent), transparent 34%);
@@ -1713,8 +1844,8 @@
   position: relative;
   display: grid;
   gap: 12px;
-  min-height: 220px;
-  padding: clamp(20px, 2.6vw, 30px);
+  min-height: 180px;
+  padding: var(--report-pad-card);
   border: 1px solid color-mix(in srgb, var(--signal-color) 22%, #ffffff);
   border-radius: 18px;
   background:
@@ -1739,16 +1870,16 @@
 
 .headlineCard strong {
   color: color-mix(in srgb, var(--signal-color) 86%, #1a1a1a);
-  font-size: clamp(1.7rem, 3.1vw, 3.15rem);
+  font-size: clamp(1.35rem, 2vw, 2.1rem);
   font-weight: 900;
-  letter-spacing: -0.04em;
-  line-height: 0.96;
+  letter-spacing: 0;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
 .headlineCard span {
   color: #1a1a1a;
-  font-size: clamp(0.98rem, 1.25vw, 1.12rem);
+  font-size: clamp(0.94rem, 1.15vw, 1rem);
   font-weight: 850;
   line-height: 1.16;
 }
@@ -1796,7 +1927,7 @@
   min-width: 0;
   padding: clamp(16px, 2vw, 22px);
   border: 1px solid color-mix(in srgb, var(--polarity-color) 28%, #ffffff);
-  border-radius: 24px;
+  border-radius: var(--report-radius-card);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.34)),
     radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--polarity-color) 10%, transparent), transparent 42%);
@@ -1880,7 +2011,7 @@
   display: grid;
   gap: 12px;
   width: min(82%, 760px);
-  padding: clamp(16px, 2.1vw, 24px);
+  padding: clamp(16px, 2vw, 22px);
   border: 1px solid color-mix(in srgb, var(--signal-color) 28%, #ffffff);
   border-radius: 22px;
   background:
@@ -1968,7 +2099,7 @@
   max-width: 980px;
   margin: 0;
   color: #303030;
-  font-size: clamp(1rem, 1.4vw, 1.2rem);
+  font-size: var(--report-body-lg);
   line-height: 1.58;
 }
 
@@ -2087,7 +2218,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   padding: 0;
-  border-radius: 28px;
+  border-radius: var(--report-radius-panel);
   background: transparent;
   box-shadow: none;
   backdrop-filter: blur(20px) saturate(128%);
@@ -2099,9 +2230,9 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 18px 12px;
-  padding: clamp(24px, 3vw, 38px);
+  padding: var(--report-pad-card);
   border: 1px solid color-mix(in srgb, var(--panel-color) 24%, #ffffff);
-  border-radius: 26px;
+  border-radius: var(--report-radius-panel);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.38)),
     radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--panel-color) 12%, transparent), transparent 40%);
@@ -2154,7 +2285,7 @@
 .doPanel :global(.eyebrow),
 .avoidPanel :global(.eyebrow) {
   color: #303030;
-  font-size: clamp(1.12rem, 1.7vw, 1.38rem);
+  font-size: clamp(1rem, 1.35vw, 1.18rem);
   font-weight: 900;
   letter-spacing: -0.02em;
   text-transform: none;
@@ -2164,7 +2295,7 @@
 .avoidPanel li {
   padding-left: 30px;
   color: #303030;
-  font-size: clamp(0.98rem, 1.3vw, 1.08rem);
+  font-size: var(--report-body);
   font-weight: 520;
 }
 
@@ -2253,7 +2384,7 @@
   gap: 12px;
   padding: 12px;
   border: 1px solid var(--report-line);
-  border-radius: 28px;
+  border-radius: var(--report-radius-panel);
   background: var(--report-glass);
   box-shadow: var(--report-shadow-soft);
   backdrop-filter: blur(22px) saturate(132%);
@@ -2264,7 +2395,7 @@
   display: grid;
   gap: 18px;
   grid-column: span 2;
-  padding: clamp(20px, 2.4vw, 28px);
+  padding: var(--report-pad-card);
   align-content: start;
 }
 
@@ -2304,7 +2435,7 @@
   gap: 10px;
   padding: 10px;
   border: 1px solid var(--report-line);
-  border-radius: 28px;
+  border-radius: var(--report-radius-panel);
   background: var(--report-glass);
   box-shadow: var(--report-shadow-soft);
   backdrop-filter: blur(22px) saturate(132%);
@@ -2314,7 +2445,7 @@
 .methodGrid article {
   display: grid;
   gap: 20px;
-  padding: clamp(24px, 3vw, 38px);
+  padding: var(--report-pad-card);
 }
 
 .methodGrid dl {
@@ -2351,9 +2482,9 @@
 .verticalSeedBlock {
   display: grid;
   gap: 14px;
-  padding: clamp(20px, 2.6vw, 30px);
+  padding: var(--report-pad-card);
   border: 1px solid var(--report-line);
-  border-radius: 26px;
+  border-radius: var(--report-radius-panel);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0.34)),
     radial-gradient(circle at top right, rgba(29, 122, 85, 0.1), transparent 34%);
@@ -2417,9 +2548,9 @@
 .maturityFramework {
   display: grid;
   gap: 18px;
-  padding: clamp(18px, 2.4vw, 28px);
+  padding: var(--report-pad-card);
   border: 1px solid var(--report-line);
-  border-radius: 24px;
+  border-radius: var(--report-radius-panel);
   background: var(--report-glass);
   box-shadow: var(--report-shadow-soft);
   backdrop-filter: blur(22px) saturate(132%);
@@ -2434,10 +2565,10 @@
 
 .maturityFrameworkHeader h3 {
   color: #1a1a1a;
-  font-size: clamp(1.35rem, 2.4vw, 2.1rem);
+  font-size: var(--report-display-md);
   font-weight: 900;
-  letter-spacing: -0.035em;
-  line-height: 1.05;
+  letter-spacing: 0;
+  line-height: 1.15;
 }
 
 .maturityFrameworkCards {
@@ -2449,7 +2580,7 @@
 .maturityFrameworkCards article {
   display: grid;
   gap: 14px;
-  padding: 24px;
+  padding: 20px;
   align-content: start;
 }
 
@@ -2467,8 +2598,8 @@
 
 .ctaSection {
   justify-items: start;
-  padding: clamp(36px, 6vw, 74px);
-  border-radius: 34px;
+  padding: var(--editorial-panel-pad);
+  border-radius: var(--report-radius-panel);
   border: 1px solid rgba(255, 255, 255, 0.16);
   background:
     radial-gradient(circle at 86% 18%, rgba(0, 238, 238, 0.16), transparent 26%),
@@ -2480,17 +2611,17 @@
 .ctaSection h2 {
   max-width: 860px;
   color: #ffffff;
-  font-size: clamp(2.3rem, 5vw, 5.1rem);
+  font-size: var(--report-display-xl);
   font-weight: 850;
-  letter-spacing: -0.055em;
-  line-height: 0.94;
+  letter-spacing: 0;
+  line-height: 1.02;
   text-wrap: balance;
 }
 
 .ctaSection p {
   max-width: 760px;
   color: rgba(255, 255, 255, 0.72);
-  font-size: clamp(1.06rem, 1.6vw, 1.3rem);
+  font-size: var(--report-body-lg);
   line-height: 1.55;
 }
 
@@ -2508,6 +2639,10 @@
       "intro"
       "visual"
       "footer";
+  }
+
+  .heroVisual {
+    min-height: clamp(360px, 62vw, 500px);
   }
 
   .keyInsightsIntro {
@@ -2568,13 +2703,14 @@
 
   .heroText h1 {
     max-width: 100%;
-    font-size: clamp(3rem, 15.2vw, 4.35rem);
-    letter-spacing: -0.06em;
+    font-size: clamp(2.45rem, 11vw, 3.35rem);
+    letter-spacing: 0;
+    line-height: 0.98;
     overflow-wrap: break-word;
   }
 
   .heroText p {
-    font-size: 1.18rem;
+    font-size: 1.02rem;
     max-width: 100%;
   }
 
@@ -2590,9 +2726,10 @@
 
   .heroMetaChip {
     max-width: calc(100vw - 92px);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    height: auto;
+    min-height: 38px;
+    overflow: visible;
+    white-space: normal;
   }
 
   .heroStats {
@@ -2746,7 +2883,7 @@
   }
 
   .reportMain {
-    gap: 82px;
+    gap: 56px;
     padding-inline: 16px;
     overflow: visible;
   }
@@ -2755,20 +2892,20 @@
   .umbrellaPanel h2,
   .ctaSection h2 {
     max-width: calc(100vw - 32px);
-    font-size: clamp(2rem, 10vw, 3rem);
+    font-size: clamp(1.8rem, 8.8vw, 2.55rem);
     overflow-wrap: break-word;
   }
 
   .editorialColumn .openingLead {
     max-width: calc(100vw - 32px);
-    font-size: clamp(2.4rem, 11vw, 3.55rem);
-    line-height: 0.96;
+    font-size: clamp(1.9rem, 9.2vw, 2.7rem);
+    line-height: 1.02;
     overflow-wrap: break-word;
   }
 
   .editorialColumn p {
     max-width: calc(100vw - 32px);
-    font-size: 1.08rem;
+    font-size: 1rem;
     overflow-wrap: break-word;
   }
 
@@ -2778,7 +2915,7 @@
 
   .keyInsightsIntro h2 {
     max-width: calc(100vw - 32px);
-    font-size: clamp(2rem, 10vw, 3.1rem);
+    font-size: clamp(1.8rem, 8.8vw, 2.55rem);
   }
 
   .keyInsightsList a {
@@ -2798,6 +2935,7 @@
   .umbrellaPanel,
   .signalTension,
   .leadQuote,
+  .signalEvolution,
   .headlineGrid,
   .implicationsGrid,
   .methodGrid,
@@ -2826,7 +2964,7 @@
   }
 
   .signalCard {
-    padding-top: 72px;
+    padding-top: 44px;
     scroll-margin-top: 206px;
   }
 
@@ -2843,7 +2981,7 @@
   }
 
   .signalNumber {
-    font-size: clamp(4.2rem, 22vw, 6.6rem);
+    font-size: clamp(3.4rem, 16vw, 4.8rem);
   }
 
   .signalHeader h2 {
@@ -2862,7 +3000,7 @@
 
   .signalHeader p,
   .leadQuote p {
-    font-size: clamp(1.16rem, 5.3vw, 1.72rem);
+    font-size: clamp(1.08rem, 4.6vw, 1.45rem);
   }
 
   .signalTension div {
@@ -2889,6 +3027,50 @@
   .leadQuoteMeta {
     gap: 7px 10px;
     font-size: 0.68rem;
+  }
+
+  .signalEvolution {
+    gap: 16px;
+    padding: 18px;
+    border-radius: 22px;
+  }
+
+  .signalEvolutionHeader {
+    align-items: start;
+  }
+
+  .signalEvolutionHeader strong {
+    font-size: clamp(1.02rem, 4.8vw, 1.28rem);
+    line-height: 1;
+  }
+
+  .signalEvolutionCanvas {
+    aspect-ratio: 1;
+    min-height: 0;
+  }
+
+  .signalEvolutionCanvas svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .signalEvolutionSvgDesktop {
+    display: none !important;
+  }
+
+  .signalEvolutionSvgMobile {
+    display: block !important;
+  }
+
+  .signalEvolutionGuide text,
+  .signalEvolutionXAxis {
+    font-size: 0.82rem;
+  }
+
+  .signalEvolutionTooltip {
+    max-width: calc(100vw - 72px);
+    font-size: 0.78rem;
+    transform: translate(-50%, calc(-100% - 12px));
   }
 
   .headlineGrid {
@@ -2962,16 +3144,19 @@
 
   .chipList li,
   .signalChip {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
     max-width: 100%;
-    height: 36px;
+    height: auto;
     min-height: 36px;
-    line-height: 34px;
+    padding: 8px 10px;
+    line-height: 1.15;
     text-align: center;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   .methodChips :global(.methodology-chip) {
@@ -3820,8 +4005,9 @@
     grid-template-columns: 0.86fr 1.14fr !important;
     grid-template-areas:
       "header quote"
-      "tension reading"
-      "headline action" !important;
+      "tension chart"
+      "headline reading"
+      "action action" !important;
     align-content: center !important;
     gap: 0.22in !important;
   }
@@ -3908,6 +4094,39 @@
   .signalReading {
     grid-area: reading !important;
     gap: 0.09in !important;
+  }
+
+  .signalEvolution {
+    grid-area: chart !important;
+    min-height: 1.32in !important;
+    padding: 0.14in !important;
+    border: 1px solid color-mix(in srgb, var(--signal-color) 28%, transparent) !important;
+    border-radius: 0.14in !important;
+    background: #ffffff !important;
+    box-shadow: var(--print-shadow) !important;
+  }
+
+  .signalEvolutionHeader {
+    gap: 0.06in !important;
+  }
+
+  .signalEvolutionHeader :global(.eyebrow),
+  .signalEvolutionHeader strong {
+    font-size: 7.2pt !important;
+    line-height: 1 !important;
+  }
+
+  .signalEvolutionCanvas {
+    min-height: 0.94in !important;
+  }
+
+  .signalEvolutionLine {
+    stroke-width: 2.4 !important;
+  }
+
+  .signalEvolutionGuide text,
+  .signalEvolutionXAxis {
+    font-size: 6pt !important;
   }
 
   .signalReading p {
@@ -4262,6 +4481,7 @@
   .lifecycleCallout,
   .signalTension,
   .leadQuote,
+  .signalEvolution,
   .headlineCard,
   .printSignalEvidence,
   .printSignalEvidence blockquote,
@@ -4285,6 +4505,7 @@
   .chartSheet,
   .lifecyclePlot,
   .lifecycleCallout,
+  .signalEvolution,
   .headlineCard,
   .printSignalEvidence,
   .implicationsGrid > div,
@@ -4411,11 +4632,12 @@
 
   .signalCard {
     grid-template-columns: 0.86fr 1.14fr !important;
-    grid-template-rows: auto auto minmax(1.42in, auto) !important;
+    grid-template-rows: auto auto minmax(1.1in, auto) auto !important;
     grid-template-areas:
       "header quote"
-      "tension reading"
-      "evidence action" !important;
+      "tension chart"
+      "evidence reading"
+      "action action" !important;
     align-content: center !important;
     gap: 0.18in !important;
   }
@@ -4441,6 +4663,19 @@
 
   .leadQuote p {
     font-size: 15.5pt !important;
+  }
+
+  .signalEvolution {
+    min-height: 1.1in !important;
+    padding: 0.13in !important;
+  }
+
+  .signalEvolutionCanvas {
+    min-height: 0.72in !important;
+  }
+
+  .signalEvolutionTooltip {
+    display: none !important;
   }
 
   .signalReading p {

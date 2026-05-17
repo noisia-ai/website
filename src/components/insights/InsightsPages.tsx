@@ -11,6 +11,7 @@ import {
   DownloadPrintButton,
   MaturityDistributionChart,
   SignalEvidenceScatter,
+  SignalEvolutionChart,
   SignalScaleChart
 } from "./InsightCharts";
 import styles from "./Insights.module.css";
@@ -18,15 +19,15 @@ import styles from "./Insights.module.css";
 const maturityCopy: Record<InsightSignal["maturity"], { title: string; note: string }> = {
   emergente: {
     title: "Emergente",
-    note: "La tensión existe; el vocabulario público apenas se está formando."
+    note: "La tensión ya existe; la gente apenas le está poniendo palabras."
   },
   acelerando: {
     title: "Acelerando",
-    note: "Vocabulario consolidado y frecuencia creciente."
+    note: "El vocabulario ya está armado y la frecuencia crece."
   },
   mainstreaming: {
     title: "Mainstreaming",
-    note: "Ya atraviesa múltiples plataformas y conversaciones."
+    note: "Ya atraviesa plataformas y conversaciones en México."
   }
 };
 
@@ -54,26 +55,26 @@ const reportCopy = {
     printLabel: "cultural foresight",
     heroVisualKicker: "México Foresight 2026",
     heroVisualTitle: "Del tener que demostrar al poder respirar",
-    heroVisualBody: "8 señales culturales leídas desde conversación digital pública.",
+    heroVisualBody: "8 señales culturales leídas en la conversación digital mexicana.",
     openingLead: "Del Mundial 2026 ya hablarán todos.",
     openingParagraphs: [
       "Pantallas, cerveza, jerseys, botanas. Este reporte mira lo que no está en el calendario.",
-      "Los grandes movimientos culturales no son los que se anuncian con fecha. Son los que se construyen en lenguaje cotidiano: cómo la gente describe su descanso, su exposición, su confianza, su aspiración y su humor.",
-      "Este es un radar de esos movimientos. 8 señales detectadas en conversación digital mexicana entre enero 2025 y mayo 2026. No son tendencias predichas; son tensiones presentes que ya están en curso."
+      "Los movimientos culturales que importan no son los que se anuncian con fecha. Son los que se cuelan en lo cotidiano: cómo la gente en México describe su descanso, su exposición, su confianza, su aspiración y su humor.",
+      "Este es un radar de esos movimientos. 8 señales detectadas en la conversación digital mexicana entre enero 2025 y mayo 2026. No son tendencias predichas. Son tensiones que ya están pasando."
     ],
     contractEyebrow: "Contrato de lectura",
     contractTitle: "No buscamos tendencias. Buscamos señales.",
     contractLead: "Una tendencia se mide en volumen. Una señal se detecta en lenguaje, contradicciones y cambios de vocabulario.",
     keyInsightsTitle: "Key insights",
     keyInsightsLead:
-      "La tesis central es que México está negociando permiso para dejar de performar: descansar sin justificarse, proteger privacidad, desconfiar de la perfección, pedir curaduría y reconocer formas contemporáneas de pertenencia. Las señales no son predicciones aisladas; juntas describen un cambio de sensibilidad que las marcas pueden leer antes de convertirlo en briefing.",
+      "México está negociando permiso para dejar de performar: descansar sin justificarse, proteger su privacidad, desconfiar de la perfección, pedir curaduría y nombrar lo propio sin cliché. Las señales no son predicciones aisladas. Juntas describen un cambio de sensibilidad que una marca puede leer antes de convertirlo en briefing.",
     searchedTitle: "Buscamos",
     searchedItems: [
       "Frases que se repiten en distintas voces y plataformas.",
-      "Tensiones que aparecen en la conversación cotidiana.",
+      "Tensiones que aparecen en la conversación cotidiana de México.",
       "Contradicciones entre lo que la gente dice y lo que las marcas asumen.",
       "Cambios de vocabulario que delatan cambios de creencia.",
-      "Comportamientos visibles que aún no tienen nombre."
+      "Comportamientos visibles que todavía no tienen nombre."
     ],
     cannotTitle: "Lo que no podemos decir",
     cannotItems: [
@@ -83,52 +84,52 @@ const reportCopy = {
     ],
     radarEyebrow: "Las 8 señales",
     radarTitle: "Por madurez cultural.",
-    radarLead: "El radar separa señales emergentes, señales acelerando y señales que ya operan como lenguaje dominante.",
+    radarLead: "El radar separa señales emergentes, señales acelerando y señales que ya operan como lenguaje dominante en México.",
     maturityFrameworkEyebrow: "Clasificación",
     maturityFrameworkTitle: "¿Cómo categorizamos las señales culturales?",
     chartMixLabel: "Radar mix",
     chartMixSubtitle: "Distribución del portafolio cultural por madurez.",
     chartMixInfo:
-      "El gráfico muestra cuántas señales caen en cada nivel de madurez. La madurez orienta qué tan rápido debería reaccionar una marca.",
-    scaleChartSubtitle: "Menciones revisadas por señal. El volumen orienta contexto; la lectura viene de la densidad cultural.",
+      "Cuántas señales caen en cada nivel de madurez. La madurez orienta qué tan rápido debería reaccionar una marca.",
+    scaleChartSubtitle: "Menciones revisadas por señal. El volumen ayuda a leer el contexto; lo importante es la carga cultural de cada una.",
     scaleChartInfo:
-      "Esta vista compara la escala de conversación revisada por señal usando el campo volume_indicator del JSON.",
+      "Compara la cantidad de menciones revisadas por señal. Es una vista de escala, no de importancia.",
     scatterLabel: "Lifecycle view",
     scatterSubtitle:
-      "La altura muestra escala de conversación revisada; la posición muestra madurez cultural. Los marcadores MX ayudan a leer el tipo de lenguaje que sostiene cada señal.",
+      "La altura muestra escala revisada; la posición muestra madurez cultural. Los marcadores MX ayudan a leer qué lenguaje sostiene cada señal.",
     scatterInfo:
-      "Cada punto es una señal cultural. El eje horizontal usa la clasificación de madurez del estudio; el eje vertical usa menciones revisadas del JSON. El tamaño indica fuentes de captura.",
+      "Cada punto es una señal. Horizontal: madurez cultural. Vertical: menciones revisadas. Tamaño: número de fuentes.",
     maturityChartTitle: "La mayoría de las señales ya están acelerando.",
     scaleChartTitle: "Dónde hay más conversación revisada.",
     scatterTitle: "Dónde está cada señal en su ciclo de vida.",
     brandLead: "Las señales no piden una sola respuesta. Piden ajustar producto, tono, evidencia, participación e identidad.",
-    ctaEyebrow: "Foundation Snapshot",
+    ctaEyebrow: "Siguiente paso",
     ctaTitle: "¿Qué señal está creciendo en tu categoría?",
     ctaBody:
-      "Este es un radar exploratorio. El siguiente paso es preguntarse, para una categoría específica, cuál de las 8 señales está cruzando su umbral en este momento y qué debería estar haciendo la marca para no llegar tarde.",
+      "Este es un radar exploratorio. El paso siguiente es preguntarse, para una categoría concreta, cuál de las 8 señales está cruzando su umbral ahora mismo y qué debería estar haciendo la marca para no llegar tarde.",
     ctaButton: "Agendar"
   },
   futureHuman: {
     printLabel: "future is human",
-    heroVisualKicker: "Seeded listening · marcas mexicanas",
+    heroVisualKicker: "Marcas mexicanas en conversación",
     heroVisualTitle: "La IA no deshumaniza. La falta de criterio sí.",
     heroVisualBody: "6 señales sobre voz, criterio, transparencia y responsabilidad cuando todo puede automatizarse.",
     openingLead: "¿Qué hace que una marca se sienta humana cuando todo puede ser automatizado?",
     openingParagraphs: [
       "La respuesta corta: no es la IA. Es el criterio.",
-      "Una marca puede ser automatizada y sentirse confiable. Una marca puede sonar cálida y sentirse falsa. Una marca puede responder rápido y aun así sentirse deshumana.",
-      "Este reporte no trata sobre chatbots ni sobre IA en abstracto. Trata sobre las señales que hacen que una marca conserve voz, criterio, transparencia y responsabilidad cuando todo a su alrededor se vuelve automatizable."
+      "Una marca puede estar automatizada y sentirse confiable. Otra puede sonar cálida y sentirse falsa. Y otra puede responder rápido y aun así sentirse deshumana.",
+      "Este reporte no es sobre chatbots ni sobre IA en abstracto. Es sobre las señales que hacen que una marca conserve voz, criterio, transparencia y responsabilidad cuando todo a su alrededor se vuelve automatizable."
     ],
     contractEyebrow: "Qué leímos",
     contractTitle: "No buscamos IA. Buscamos momentos donde una marca pierde humanidad.",
     contractLead:
-      "El estudio cruza marcas mexicanas con frases de fricción para detectar cuándo la audiencia siente voz, criterio, transparencia o responsabilidad en una interacción.",
+      "Cruzamos marcas mexicanas con frases de fricción para detectar cuándo la audiencia siente que una marca pierde voz, criterio, transparencia o responsabilidad en una interacción.",
     keyInsightsTitle: "Key insights",
     keyInsightsLead:
-      "La tesis central es que la humanidad de marca ya no se evalúa por sonar cálida, sino por conservar criterio cuando algo puede automatizarse. La audiencia distingue entre eficiencia útil y eficiencia deshumanizada: pide acceso a humano, transparencia, contexto, voz propia y responsabilidad cuando la experiencia se rompe.",
+      "La humanidad de una marca ya no se mide por sonar cálida, sino por conservar criterio cuando algo se puede automatizar. La audiencia distingue eficiencia útil de eficiencia deshumanizada: pide acceso a humano, transparencia, contexto, voz propia y responsabilidad cuando la experiencia se rompe.",
     searchedTitle: "Sí leímos",
     searchedItems: [
-      "80+ marcas mexicanas como punto de entrada, no como ranking.",
+      "Más de 80 marcas mexicanas como punto de entrada, no como ranking.",
       "Frases donde la gente pide humano, criterio, claridad o responsabilidad.",
       "Citas con contexto explícito de marca, plataforma y momento de servicio.",
       "Patrones de lenguaje que revelan cuándo la automatización ayuda o rompe confianza.",
@@ -139,35 +140,35 @@ const reportCopy = {
       "No es un ranking de mejores o peores marcas.",
       "No es un score de customer service.",
       "No representa a toda la población mexicana.",
-      "No equipara volumen con importancia: el volumen da contexto; la señal viene del tipo de fricción."
+      "No equipara volumen con importancia. El volumen da contexto; la señal viene del tipo de fricción."
     ],
     radarEyebrow: "Radar de humanidad",
     radarTitle: "Por nivel de instalación.",
     radarLead:
-      "El radar separa expectativas que ya son default de aquellas que todavía aparecen como fricción puntual, pero repetible.",
+      "El radar separa las expectativas que ya son default de las que todavía aparecen como fricción puntual, pero que se repiten.",
     maturityFrameworkEyebrow: "Nivel de instalación",
     maturityFrameworkTitle: "¿Qué tan instalada está la expectativa de humanidad?",
     chartMixLabel: "Mapa de instalación",
-    chartMixSubtitle: "Distribución de señales por nivel de instalación en conversación brand-tagged.",
+    chartMixSubtitle: "Distribución de señales por nivel de instalación en la conversación sobre marcas.",
     chartMixInfo:
-      "El gráfico muestra cuántas señales aparecen como emergentes, acelerando o mainstreaming. Aquí la madurez no mide cultura general: mide qué tan instalada está una expectativa de trato humano hacia marcas concretas.",
+      "Cuántas señales aparecen como emergentes, acelerando o mainstreaming. Aquí la madurez no mide cultura general: mide qué tan instalada está la expectativa de trato humano hacia marcas concretas.",
     scaleChartSubtitle: "Menciones revisadas por señal. El volumen orienta dónde hay más fricción visible; no sustituye la lectura estratégica.",
     scaleChartInfo:
-      "Esta vista compara escala de conversación revisada por señal usando el campo volume_indicator del JSON. Sirve para dimensionar exposición, no para rankear importancia.",
+      "Compara escala de conversación revisada por señal. Sirve para dimensionar exposición, no para rankear importancia.",
     scatterLabel: "Mapa de exposición",
     scatterSubtitle:
       "La altura muestra escala revisada; la posición muestra nivel de instalación. Los marcadores MX ayudan a leer qué lenguaje sostiene cada expectativa.",
     scatterInfo:
-      "Cada punto es una señal de humanidad de marca. El eje horizontal usa nivel de instalación; el eje vertical usa menciones revisadas del JSON. El tamaño indica fuentes de captura.",
+      "Cada punto es una señal de humanidad de marca. Horizontal: nivel de instalación. Vertical: menciones revisadas. Tamaño: número de fuentes.",
     maturityChartTitle: "La demanda de humano ya opera como default.",
-    scaleChartTitle: "Dónde aparece más conversación brand-tagged.",
+    scaleChartTitle: "Dónde aparece más conversación sobre marcas.",
     scatterTitle: "Cómo se distribuye la exposición por señal.",
     brandLead:
-      "Las señales aterrizan en decisiones concretas: acceso a humano, voz, disclosure, criterio y responsabilidad.",
+      "Las señales aterrizan en decisiones concretas: acceso a humano, voz, transparencia, criterio y responsabilidad.",
     ctaEyebrow: "Siguiente paso",
     ctaTitle: "¿En qué momento tu marca deja de sentirse humana?",
     ctaBody:
-      "Este es un radar exploratorio. El siguiente paso es preguntarse, para una marca específica, en cuál de las 6 señales está más expuesta y qué debería estar haciendo para conservar humanidad en los momentos que importan.",
+      "Este es un radar exploratorio. El paso siguiente es preguntarse, para una marca concreta, en cuál de las 6 señales está más expuesta y qué debería estar haciendo para conservar humanidad en los momentos que importan.",
     ctaButton: "Conversemos"
   }
 };
@@ -350,9 +351,9 @@ function maturityFrameworkText(report: InsightReport, maturity: InsightSignal["m
 
   const futureHumanMaturity: Record<InsightSignal["maturity"], string> = {
     emergente:
-      "Aparece en casos específicos. Todavía no es expectativa masiva, pero ya revela dónde una marca puede sentirse automática o descuidada.",
+      "Aparece en casos puntuales. Todavía no es expectativa masiva, pero ya revela dónde una marca puede sentirse automática o descuidada.",
     acelerando:
-      "La expectativa ya tiene vocabulario público y se dirige a marcas concretas. Si no se atiende, la fricción se vuelve narrativa.",
+      "La expectativa ya tiene vocabulario público y se dirige a marcas concretas. Si no se atiende, la fricción se vuelve historia.",
     mainstreaming:
       "Ya funciona como default. La gente pide humanidad antes de probar el sistema, no solo después de una mala experiencia."
   };
@@ -535,10 +536,6 @@ function ActionItem({ item }: { item: string }) {
 }
 
 function headlineDetailCopy(input: string) {
-  if (input.includes("corpus original") || input.includes("cadencia mensual")) {
-    return "La conversación aparece con más frecuencia mes a mes: entre 2025 y los primeros meses de 2026 el ritmo creció con claridad.";
-  }
-
   return input;
 }
 
@@ -761,10 +758,12 @@ function EvidenceList({ signal, evidence }: { signal: InsightSignal; evidence: I
 
 function SignalCard({
   signal,
+  evolution,
   printTotal,
   isFutureHuman = false
 }: {
   signal: InsightSignal;
+  evolution?: InsightReport["signalEvolution"][string];
   printTotal: string;
   isFutureHuman?: boolean;
 }) {
@@ -814,6 +813,8 @@ function SignalCard({
         <p>&ldquo;{cleanText(signal.lead_quote.text, 340)}&rdquo;</p>
         <QuoteGlyph />
       </blockquote>
+
+      <SignalEvolutionChart signal={signal} evolution={evolution} />
 
       <section className={styles.signalReading}>
         <span className="eyebrow">Lectura cultural</span>
@@ -1160,7 +1161,13 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
 
         <section className={styles.signalStack} aria-label="Señales culturales">
           {report.signals.map((signal) => (
-            <SignalCard signal={signal} printTotal={printPagesTotal} isFutureHuman={isFutureHuman} key={signal.id} />
+            <SignalCard
+              signal={signal}
+              evolution={report.signalEvolution[signal.id]}
+              printTotal={printPagesTotal}
+              isFutureHuman={isFutureHuman}
+              key={signal.id}
+            />
           ))}
         </section>
 
@@ -1198,12 +1205,12 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
           <PrintChrome page={printPage(report.signals.length + 9)} label="método" total={printPagesTotal} />
           <SectionIntro
             eyebrow="Cómo se leyeron las señales"
-            title="Método cualitativo, evidencia trazable."
+            title="Escuchamos, leímos y citamos."
             lead={report.methodology.opening_statement}
           />
           <div className={styles.methodGrid}>
             <article>
-              <h3>Principios</h3>
+              <h3>Cómo trabajamos</h3>
               <ul>
                 {report.methodology.principles.map((item) => (
                   <li key={item}>{item}</li>
@@ -1211,7 +1218,7 @@ export function InsightReportPage({ report }: { report: InsightReport }) {
               </ul>
             </article>
             <article>
-              <h3>Corpus</h3>
+              <h3>Qué escuchamos</h3>
               <dl>
                 <div>
                   <dt>Fuentes</dt>

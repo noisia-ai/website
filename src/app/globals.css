@@ -59,6 +59,27 @@
   --max-site: 1440px;
   --shadow-glass: 0 22px 64px rgba(43, 43, 43, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.86);
   --shadow-lift: 0 30px 90px rgba(43, 43, 43, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --editorial-max: var(--max-content);
+  --editorial-wide: var(--max-wide);
+  --editorial-read: var(--max-read);
+  --editorial-page-x: 20px;
+  --editorial-section-y: clamp(36px, 3.8vw, 56px);
+  --editorial-section-gap: clamp(44px, 6vw, 72px);
+  --editorial-card-gap: 20px;
+  --editorial-card-pad: clamp(22px, 2.8vw, 30px);
+  --editorial-panel-pad: clamp(28px, 6vw, 58px);
+  --editorial-radius-panel: var(--radius-xxl);
+  --editorial-radius-card: var(--radius-xl);
+  --editorial-radius-inner: var(--radius-lg);
+  --editorial-shadow: var(--shadow-glass);
+  --editorial-shadow-lift: var(--shadow-lift);
+  --editorial-display-hero: clamp(2.8rem, 5.4vw, 5.4rem);
+  --editorial-display-xl: var(--display-xl-size, clamp(2rem, 3.1vw, 3.8rem));
+  --editorial-display-lg: var(--display-lg-size, clamp(1.62rem, 2.05vw, 2.42rem));
+  --editorial-display-md: var(--display-md-size, clamp(1.25rem, 1.55vw, 1.72rem));
+  --editorial-body-lg: var(--body-lg-size, clamp(0.92rem, 1.2vw, 1.04rem));
+  --editorial-body: 0.94rem;
+  --editorial-small: 0.76rem;
 }
 
 * {

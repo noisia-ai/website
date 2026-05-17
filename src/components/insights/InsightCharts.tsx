@@ -1,6 +1,7 @@
 "use client";
 
-import type { InsightSignal } from "@/content/insights/reports";
+import { useState } from "react";
+import type { InsightSignal, SignalEvolutionSeries } from "@/content/insights/reports";
 import styles from "./Insights.module.css";
 
 const maturityOrder = ["emergente", "acelerando", "mainstreaming"] as const;
@@ -40,11 +41,207 @@ function compactSignalName(input: string) {
     .replace(" empieza a ", " ");
 }
 
+const monthNames = [
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre"
+];
+
+function formatMonth(month: string) {
+  const [year, monthNumber] = month.split("-");
+  return `${monthNames[Number(monthNumber) - 1] ?? month} ${year}`;
+}
+
+function compactMentions(value: number) {
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(1)}M`;
+  }
+
+  if (value >= 100_000) {
+    return `${Math.round(value / 1_000)}k`;
+  }
+
+  if (value >= 10_000) {
+    return `${Math.round(value / 1_000)}k`;
+  }
+
+  return value.toLocaleString("es-MX");
+}
+
+function pathFromPoints(points: Array<{ x: number; y: number }>) {
+  return points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(" ");
+}
+
 export function DownloadPrintButton() {
   return (
     <button className={`button button--secondary ${styles.printButton}`} type="button" onClick={() => window.print()}>
       Descargar PDF
     </button>
+  );
+}
+
+export function SignalEvolutionChart({
+  signal,
+  evolution
+}: {
+  signal: InsightSignal;
+  evolution?: SignalEvolutionSeries;
+}) {
+  const [tooltip, setTooltip] = useState<{
+    label: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
+  if (!evolution || evolution.monthly.length < 2) {
+    return null;
+  }
+
+  const evolutionData = evolution;
+  const values = evolutionData.monthly.map((item) => item.mentions);
+  const maxValue = Math.max(...values);
+  const yMax = Math.ceil((maxValue * 1.12) / 1000) * 1000;
+  const yTicks = [0, yMax / 2, yMax];
+  const xLabelIndexes = [0, Math.floor((evolutionData.monthly.length - 1) / 2), evolutionData.monthly.length - 1];
+  const chartFrames = {
+    desktop: {
+      className: styles.signalEvolutionSvgDesktop,
+      height: 188,
+      padding: { top: 18, right: 22, bottom: 34, left: 52 },
+      pointRadius: 7,
+      width: 760
+    },
+    mobile: {
+      className: styles.signalEvolutionSvgMobile,
+      height: 360,
+      padding: { top: 28, right: 18, bottom: 50, left: 56 },
+      pointRadius: 11,
+      width: 360
+    }
+  };
+
+  function renderSvg(variant: keyof typeof chartFrames) {
+    const frame = chartFrames[variant];
+    const plotWidth = frame.width - frame.padding.left - frame.padding.right;
+    const plotHeight = frame.height - frame.padding.top - frame.padding.bottom;
+    const baselineY = frame.padding.top + plotHeight;
+    const points = evolutionData.monthly.map((item, index) => {
+      const x = frame.padding.left + (index / (evolutionData.monthly.length - 1)) * plotWidth;
+      const y = frame.padding.top + plotHeight - (item.mentions / yMax) * plotHeight;
+
+      return { ...item, x, y };
+    });
+    const linePath = pathFromPoints(points);
+    const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(2)} ${baselineY.toFixed(2)} L ${points[0].x.toFixed(2)} ${baselineY.toFixed(2)} Z`;
+    const gradientId = `evolution-fill-${signal.id}-${variant}`;
+
+    return (
+      <svg
+        className={frame.className}
+        viewBox={`0 0 ${frame.width} ${frame.height}`}
+        role="img"
+        aria-label={`${signal.commercial_name}: menciones mensuales`}
+      >
+        <defs>
+          <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor={signal.color} stopOpacity="0.2" />
+            <stop offset="100%" stopColor={signal.color} stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        {yTicks.map((tick) => {
+          const y = frame.padding.top + plotHeight - (tick / yMax) * plotHeight;
+
+          return (
+            <g className={styles.signalEvolutionGuide} key={`${variant}-${tick}`}>
+              <line x1={frame.padding.left} x2={frame.width - frame.padding.right} y1={y} y2={y} />
+              <text x={frame.padding.left - 10} y={y + 4}>
+                {compactMentions(tick)}
+              </text>
+            </g>
+          );
+        })}
+        <path className={styles.signalEvolutionArea} d={areaPath} fill={`url(#${gradientId})`} />
+        <path className={styles.signalEvolutionLine} d={linePath} style={{ stroke: signal.color }} />
+        {points.map((point) => (
+          <circle
+            className={styles.signalEvolutionPoint}
+            cx={point.x}
+            cy={point.y}
+            key={`${signal.id}-${variant}-${point.month}`}
+            r={frame.pointRadius}
+            style={{ ["--signal-color" as string]: signal.color }}
+            tabIndex={0}
+            aria-label={`${formatMonth(point.month)} · ${point.mentions.toLocaleString("es-MX")} menciones`}
+            onBlur={() => setTooltip(null)}
+            onFocus={() =>
+              setTooltip({
+                label: `${formatMonth(point.month)} · ${point.mentions.toLocaleString("es-MX")} menciones`,
+                x: point.x,
+                y: point.y,
+                width: frame.width,
+                height: frame.height
+              })
+            }
+            onMouseEnter={() =>
+              setTooltip({
+                label: `${formatMonth(point.month)} · ${point.mentions.toLocaleString("es-MX")} menciones`,
+                x: point.x,
+                y: point.y,
+                width: frame.width,
+                height: frame.height
+              })
+            }
+            onMouseLeave={() => setTooltip(null)}
+          >
+            <title>{`${formatMonth(point.month)} · ${point.mentions.toLocaleString("es-MX")} menciones`}</title>
+          </circle>
+        ))}
+        {xLabelIndexes.map((index) => {
+          const point = points[index];
+
+          return (
+            <text className={styles.signalEvolutionXAxis} x={point.x} y={frame.height - 10} key={`${signal.id}-${variant}-label-${point.month}`}>
+              {point.month}
+            </text>
+          );
+        })}
+      </svg>
+    );
+  }
+
+  return (
+    <section className={styles.signalEvolution} aria-label={`Evolución mensual de ${signal.commercial_name}`}>
+      <header className={styles.signalEvolutionHeader}>
+        <span className="eyebrow">Evolución mensual</span>
+        <strong>{evolutionData.total.toLocaleString("es-MX")} menciones</strong>
+      </header>
+      <div className={styles.signalEvolutionCanvas}>
+        {renderSvg("desktop")}
+        {renderSvg("mobile")}
+        {tooltip ? (
+          <span
+            className={styles.signalEvolutionTooltip}
+            style={{
+              ["--tooltip-x" as string]: `${(tooltip.x / tooltip.width) * 100}%`,
+              ["--tooltip-y" as string]: `${(tooltip.y / tooltip.height) * 100}%`
+            }}
+          >
+            {tooltip.label}
+          </span>
+        ) : null}
+      </div>
+    </section>
   );
 }
 

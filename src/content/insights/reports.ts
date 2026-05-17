@@ -1,4 +1,6 @@
 import rawForesightReport from "./noisia-foresight-master-handoff.json";
+import { signalEvolution as foresightSignalEvolution } from "./noisia_foresight_2026_signal_evolution";
+import { signalEvolution as futureHumanSignalEvolution } from "./noisia_future_is_human_signal_evolution";
 import rawFutureHumanReport from "./noisia_future_is_human_master_handoff.json";
 
 export type HeroNumber = {
@@ -60,6 +62,22 @@ export type InsightSignal = {
   evidence: SignalEvidence[];
 };
 
+export type SignalEvolutionMonth = {
+  month: string;
+  mentions: number;
+};
+
+export type SignalEvolutionSeries = {
+  id: string;
+  name: string;
+  color: string;
+  maturity: InsightSignal["maturity"];
+  total: number;
+  monthly: SignalEvolutionMonth[];
+};
+
+export type SignalEvolutionMap = Record<string, SignalEvolutionSeries>;
+
 export type BrandAction = {
   pillar: string;
   do: string;
@@ -110,15 +128,19 @@ export type InsightReport = {
   hero_numbers: Record<string, HeroNumber>;
   narrative_umbrella: NarrativeUmbrella;
   signals: InsightSignal[];
+  signalEvolution: SignalEvolutionMap;
   brand_action_map: BrandAction[];
   methodology: Methodology;
 };
 
-const foresightReport = rawForesightReport as unknown as Omit<InsightReport, "slug" | "indexLabel" | "ctaHref">;
-const futureHumanReport = rawFutureHumanReport as unknown as Omit<InsightReport, "slug" | "indexLabel" | "ctaHref">;
+const foresightReport = rawForesightReport as unknown as Omit<InsightReport, "slug" | "indexLabel" | "ctaHref" | "signalEvolution">;
+const futureHumanReport = rawFutureHumanReport as unknown as Omit<InsightReport, "slug" | "indexLabel" | "ctaHref" | "signalEvolution">;
+const foresightSignalEvolutionMap = foresightSignalEvolution as unknown as SignalEvolutionMap;
+const futureHumanSignalEvolutionMap = futureHumanSignalEvolution as unknown as SignalEvolutionMap;
 
 export const mexicoForesight2026Report: InsightReport = {
   ...foresightReport,
+  signalEvolution: foresightSignalEvolutionMap,
   slug: "cultural-foresight-mexico-2026",
   aliases: ["mexico-esta-cansado-de-performar"],
   indexLabel: "Cultural Foresight México 2026",
@@ -127,6 +149,7 @@ export const mexicoForesight2026Report: InsightReport = {
 
 export const futureIsHumanReport: InsightReport = {
   ...futureHumanReport,
+  signalEvolution: futureHumanSignalEvolutionMap,
   slug: "future-is-human",
   indexLabel: "Future is Human",
   ctaHref: "/contacto"

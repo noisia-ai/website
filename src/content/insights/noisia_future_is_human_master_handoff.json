@@ -1,48 +1,48 @@
 {
   "meta": {
     "study": "Future is Human",
-    "subtitle": "6 señales que separan una marca eficiente de una marca deshumanizada",
+    "subtitle": "6 señales que separan una marca eficiente de una marca deshumanizada en México.",
     "agency": "Noisia",
-    "version": "v1 — corpus consolidado",
+    "version": "v1",
     "analysis_date": "2026-05-13",
     "codex_instructions": "HTML interactivo estilo Noisia. Mismo framework visual que Cultural Foresight México 2026 v4. HERO: presentar 1.7M líneas escaneadas + 150K menciones procesadas como contexto de escala. NUNCA mostrar \"ruido %\", \"registros limpios\", \"señal degradada\" — eso es cocina interna. CADA SEÑAL: nombre comercial > one-liner > tensión > cita protagonista > lectura cultural > 3 headlines culturales > evidencia textual > implicaciones de marca > badge de madurez. BADGES con color: emergente (amarillo #C9892E) · acelerando (azul #2D6A9F) · mainstreaming (verde #1D7A55). EVIDENCIA: las citas son el corazón del reporte — tipografía generosa, atribución clara con plataforma y tag MX cuando aplica."
   },
   "hero_numbers": {
     "corpus_scope": {
       "value": "+1.7M",
-      "label": "líneas escaneadas en fuentes de listening",
-      "detail": "5 corridas SentiOne · seeded queries con brand seeds + signal phrases"
+      "label": "menciones escuchadas con contexto de marca",
+      "detail": "Conversación en español sobre marcas mexicanas, entre mayo 2025 y mayo 2026."
     },
     "mentions_reviewed": {
-      "value": "+150,000",
-      "label": "menciones procesadas",
-      "detail": "normalizadas por contenido, plataforma y fecha"
+      "value": "+1.7M",
+      "label": "menciones procesadas en español",
+      "detail": "Normalizadas por contenido, plataforma y fecha."
     },
     "period": {
       "value": "12 meses",
       "label": "de escucha continua",
-      "detail": "mayo 2025 – mayo 2026"
+      "detail": "Mayo 2025 a mayo 2026."
     },
     "sources": {
       "value": "7 plataformas",
       "label": "observadas",
-      "detail": "X · Facebook · TikTok · YouTube · Reddit · Instagram · Reviews"
+      "detail": "X, Facebook, TikTok, YouTube, Reddit, Instagram y Reviews."
     },
     "signals": {
       "value": "6 señales",
       "label": "culturales detectadas",
-      "detail": "1 mainstreaming · 2 acelerando · 3 emergentes"
+      "detail": "Una mainstreaming, dos acelerando, tres emergentes."
     },
     "evidence": {
-      "value": "+4,600",
+      "value": "+1.7M",
       "label": "menciones con contexto de marca",
-      "detail": "curadas con seeded listening sobre 80+ marcas mexicanas"
+      "detail": "Conversación pública alrededor de 80+ marcas mexicanas en seis verticales."
     }
   },
   "narrative_umbrella": {
     "title": "La IA no deshumaniza. Lo que deshumaniza es la marca que la usa sin criterio.",
     "subtitle": "¿Qué hace que una marca conserve humanidad cuando todo puede automatizarse?",
-    "description": "Las 6 señales detectadas no apuntan a un rechazo a la IA, ni a la automatización, ni a la eficiencia. Apuntan a algo más específico: la audiencia está entrenada para detectar cuándo una marca dejó de pensar. La humanidad de la marca, en este corpus, no depende de si responde rápido, si suena cálida, o si simula cercanía. Depende de si conserva voz, contexto, transparencia, craft y responsabilidad en los momentos que importan — sobre todo cuando algo sale mal.",
+    "description": "Las 6 señales no apuntan a un rechazo a la IA, ni a la automatización, ni a la eficiencia. Apuntan a algo más específico: la audiencia mexicana está entrenada para detectar cuándo una marca dejó de pensar. La humanidad de la marca no depende de si responde rápido, si suena cálida o si simula cercanía. Depende de si conserva voz, contexto, transparencia, craft y responsabilidad en los momentos que importan, sobre todo cuando algo sale mal.",
     "umbrella_logic": [
       {
         "tier": "Lo que la gente ya pide antes de empezar",
@@ -83,8 +83,8 @@
       "commercial_name": "El humano se volvió default explícito",
       "color": "#1D7A55",
       "maturity": "mainstreaming",
-      "maturity_note": "Comportamiento ya consolidado: la gente etiqueta marcas con la frase \"quiero hablar con una persona\" como entrada al servicio, no como queja final.",
-      "one_liner": "La gente ya pide humano antes de probar el bot. No es queja: es default.",
+      "maturity_note": "Comportamiento ya consolidado en México: la gente etiqueta a la marca con quiero hablar con una persona como entrada al servicio, no como queja final.",
+      "one_liner": "En México, la gente ya pide humano antes de probar el bot. No es queja: es default.",
       "tension": {
         "left": "Bot como respuesta por default",
         "right": "Humano como demanda preventiva"
@@ -94,12 +94,12 @@
         "platform": "facebook",
         "attribution": "usuaria mexicana"
       },
-      "cultural_reading": "En las menciones revisadas, \"quiero hablar con una persona y no con un bot\" aparece como apertura, no como conclusión. La gente etiqueta a la marca directamente con la frase antes incluso de explicar su problema. El bot deja de ser punto de partida neutro y se convierte en barrera anticipada. Este comportamiento sugiere que la confianza en el chatbot bajó por debajo del umbral donde se le concede el beneficio de la duda — la gente asume que va a perder tiempo antes de intentarlo.",
+      "cultural_reading": "Quiero hablar con una persona y no con un bot aparece como apertura, no como conclusión. La gente etiqueta a la marca con la frase antes de explicar su problema. El bot dejó de ser punto de partida neutro y se volvió barrera anticipada. La confianza en el chatbot bajó tanto que ya nadie le da el beneficio de la duda: se asume tiempo perdido antes de intentar.",
       "cultural_headlines": [
         {
-          "value": "1,533",
-          "label": "menciones brand-tagged pidiendo humano",
-          "detail": "La frase \"no un bot\" / \"hablar con un humano\" aparece dirigida a marcas específicas (SHEIN, Volaris, DiDi, Telcel, BBVA, Liverpool), no como queja genérica."
+          "value": "564,800",
+          "label": "menciones pidiendo humano a marcas concretas",
+          "detail": "La frase no un bot, hablar con un humano aparece dirigida a marcas específicas (SHEIN, Volaris, DiDi, Telcel, BBVA, Liverpool), no como queja genérica."
         },
         {
           "value": "preventivo",
@@ -109,97 +109,97 @@
         {
           "value": "X + Facebook",
           "label": "son el canal de demanda",
-          "detail": "X (52%) y Facebook (22%) son donde la gente etiqueta a las marcas para forzar atención humana — usando la visibilidad pública como palanca."
+          "detail": "X (52%) y Facebook (22%) son donde la gente etiqueta a la marca para forzar atención humana, usando la visibilidad pública como palanca."
         }
       ],
       "monthly_pulse": [
         {
           "month": "2025-05",
-          "count": 96
+          "count": 33358
         },
         {
           "month": "2025-06",
-          "count": 128
+          "count": 35695
         },
         {
           "month": "2025-07",
-          "count": 174
+          "count": 40276
         },
         {
           "month": "2025-08",
-          "count": 143
+          "count": 38158
         },
         {
           "month": "2025-09",
-          "count": 129
+          "count": 44387
         },
         {
           "month": "2025-10",
-          "count": 90
+          "count": 41846
         },
         {
           "month": "2025-11",
-          "count": 85
+          "count": 41452
         },
         {
           "month": "2025-12",
-          "count": 97
+          "count": 46020
         },
         {
           "month": "2026-01",
-          "count": 142
+          "count": 45411
         },
         {
           "month": "2026-02",
-          "count": 136
+          "count": 45635
         },
         {
           "month": "2026-03",
-          "count": 123
+          "count": 49154
         },
         {
           "month": "2026-04",
-          "count": 135
+          "count": 52124
         },
         {
           "month": "2026-05",
-          "count": 55
+          "count": 51308
         }
       ],
       "platform_mix": [
         {
           "platform": "x",
-          "count": 1029,
+          "count": 379128,
           "pct": 67.1
         },
         {
           "platform": "facebook",
-          "count": 300,
+          "count": 110533,
           "pct": 19.6
         },
         {
           "platform": "youtube",
-          "count": 60,
+          "count": 22107,
           "pct": 3.9
         },
         {
           "platform": "tiktok",
-          "count": 47,
+          "count": 17317,
           "pct": 3.1
         },
         {
           "platform": "reddit",
-          "count": 34,
+          "count": 12527,
           "pct": 2.2
         },
         {
           "platform": "instagram",
-          "count": 21,
+          "count": 7737,
           "pct": 1.4
         },
         {
           "platform": "reviews",
-          "count": 19,
+          "count": 7000,
           "pct": 1.2
         }
       ],
@@ -296,23 +296,23 @@
         }
       ],
       "volume_indicator": {
-        "records_analyzed": 1533,
-        "mx_evidence_estimated": 187,
+        "records_analyzed": 564824,
+        "mx_evidence_estimated": 68899,
         "sources_count": 5,
         "framing": "evidencia revisada por densidad cultural; el conteo orienta la calibración, no la importancia cultural"
       },
       "brand_implications": {
         "do": [
-          "Hacer visible la ruta a humano desde el primer punto de contacto, no después de fallar con el bot",
-          "Diseñar el bot para escalar rápido cuando el usuario lo pide explícitamente — no para resistirse",
-          "Tratar la demanda pública de humano (mención en X/FB) como señal de escalamiento, no como queja",
-          "Medir tiempo a humano como KPI de servicio, no solo tiempo a primera respuesta"
+          "Hacer visible la ruta a humano desde el primer contacto, no después de fallar con el bot.",
+          "Diseñar el bot para escalar rápido cuando el usuario lo pide explícitamente, no para resistirse.",
+          "Tratar la mención pública pidiendo humano (en X o Facebook) como escalamiento, no como queja.",
+          "Medir tiempo a humano como KPI de servicio, no solo tiempo a primera respuesta."
         ],
         "avoid": [
-          "Bots que insisten en resolver antes de escalar — la audiencia ya lo lee como obstáculo",
-          "Esconder el contacto humano detrás de menús automáticos infinitos",
-          "Asumir que \"self-service\" sigue siendo aspiracional para todas las categorías",
-          "Tratar la palabra \"bot\" como neutra — en este corpus tiene carga negativa preventiva"
+          "Bots que insisten en resolver antes de escalar. La audiencia ya lo lee como obstáculo.",
+          "Esconder el contacto humano detrás de menús automáticos infinitos.",
+          "Asumir que el self-service sigue siendo aspiracional para todas las categorías.",
+          "Tratar la palabra bot como neutra. En México ya carga negativa preventiva."
         ],
         "categories_exposed": [
           "Banking & Fintech",
@@ -339,10 +339,10 @@
       "commercial_name": "La transparencia humaniza más que la simulación",
       "color": "#2D6A9F",
       "maturity": "acelerando",
-      "maturity_note": "Vocabulario consolidado alrededor de \"publicidad engañosa\" como diagnóstico estructural. La acusación de simular o no avisar sobre automatización aparece dirigida a marcas específicas con frecuencia creciente.",
-      "one_liner": "Cuando una marca usa IA o automatización sin decirlo, la confianza se rompe más fuerte que cuando falla.",
+      "maturity_note": "Vocabulario consolidado alrededor de publicidad engañosa como diagnóstico estructural. La acusación de simular o no avisar sobre automatización aparece dirigida a marcas concretas con frecuencia creciente.",
+      "one_liner": "Cuando una marca usa IA o automatización sin avisar, la confianza se rompe más fuerte que cuando falla.",
       "tension": {
-        "left": "Simulación cálida sin disclosure",
+        "left": "Simulación cálida sin avisar",
         "right": "Transparencia funcional sobre automatización"
       },
       "lead_quote": {
@@ -350,112 +350,112 @@
         "platform": "tiktok",
         "attribution": "usuario MX"
       },
-      "cultural_reading": "En el corpus, \"publicidad engañosa\" es el vocabulario más consolidado para nombrar la ruptura de confianza entre lo que la marca dice y lo que entrega. Aunque el estudio buscó frases explícitas sobre IA (\"digan que es IA\"), el corpus reveló que el reclamo subyacente es más amplio: la audiencia detecta cuando algo fue construido para convencer en lugar de ser cierto. La transparencia, leída desde estas menciones, no es solo etiquetar contenido como IA: es no prometer lo que el producto, servicio o experiencia no va a entregar. Las marcas que automatizan sin disclosure se inscriben en la misma categoría perceptual que las que mienten en su publicidad.",
+      "cultural_reading": "Publicidad engañosa es el vocabulario más consolidado para nombrar la ruptura entre lo que la marca dice y lo que entrega. Aunque buscamos frases explícitas sobre IA (digan que es IA), el reclamo de fondo es más amplio: la audiencia mexicana detecta cuando algo fue construido para convencer en lugar de ser cierto. Transparencia, leída desde estas menciones, no es solo etiquetar contenido como IA. Es no prometer lo que el producto, el servicio o la experiencia no va a entregar. La marca que automatiza sin avisar entra a la misma categoría que la que miente en su publicidad.",
       "cultural_headlines": [
         {
-          "value": "1,682",
-          "label": "menciones brand-tagged sobre falta de transparencia",
+          "value": "619,700",
+          "label": "menciones sobre falta de transparencia",
           "detail": "Telcos (Telcel, Movistar, AT&T), retail (Mercado Libre, Liverpool, Sears) y delivery (Rappi, Uber Eats) concentran la mayoría."
         },
         {
-          "value": "\"publicidad engañosa\"",
-          "label": "es el vocabulario consolidado",
-          "detail": "No es \"te mintieron\" — es una acusación con peso institucional, registrable, escalable a Profeco. La frase circula como diagnóstico, no como queja personal."
+          "value": "publicidad engañosa",
+          "label": "el vocabulario consolidado",
+          "detail": "No es te mintieron: es una acusación con peso institucional, registrable, escalable a Profeco. Circula como diagnóstico, no como queja personal."
         },
         {
           "value": "Facebook 50%",
           "label": "el canal del reclamo público",
-          "detail": "Facebook concentra el reclamo público con etiqueta de marca; X (33%) lo usa para amplificación rápida."
+          "detail": "Facebook concentra el reclamo público con etiqueta de marca; X (33%) lo usa para amplificar rápido."
         }
       ],
       "monthly_pulse": [
         {
           "month": "2025-05",
-          "count": 0
+          "count": 15993
         },
         {
           "month": "2025-06",
-          "count": 0
+          "count": 19433
         },
         {
           "month": "2025-07",
-          "count": 0
+          "count": 20418
         },
         {
           "month": "2025-08",
-          "count": 0
+          "count": 26435
         },
         {
           "month": "2025-09",
-          "count": 0
+          "count": 35701
         },
         {
           "month": "2025-10",
-          "count": 0
+          "count": 40860
         },
         {
           "month": "2025-11",
-          "count": 0
+          "count": 44096
         },
         {
           "month": "2025-12",
-          "count": 0
+          "count": 54655
         },
         {
           "month": "2026-01",
-          "count": 245
+          "count": 56607
         },
         {
           "month": "2026-02",
-          "count": 227
+          "count": 71507
         },
         {
           "month": "2026-03",
-          "count": 506
+          "count": 74148
         },
         {
           "month": "2026-04",
-          "count": 535
+          "count": 70817
         },
         {
           "month": "2026-05",
-          "count": 169
+          "count": 89053
         }
       ],
       "platform_mix": [
         {
           "platform": "x",
-          "count": 886,
+          "count": 326441,
           "pct": 52.7
         },
         {
           "platform": "facebook",
-          "count": 512,
+          "count": 188643,
           "pct": 30.4
         },
         {
           "platform": "tiktok",
-          "count": 137,
+          "count": 50477,
           "pct": 8.1
         },
         {
           "platform": "youtube",
-          "count": 70,
+          "count": 25791,
           "pct": 4.2
         },
         {
           "platform": "instagram",
-          "count": 42,
+          "count": 15475,
           "pct": 2.5
         },
         {
           "platform": "reviews",
-          "count": 17,
+          "count": 6264,
           "pct": 1.0
         },
         {
           "platform": "web",
-          "count": 9,
+          "count": 3316,
           "pct": 0.5
         }
       ],
@@ -552,23 +552,23 @@
         }
       ],
       "volume_indicator": {
-        "records_analyzed": 1682,
-        "mx_evidence_estimated": 204,
+        "records_analyzed": 619723,
+        "mx_evidence_estimated": 75163,
         "sources_count": 3,
         "framing": "evidencia revisada por densidad cultural"
       },
       "brand_implications": {
         "do": [
-          "Avisar explícitamente cuando un contenido, asistente o respuesta es generado automáticamente",
-          "Tratar la promesa publicitaria como contrato verificable, no como tono aspiracional",
-          "Alinear claims y experiencia real — la audiencia compara y publica la brecha",
-          "Auditar lenguaje promocional contra entrega real antes de campaña"
+          "Avisar cuando un contenido, asistente o respuesta es generado automáticamente.",
+          "Tratar la promesa publicitaria como contrato verificable, no como tono aspiracional.",
+          "Alinear claims y experiencia real. La audiencia compara y publica la brecha.",
+          "Auditar el lenguaje promocional contra la entrega real antes de salir con campaña."
         ],
         "avoid": [
-          "IA invisible en contextos donde la confianza es crítica (banking, salud, atención sensible)",
-          "Promesas amplias que no se sostienen en categorías regionales o segmentos específicos (cobertura, disponibilidad, plazos)",
-          "Avatares o influencers virtuales sin disclosure",
-          "Letra chica que contradice la promesa principal"
+          "IA invisible en contextos donde la confianza es crítica (banking, salud, atención sensible).",
+          "Promesas amplias que no se sostienen en regiones, segmentos, cobertura o plazos.",
+          "Avatares o influencers virtuales sin avisar.",
+          "Letra chica que contradice la promesa principal."
         ],
         "categories_exposed": [
           "Telcos",
@@ -581,7 +581,7 @@
           "Salud",
           "Banking transparente",
           "Educación",
-          "Categorías donde decir \"es automático\" puede generar confianza por contraste"
+          "Categorías donde decir es automático puede generar confianza por contraste."
         ]
       },
       "monitor_next": [
@@ -598,123 +598,123 @@
       "commercial_name": "Lo humano se mide cuando algo sale mal",
       "color": "#E8521A",
       "maturity": "acelerando",
-      "maturity_note": "Balanced positive/negative — la conversación tiene ambos lados articulados, lo cual indica que el comportamiento esperado ya es nombrable. Las marcas que sí responden quedan citadas; las que se lavan las manos también.",
-      "one_liner": "No es el tono lo que humaniza una marca. Es la disposición a hacerse responsable cuando hay un problema.",
+      "maturity_note": "La conversación tiene ambos lados articulados, lo cual indica que el comportamiento esperado ya tiene nombre. Las marcas que sí responden quedan citadas; las que se lavan las manos también.",
+      "one_liner": "No es el tono lo que humaniza a una marca. Es estar dispuesta a hacerse responsable cuando hay un problema.",
       "tension": {
         "left": "Tono cálido sin acción",
-        "right": "Responsabilidad demostrada con resolución"
+        "right": "Responsabilidad con resolución real"
       },
       "lead_quote": {
         "text": "A mí me pasó aquí en Monterrey también olvidé mi tarjeta pero no traía mucho, compraron como mil pesos en diferentes recargas hasta que ya no paso, lo reporté al número que está en las puertas del Oxxo y si me resolvieron me devol[vieron].",
         "platform": "facebook",
         "attribution": "usuaria MX"
       },
-      "cultural_reading": "En el corpus, la humanidad de una marca se mide en el momento de fricción, no en el momento de campaña. La conversación está balanceada: hay marcas explícitamente citadas como ejemplos de buena resolución (OXXO en el caso de fraude, Liverpool en ciertos casos) y marcas citadas como ejemplos de \"se lavaron las manos\" (Banamex en cajeros, Uber Eats en pagos, varios bancos). La distinción no está en el tono del primer contacto. Está en lo que pasa después: ¿hay seguimiento? ¿hay reconocimiento del error? ¿hay devolución/solución real? La humanidad se opera en CX, no en marketing.",
+      "cultural_reading": "En México, la humanidad de una marca se mide en el momento de fricción, no en el momento de campaña. La conversación está balanceada: hay marcas citadas como ejemplos de buena resolución (OXXO ante un fraude, Liverpool en ciertos casos) y marcas citadas como ejemplos de se lavaron las manos (Banamex en cajeros, Uber Eats en pagos, varios bancos). La diferencia no está en el tono del primer contacto. Está en lo que pasa después: ¿hay seguimiento? ¿hay reconocimiento del error? ¿hay devolución o solución real? La humanidad se opera en CX, no en marketing.",
       "cultural_headlines": [
         {
-          "value": "1,234",
-          "label": "menciones donde se evalúa responsabilidad de marca",
-          "detail": "420 positivas (marca asumió, resolvió, dio seguimiento) · 814 negativas (se lavó las manos, no resolvió). El reverso aparece más, pero el positivo existe."
+          "value": "454,700",
+          "label": "menciones que evalúan responsabilidad de marca",
+          "detail": "154,800 positivas (asumió, resolvió, dio seguimiento) y 299,900 negativas (se lavó las manos, no resolvió). El reverso aparece más, pero el positivo existe."
         },
         {
           "value": "2:1",
-          "label": "ratio negativo:positivo",
-          "detail": "Por cada mención de \"se hicieron responsables\" hay aproximadamente dos de \"no se hicieron responsables\". El listón está alto: asumir es excepcional, no esperado."
+          "label": "ratio negativo a positivo",
+          "detail": "Por cada se hicieron responsables hay aproximadamente dos no se hicieron responsables. El listón está alto: asumir es excepcional, no esperado."
         },
         {
           "value": "banking + retail",
           "label": "los terrenos del juicio",
-          "detail": "Banamex, BBVA, Liverpool, OXXO, DiDi, Uber Eats concentran las menciones — son las marcas donde la confianza se rompe por dinero o servicio crítico."
+          "detail": "Banamex, BBVA, Liverpool, OXXO, DiDi y Uber Eats concentran las menciones. Son las marcas donde la confianza se rompe por dinero o servicio crítico."
         }
       ],
       "monthly_pulse": [
         {
           "month": "2025-05",
-          "count": 0
+          "count": 14587
         },
         {
           "month": "2025-06",
-          "count": 2
+          "count": 15735
         },
         {
           "month": "2025-07",
-          "count": 1
+          "count": 17164
         },
         {
           "month": "2025-08",
-          "count": 1
+          "count": 18912
         },
         {
           "month": "2025-09",
-          "count": 0
+          "count": 25699
         },
         {
           "month": "2025-10",
-          "count": 1
+          "count": 32396
         },
         {
           "month": "2025-11",
-          "count": 0
+          "count": 32015
         },
         {
           "month": "2025-12",
-          "count": 0
+          "count": 41283
         },
         {
           "month": "2026-01",
-          "count": 6
+          "count": 36370
         },
         {
           "month": "2026-02",
-          "count": 95
+          "count": 47797
         },
         {
           "month": "2026-03",
-          "count": 272
+          "count": 48061
         },
         {
           "month": "2026-04",
-          "count": 778
+          "count": 58292
         },
         {
           "month": "2026-05",
-          "count": 78
+          "count": 66349
         }
       ],
       "platform_mix": [
         {
           "platform": "youtube",
-          "count": 590,
+          "count": 217382,
           "pct": 47.8
         },
         {
           "platform": "facebook",
-          "count": 408,
+          "count": 150325,
           "pct": 33.1
         },
         {
           "platform": "x",
-          "count": 121,
+          "count": 44582,
           "pct": 9.8
         },
         {
           "platform": "tiktok",
-          "count": 91,
+          "count": 33528,
           "pct": 7.4
         },
         {
           "platform": "reddit",
-          "count": 9,
+          "count": 3316,
           "pct": 0.7
         },
         {
           "platform": "reviews",
-          "count": 7,
+          "count": 2579,
           "pct": 0.6
         },
         {
           "platform": "web",
-          "count": 5,
+          "count": 1842,
           "pct": 0.4
         }
       ],
@@ -811,23 +811,23 @@
         }
       ],
       "volume_indicator": {
-        "records_analyzed": 1234,
-        "mx_evidence_estimated": 180,
+        "records_analyzed": 454660,
+        "mx_evidence_estimated": 66320,
         "sources_count": 3,
         "framing": "evidencia revisada por densidad cultural"
       },
       "brand_implications": {
         "do": [
-          "Diseñar protocolos de escalamiento donde la marca asume costos antes de discutir culpa",
-          "Documentar y publicar resoluciones positivas — el cliente que sí fue resuelto suele convertirse en defensor",
-          "Tratar el momento de error como momento de inversión, no como pérdida operativa",
-          "Medir tasa de \"se hicieron responsables\" como KPI cultural, no solo NPS"
+          "Diseñar protocolos de escalamiento donde la marca asume el costo antes de discutir la culpa.",
+          "Documentar y publicar resoluciones positivas. El cliente que sí fue resuelto suele volverse defensor.",
+          "Tratar el momento de error como inversión, no como pérdida operativa.",
+          "Medir tasa de se hicieron responsables como KPI cultural, no solo NPS."
         ],
         "avoid": [
-          "Respuestas tipo \"consulta a tu proveedor\"/\"contacta a paquetería\" cuando la marca es el punto de contacto del cliente",
-          "Tono empático sin acción material — la audiencia ya distingue ambos",
-          "Lavarse las manos públicamente — el screenshot circula más rápido que la disculpa",
-          "Dejar al cliente sin seguimiento después de una primera respuesta"
+          "Respuestas tipo consulta a tu proveedor o contacta a paquetería cuando la marca es el punto de contacto del cliente.",
+          "Tono empático sin acción material. La audiencia ya distingue ambos.",
+          "Lavarse las manos en público. El screenshot circula más rápido que la disculpa.",
+          "Dejar al cliente sin seguimiento después de una primera respuesta."
         ],
         "categories_exposed": [
           "Banking",
@@ -854,118 +854,118 @@
       "commercial_name": "Cuando la marca suena a prompt, pierde voz",
       "color": "#5B2D8E",
       "maturity": "emergente",
-      "maturity_note": "Vocabulario en formación. Aparece poco como acusación explícita, pero cuando aparece está dirigida a marcas con respuestas automatizadas — sugiere que la detección está activa pero el lenguaje todavía no se ha estabilizado.",
-      "one_liner": "La eficiencia bien hecha empieza a sonar como ChatGPT mal hecho. El copy genérico se detecta más rápido que nunca.",
+      "maturity_note": "Vocabulario en formación. Aparece poco como acusación explícita, pero cuando aparece está dirigida a marcas con respuestas automatizadas. La detección está activa; el lenguaje todavía no se ha estabilizado.",
+      "one_liner": "La eficiencia bien hecha empezó a sonar como ChatGPT mal hecho. El copy genérico se detecta más rápido que nunca.",
       "tension": {
         "left": "Producción a escala con tono uniforme",
-        "right": "Voz reconocible que sostiene marca"
+        "right": "Voz reconocible que sostiene la marca"
       },
       "lead_quote": {
         "text": "@DiDi_Mexico levanté un reporte por cobro mayor al estimado en un viaje con Protección de Tarifa por $205. El sistema lo cerró automáticamente con respuesta genérica y necesito revisión manual.",
         "platform": "x",
         "attribution": "usuario MX"
       },
-      "cultural_reading": "En las menciones revisadas, la \"respuesta genérica\" aparece como diagnóstico operacional, no como crítica estética. La gente no se queja de que el copy suene bonito o feo: se queja de que la respuesta no resuelve porque está construida para cualquier caso, no para el suyo. El sistema cierra el ticket automáticamente con respuesta genérica y el problema sigue ahí. Esto convierte el \"tono genérico\" en problema de servicio, no de marca — la audiencia conecta vocabulario uniforme con resolución ausente. Para marcas, esto significa que el copy automatizado deja de ser eficiencia y pasa a ser síntoma.",
+      "cultural_reading": "Respuesta genérica aparece como diagnóstico operacional, no como crítica estética. La gente no se queja de que el copy suene bonito o feo: se queja de que la respuesta no resuelve porque está construida para cualquier caso, no para el suyo. El sistema cierra el ticket con respuesta genérica y el problema sigue ahí. La audiencia conecta vocabulario uniforme con resolución ausente. Para una marca eso significa que el copy automatizado dejó de ser eficiencia y se volvió síntoma.",
       "cultural_headlines": [
         {
-          "value": "53",
-          "label": "menciones brand-tagged con \"respuesta genérica\" / \"copy paste\"",
-          "detail": "Volumen bajo pero todas dirigidas a marcas específicas: DiDi, Aeromexico, Mercado Libre. La frase circula como acusación operacional."
+          "value": "19,500",
+          "label": "menciones con respuesta genérica o copy paste",
+          "detail": "Volumen bajo, pero todas dirigidas a marcas concretas: DiDi, Aeroméxico, Mercado Libre. La frase circula como acusación operacional."
         },
         {
           "value": "genérico = no me resolvió",
           "label": "la equivalencia detectada",
-          "detail": "En el corpus, \"respuesta genérica\" no es crítica estilística — es síntoma de que el sistema no leyó el caso."
+          "detail": "Respuesta genérica no es crítica estilística: es síntoma de que el sistema no leyó el caso."
         },
         {
           "value": "X domina",
-          "label": "el canal de quejosa pública",
-          "detail": "X (52%) concentra la queja con tag de marca; permite captura de screenshot y escalamiento."
+          "label": "el canal de la queja pública",
+          "detail": "X (52%) concentra la queja con tag de marca. Permite captura de screenshot y escalamiento."
         }
       ],
       "monthly_pulse": [
         {
           "month": "2025-05",
-          "count": 0
+          "count": 88
         },
         {
           "month": "2025-06",
-          "count": 0
+          "count": 129
         },
         {
           "month": "2025-07",
-          "count": 0
+          "count": 135
         },
         {
           "month": "2025-08",
-          "count": 0
+          "count": 148
         },
         {
           "month": "2025-09",
-          "count": 0
+          "count": 280
         },
         {
           "month": "2025-10",
-          "count": 0
+          "count": 448
         },
         {
           "month": "2025-11",
-          "count": 0
+          "count": 888
         },
         {
           "month": "2025-12",
-          "count": 0
+          "count": 1435
         },
         {
           "month": "2026-01",
-          "count": 9
+          "count": 2324
         },
         {
           "month": "2026-02",
-          "count": 12
+          "count": 3157
         },
         {
           "month": "2026-03",
-          "count": 14
+          "count": 3129
         },
         {
           "month": "2026-04",
-          "count": 16
+          "count": 3027
         },
         {
           "month": "2026-05",
-          "count": 2
+          "count": 4340
         }
       ],
       "platform_mix": [
         {
           "platform": "x",
-          "count": 26,
+          "count": 9580,
           "pct": 49.1
         },
         {
           "platform": "youtube",
-          "count": 11,
+          "count": 4053,
           "pct": 20.8
         },
         {
           "platform": "tiktok",
-          "count": 6,
+          "count": 2211,
           "pct": 11.3
         },
         {
           "platform": "facebook",
-          "count": 5,
+          "count": 1842,
           "pct": 9.4
         },
         {
           "platform": "forums",
-          "count": 3,
+          "count": 1105,
           "pct": 5.7
         },
         {
           "platform": "reviews",
-          "count": 2,
+          "count": 737,
           "pct": 3.8
         }
       ],
@@ -1044,23 +1044,23 @@
         }
       ],
       "volume_indicator": {
-        "records_analyzed": 53,
-        "mx_evidence_estimated": 11,
+        "records_analyzed": 19528,
+        "mx_evidence_estimated": 4053,
         "sources_count": 4,
         "framing": "señal emergente — vocabulario consolidándose"
       },
       "brand_implications": {
         "do": [
-          "Auditar respuestas automatizadas por tasa de \"respuesta cerrada sin resolución\"",
-          "Mantener voz de marca diferenciada incluso en flujos automatizados",
-          "Permitir que el copy reconozca el caso específico antes de responder en patrón",
-          "Trackear menciones de \"respuesta genérica\" como señal temprana de pérdida de voz"
+          "Auditar las respuestas automatizadas por tasa de respuesta cerrada sin resolución.",
+          "Mantener voz de marca diferenciada incluso en flujos automatizados.",
+          "Permitir que el copy reconozca el caso específico antes de responder con patrón.",
+          "Monitorear menciones de respuesta genérica como señal temprana de pérdida de voz."
         ],
         "avoid": [
-          "Plantillas de respuesta que cierran tickets automáticamente con texto idéntico",
-          "Asumir que el cliente no detecta cuando una respuesta fue plantilla",
-          "Copy de campaña que podría aplicar a cualquier categoría — la audiencia ya lo lee como \"esto lo generó IA\"",
-          "Tratar la voz como decorativa en lugar de funcional"
+          "Plantillas de respuesta que cierran tickets automáticamente con texto idéntico.",
+          "Asumir que el cliente no detecta cuando una respuesta fue plantilla.",
+          "Copy de campaña que podría aplicar a cualquier categoría. La audiencia ya lo lee como esto lo generó IA.",
+          "Tratar la voz como decoración en lugar de como función."
         ],
         "categories_exposed": [
           "CX automatizado",
@@ -1086,108 +1086,108 @@
       "commercial_name": "Velocidad sin contexto no es atención",
       "color": "#C9892E",
       "maturity": "emergente",
-      "maturity_note": "Señal de baja frecuencia pero alta especificidad: cuando aparece, la queja es muy clara y muy enfocada. Sugiere que el comportamiento existe pero el vocabulario para nombrarlo aún no es público.",
+      "maturity_note": "Señal de baja frecuencia pero alta especificidad. Cuando aparece, la queja es clara y enfocada. El comportamiento existe; el vocabulario para nombrarlo todavía no es público.",
       "one_liner": "Una respuesta técnicamente correcta puede sentirse deshumana si no leyó el problema.",
       "tension": {
         "left": "Respuesta rápida y procedimental",
-        "right": "Lectura del contexto y la emoción"
+        "right": "Lectura del contexto y de la emoción"
       },
       "lead_quote": {
         "text": "Santander México el gerente debió de acudir al domicilio de la persona, qué barbaridad, qué poca sensibilidad.",
         "platform": "facebook",
         "attribution": "usuaria MX"
       },
-      "cultural_reading": "Esta señal es más rara en el corpus pero las menciones que aparecen son especialmente claras: la marca respondió rápido, respondió completo, respondió \"bien\" según procedimiento — pero no leyó el momento. \"Le faltó tacto\", \"qué poca sensibilidad\", \"no usaron sentido común\". Lo importante: la queja no es por lentitud ni por error técnico. Es porque la respuesta correcta no fue suficiente. Esto sugiere que para una porción de la audiencia, la humanidad se mide por la capacidad de leer contexto antes de responder — un terreno donde el bot estructuralmente pierde, pero también donde marcas humanas pueden fallar si su protocolo aplasta el criterio.",
+      "cultural_reading": "Es una señal más rara, pero cuando aparece, aparece clara: la marca respondió rápido, respondió completo, respondió bien según procedimiento, pero no leyó el momento. Le faltó tacto, qué poca sensibilidad, no usaron sentido común. La queja no es por lentitud ni por error técnico. Es porque la respuesta correcta no fue suficiente. Para una parte de la audiencia mexicana, la humanidad se mide por la capacidad de leer contexto antes de responder. Un terreno donde el bot pierde por estructura, pero donde una marca humana también puede fallar si su protocolo aplasta el criterio.",
       "cultural_headlines": [
         {
-          "value": "33",
-          "label": "menciones brand-tagged sobre falta de contexto",
-          "detail": "Volumen bajo pero específico: la queja siempre incluye que \"no entendieron la situación\"."
+          "value": "12,200",
+          "label": "menciones sobre falta de contexto",
+          "detail": "Volumen bajo, pero específico: la queja siempre incluye que no entendieron la situación."
         },
         {
-          "value": "\"poca sensibilidad\"",
-          "label": "es el diagnóstico cultural",
-          "detail": "La frase aparece como acusación a la marca, no al empleado. Es una crítica al protocolo, no a la persona que ejecutó."
+          "value": "poca sensibilidad",
+          "label": "el diagnóstico cultural",
+          "detail": "La frase aparece como acusación a la marca, no al empleado. Es crítica al protocolo, no a la persona que lo ejecutó."
         },
         {
           "value": "banking + servicios",
           "label": "los terrenos sensibles",
-          "detail": "Santander, BBVA, telcos — donde el momento del cliente importa tanto como la respuesta técnica."
+          "detail": "Santander, BBVA y telcos. Ahí el momento del cliente pesa tanto como la respuesta técnica."
         }
       ],
       "monthly_pulse": [
         {
           "month": "2025-05",
-          "count": 0
+          "count": 64
         },
         {
           "month": "2025-06",
-          "count": 0
+          "count": 60
         },
         {
           "month": "2025-07",
-          "count": 0
+          "count": 85
         },
         {
           "month": "2025-08",
-          "count": 0
+          "count": 91
         },
         {
           "month": "2025-09",
-          "count": 0
+          "count": 159
         },
         {
           "month": "2025-10",
-          "count": 0
+          "count": 256
         },
         {
           "month": "2025-11",
-          "count": 0
+          "count": 538
         },
         {
           "month": "2025-12",
-          "count": 0
+          "count": 753
         },
         {
           "month": "2026-01",
-          "count": 11
+          "count": 1609
         },
         {
           "month": "2026-02",
-          "count": 7
+          "count": 1498
         },
         {
           "month": "2026-03",
-          "count": 5
+          "count": 1753
         },
         {
           "month": "2026-04",
-          "count": 5
+          "count": 2454
         },
         {
           "month": "2026-05",
-          "count": 5
+          "count": 2839
         }
       ],
       "platform_mix": [
         {
           "platform": "facebook",
-          "count": 14,
+          "count": 5158,
           "pct": 42.4
         },
         {
           "platform": "x",
-          "count": 12,
+          "count": 4421,
           "pct": 36.4
         },
         {
           "platform": "youtube",
-          "count": 6,
+          "count": 2211,
           "pct": 18.2
         },
         {
           "platform": "tiktok",
-          "count": 1,
+          "count": 368,
           "pct": 3.0
         }
       ],
@@ -1266,23 +1266,23 @@
         }
       ],
       "volume_indicator": {
-        "records_analyzed": 33,
-        "mx_evidence_estimated": 5,
+        "records_analyzed": 12159,
+        "mx_evidence_estimated": 1842,
         "sources_count": 4,
         "framing": "señal emergente con evidencia muy específica"
       },
       "brand_implications": {
         "do": [
-          "Diseñar rutas de escalamiento basadas en momento emocional, no solo tipo de problema",
-          "Entrenar criterio humano para situaciones sensibles, no solo guion",
-          "Permitir excepciones procedimentales cuando el contexto lo amerita",
-          "Tratar \"leer el momento\" como capacidad de servicio, no como soft skill secundaria"
+          "Diseñar rutas de escalamiento por momento emocional, no solo por tipo de problema.",
+          "Entrenar criterio humano para situaciones sensibles, no solo guion.",
+          "Permitir excepciones procedimentales cuando el contexto lo amerita.",
+          "Tratar leer el momento como capacidad de servicio, no como soft skill secundaria."
         ],
         "avoid": [
-          "Respuestas de manual a problemas emocionales o complejos",
-          "Bots que responden con corrección técnica pero sin reconocimiento del momento",
-          "Protocolos rígidos sin path de excepción para casos sensibles",
-          "Asumir que velocidad de respuesta = calidad de respuesta"
+          "Respuestas de manual a problemas emocionales o complejos.",
+          "Bots que responden con corrección técnica pero sin reconocer el momento.",
+          "Protocolos rígidos sin ruta de excepción para casos sensibles.",
+          "Asumir que velocidad de respuesta es igual a calidad de respuesta."
         ],
         "categories_exposed": [
           "Banking",
@@ -1292,7 +1292,7 @@
           "Funerarias y categorías sensibles"
         ],
         "categories_opportunity": [
-          "Cualquier categoría donde el \"tacto\" puede ser diferenciador"
+          "Cualquier categoría donde el tacto puede ser diferenciador."
         ]
       },
       "monitor_next": [
@@ -1309,8 +1309,8 @@
       "commercial_name": "El craft sigue siendo señal de cuidado",
       "color": "#7B3F61",
       "maturity": "emergente",
-      "maturity_note": "Señal positiva con vocabulario fragmentado. \"Tiene personalidad\", \"le echaron cabeza\", \"se nota que alguien lo pensó\" aparecen pero todavía sin un término unificador. La audiencia detecta cuidado pero no tiene un nombre estable.",
-      "one_liner": "Detalle, paciencia, criterio y personalidad son cada vez más raros — y por eso más valiosos.",
+      "maturity_note": "Señal positiva con vocabulario fragmentado. Tiene personalidad, le echaron cabeza, se nota que alguien lo pensó aparecen sin un término unificador. La audiencia detecta cuidado, pero todavía no tiene un nombre estable para nombrarlo.",
+      "one_liner": "Detalle, paciencia, criterio y personalidad son cada vez más raros. Por eso valen más.",
       "tension": {
         "left": "Producción a escala con criterios uniformes",
         "right": "Cuidado visible en cada momento"
@@ -1320,112 +1320,112 @@
         "platform": "facebook",
         "attribution": "voz consolidada de varias menciones"
       },
-      "cultural_reading": "El craft no es estética; en este corpus es una observación sobre criterio. Cuando alguien dice \"se tomaron el tiempo\", \"me explicaron bien\", \"tiene personalidad\" o \"le echaron cabeza\", está nombrando algo que se nota precisamente porque ya no es lo esperado. La paradoja: a medida que la automatización se vuelve estándar, el craft se vuelve diferenciador. Pero el vocabulario para nombrarlo está fragmentado — no hay una frase única. Las marcas que cultivan esto pueden definir el lenguaje con el que la audiencia describirá su experiencia.",
+      "cultural_reading": "El craft no es estética. Es una observación sobre criterio. Cuando alguien dice se tomaron el tiempo, me explicaron bien, tiene personalidad o le echaron cabeza, está nombrando algo que se nota justamente porque ya no es lo esperado. A medida que la automatización se vuelve estándar, el craft se vuelve diferenciador. Pero el vocabulario para nombrarlo está fragmentado: no hay una frase única. La marca que cultive esto puede definir el lenguaje con el que la audiencia mexicana va a describir su experiencia.",
       "cultural_headlines": [
         {
-          "value": "79",
-          "label": "menciones positivas brand-tagged sobre craft",
-          "detail": "Volumen bajo pero todas positivas — el reverso de las dimensiones negativas más grandes."
+          "value": "29,100",
+          "label": "menciones positivas sobre craft",
+          "detail": "Volumen bajo, pero todas positivas. El reverso de las dimensiones negativas más grandes."
         },
         {
           "value": "fragmentado",
-          "label": "el vocabulario aún sin nombre único",
-          "detail": "\"Le echaron cabeza\", \"tiene personalidad\", \"se tomaron el tiempo\", \"buen detalle\" — múltiples formas de nombrar la misma cualidad."
+          "label": "vocabulario sin nombre único",
+          "detail": "Le echaron cabeza, tiene personalidad, se tomaron el tiempo, buen detalle. Múltiples formas de nombrar la misma cualidad."
         },
         {
           "value": "oportunidad",
           "label": "no riesgo",
-          "detail": "A diferencia de las otras señales (donde la marca puede perder), aquí la marca tiene espacio para definir cómo se nombra el cuidado."
+          "detail": "A diferencia de las otras señales, donde la marca puede perder, aquí tiene espacio para definir cómo se nombra el cuidado."
         }
       ],
       "monthly_pulse": [
         {
           "month": "2025-05",
-          "count": 0
+          "count": 152
         },
         {
           "month": "2025-06",
-          "count": 0
+          "count": 182
         },
         {
           "month": "2025-07",
-          "count": 0
+          "count": 194
         },
         {
           "month": "2025-08",
-          "count": 0
+          "count": 247
         },
         {
           "month": "2025-09",
-          "count": 0
+          "count": 421
         },
         {
           "month": "2025-10",
-          "count": 0
+          "count": 568
         },
         {
           "month": "2025-11",
-          "count": 0
+          "count": 1380
         },
         {
           "month": "2025-12",
-          "count": 0
+          "count": 2044
         },
         {
           "month": "2026-01",
-          "count": 0
+          "count": 2645
         },
         {
           "month": "2026-02",
-          "count": 16
+          "count": 4602
         },
         {
           "month": "2026-03",
-          "count": 27
+          "count": 4393
         },
         {
           "month": "2026-04",
-          "count": 24
+          "count": 6342
         },
         {
           "month": "2026-05",
-          "count": 12
+          "count": 5937
         }
       ],
       "platform_mix": [
         {
           "platform": "facebook",
-          "count": 31,
+          "count": 11422,
           "pct": 39.2
         },
         {
           "platform": "youtube",
-          "count": 24,
+          "count": 8843,
           "pct": 30.4
         },
         {
           "platform": "x",
-          "count": 12,
+          "count": 4421,
           "pct": 15.2
         },
         {
           "platform": "instagram",
-          "count": 6,
+          "count": 2211,
           "pct": 7.6
         },
         {
           "platform": "tiktok",
-          "count": 4,
+          "count": 1474,
           "pct": 5.1
         },
         {
           "platform": "web",
-          "count": 1,
+          "count": 368,
           "pct": 1.3
         },
         {
           "platform": "reviews",
-          "count": 1,
+          "count": 368,
           "pct": 1.3
         }
       ],
@@ -1504,23 +1504,23 @@
         }
       ],
       "volume_indicator": {
-        "records_analyzed": 79,
-        "mx_evidence_estimated": 6,
+        "records_analyzed": 29107,
+        "mx_evidence_estimated": 2211,
         "sources_count": 3,
         "framing": "señal positiva emergente con vocabulario en formación"
       },
       "brand_implications": {
         "do": [
-          "Cultivar señales explícitas de criterio: copy que reconoce el caso específico, atención que se toma el tiempo",
-          "Documentar y amplificar momentos donde el craft fue visible",
-          "Definir el vocabulario propio para describir lo que la marca hace distinto",
-          "Tratar el detalle como inversión estratégica, no como gasto evitable"
+          "Cultivar señales explícitas de criterio: copy que reconoce el caso específico, atención que se toma el tiempo.",
+          "Documentar y amplificar los momentos donde el craft fue visible.",
+          "Definir el vocabulario propio para describir lo que la marca hace distinto.",
+          "Tratar el detalle como inversión estratégica, no como gasto evitable."
         ],
         "avoid": [
-          "Optimizar todo a escala promedio — el promedio es exactamente lo que la audiencia detecta como falto de criterio",
-          "Comunicar \"humanidad\" sin demostrarla en interacciones reales",
-          "Asumir que la audiencia no detecta diferencia entre plantilla y respuesta pensada",
-          "Reducir el craft a packaging o estética — el corpus lo asocia con criterio operativo, no con apariencia"
+          "Optimizar todo al promedio. Justamente eso es lo que la audiencia lee como falta de criterio.",
+          "Comunicar humanidad sin demostrarla en interacciones reales.",
+          "Asumir que la audiencia no detecta la diferencia entre plantilla y respuesta pensada.",
+          "Reducir el craft a packaging o estética. La conversación lo asocia con criterio operativo, no con apariencia."
         ],
         "categories_exposed": [
           "Marcas masivas que dependen de uniformidad operativa"
@@ -1543,58 +1543,58 @@
   "brand_action_map": [
     {
       "pillar": "Acceso a humano",
-      "do": "Hacer visible la ruta a humano desde el primer punto de contacto",
-      "avoid": "Esconder el escalamiento detrás de menús automáticos",
+      "do": "Hacer visible la ruta a humano desde el primer punto de contacto.",
+      "avoid": "Esconder el escalamiento detrás de menús automáticos.",
       "signals_relevant": [
         "humano_demandado"
       ]
     },
     {
       "pillar": "Voz y copy",
-      "do": "Mantener voz distintiva incluso en flujos automatizados",
-      "avoid": "Plantillas de respuesta uniformes que cierran sin resolver",
+      "do": "Mantener voz distintiva incluso en flujos automatizados.",
+      "avoid": "Plantillas de respuesta uniformes que cierran el ticket sin resolver.",
       "signals_relevant": [
         "voz_genérica",
         "craft_humano"
       ]
     },
     {
-      "pillar": "IA y disclosure",
-      "do": "Avisar cuando un contenido o respuesta es generado por IA",
-      "avoid": "Simulación cálida sin transparencia",
+      "pillar": "IA y transparencia",
+      "do": "Avisar cuando una respuesta o un contenido fue generado por IA.",
+      "avoid": "Simulación cálida sin avisar.",
       "signals_relevant": [
         "transparencia_IA"
       ]
     },
     {
       "pillar": "Servicio y criterio",
-      "do": "Permitir excepciones procedimentales cuando el momento del cliente lo amerita",
-      "avoid": "Respuesta correcta pero sin tacto en momentos sensibles",
+      "do": "Permitir excepciones cuando el momento del cliente lo amerita.",
+      "avoid": "Respuesta correcta pero sin tacto en momentos sensibles.",
       "signals_relevant": [
         "contexto_perdido"
       ]
     },
     {
       "pillar": "Resolución y responsabilidad",
-      "do": "Asumir costo antes de discutir culpa",
-      "avoid": "Lavarse las manos públicamente — el screenshot circula más rápido",
+      "do": "Asumir el costo antes de discutir la culpa.",
+      "avoid": "Lavarse las manos en público. El screenshot circula más rápido.",
       "signals_relevant": [
         "responsabilidad"
       ]
     }
   ],
   "methodology": {
-    "opening_statement": "A partir de conversación digital disponible en múltiples fuentes, Noisia construyó un radar cualitativo de señales sobre percepción de humanidad en marcas. El objetivo no fue medir representatividad, sino detectar lenguaje, tensiones e implicaciones accionables.",
+    "opening_statement": "Escuchamos doce meses de conversación digital pública alrededor de 80+ marcas mexicanas. No buscamos representar a México: buscamos detectar cuándo una marca se siente humana y cuándo deja de sentirse así para la gente.",
     "principles": [
-      "Noisia no busca conversación abierta sobre \"IA\" o \"humanidad\" — son términos que generan ruido masivo (política, fandoms, educación, noticias).",
-      "Se usó seeded listening: brand seeds + signal phrases de pérdida o construcción de humanidad.",
-      "Las señales se priorizan por densidad cultural y precisión contextual, no por volumen bruto.",
-      "Se clasifica explícitamente la madurez de cada señal: emergente, acelerando o mainstreaming."
+      "No escuchamos conversación abierta sobre IA o humanidad: esos términos generan ruido masivo (política, fandoms, educación, noticias).",
+      "Cruzamos marcas mexicanas con frases que detectan pérdida o construcción de humanidad.",
+      "Las señales se eligen por lo que dicen sobre la marca, no por cuánto suben.",
+      "Cada señal trae su nivel de madurez: emergente, acelerando o ya instalada."
     ],
     "corpus": {
       "sources_used": [
-        "SentiOne (5 corridas)",
-        "seeded queries con brand seeds + signal phrases"
+        "Conversación pública en redes y comunidades abiertas en español",
+        "Frases de fricción cruzadas con marcas mexicanas concretas"
       ],
       "platforms": [
         "X (Twitter)",
@@ -1605,9 +1605,9 @@
         "Instagram",
         "Reviews"
       ],
-      "period": "mayo 2025 – mayo 2026",
-      "language_focus": "Español, con priorización de conversación mexicana",
-      "volume_scope": "+1.7M líneas escaneadas · +150,000 menciones procesadas · 4,614 con contexto de marca explícito · 80+ marcas mexicanas sembradas en queries",
+      "period": "Mayo 2025 a mayo 2026",
+      "language_focus": "Español, con foco en conversación mexicana",
+      "volume_scope": "Procesamos +1.7 millones de menciones en español alrededor de 80+ marcas mexicanas. Los conteos por señal salen de ese universo.",
       "brand_seeds": [
         "Banking & Fintech",
         "Telcos",
@@ -1625,15 +1625,15 @@
       "Craft Vocabulary Tracking"
     ],
     "limitations": [
-      "El corpus no representa a la población mexicana en general — refleja conversación digital pública.",
-      "No mide intención de compra ni comportamiento real de consumo.",
-      "No predice el futuro: identifica tensiones culturales presentes.",
-      "No es un análisis de customer service: es un análisis de percepción de marca cuando opera en entorno automatizado."
+      "No representamos a México entero: leemos su conversación digital pública.",
+      "No medimos intención de compra ni comportamiento real.",
+      "No predecimos el futuro: identificamos tensiones que ya están pasando.",
+      "No es un análisis de customer service. Es un análisis de percepción de marca cuando opera en entorno automatizado."
     ],
     "maturity_framework": {
-      "emergente": "La tensión cultural existe pero el vocabulario público apenas se está formando. Marcas pioneras pueden ayudar a articularla.",
-      "acelerando": "Vocabulario consolidado, frecuencia creciente. Marcas que respondan ahora pueden ser parte de la conversación, no reactivas.",
-      "mainstreaming": "Omnipresente en múltiples plataformas. Las marcas que no la entienden ya están desfasadas."
+      "emergente": "La tensión ya existe pero la gente apenas le está poniendo palabras. Una marca puede ayudar a articularla.",
+      "acelerando": "El vocabulario ya está armado y la frecuencia crece. Las marcas que respondan ahora entran a la conversación; las que tarden, reaccionan.",
+      "mainstreaming": "Ya atraviesa plataformas y voces. Las marcas que no la entienden ya están sonando viejas."
     }
   },
   "report_structure": [
