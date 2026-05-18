@@ -827,23 +827,6 @@ export const serviceTiers = [
   }
 ];
 
-export const manifesto = [
-  "La industria del social listening prometió acceso: más menciones, más métricas, más reportes.",
-  "Pero acceso no es claridad. Ver más conversación no significa saber qué hacer con ella.",
-  "Una métrica no es un insight. Un reporte no es una estrategia. Un semáforo de sentimiento no decide por tu equipo.",
-  "Noisia existe para convertir conversación pública en una lectura que explique qué está pasando y qué conviene hacer.",
-  "Trabajamos desde la pregunta de negocio: qué decisión se necesita tomar, qué evidencia la sostiene y qué acción sigue.",
-  "Cobramos por inteligencia, no por acceso. Entregamos decisiones, no ruido organizado."
-];
-
-export const principles = [
-  "La pregunta antes que el método.",
-  "Honestidad antes que promesa comercial.",
-  "Profundidad antes que velocidad.",
-  "Decisiones antes que reportes.",
-  "Muchas fuentes, una lectura clara."
-];
-
 export const fieldNotes = [
   {
     slug: "sentiment-score-murio",

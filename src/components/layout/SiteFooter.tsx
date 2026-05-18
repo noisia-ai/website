@@ -1,53 +1,72 @@
 import Image from "next/image";
 import Link from "next/link";
-import { methodologies, site, useCases } from "@/content/site";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
+
+const contactHref =
+  "mailto:hola@noisia.ai?subject=Quiero%20hablar%20con%20Noisia&body=Hola%20Noisia%2C%0A%0AQuiero%20platicar%20sobre%20una%20decisi%C3%B3n%20que%20necesitamos%20defender%20con%20evidencia.%0A%0AGracias.";
+
+const footerRoutes = [
+  {
+    href: "/insights",
+    label: "Insights",
+    text: "Ideas y señales culturales."
+  },
+  {
+    href: "/metodologias",
+    label: "Metodologías",
+    text: "El marco de trabajo."
+  },
+  {
+    href: "/servicios",
+    label: "Servicios",
+    text: "Formas de colaborar."
+  },
+  {
+    href: "/arquitectura-de-datos",
+    label: "Arquitectura",
+    text: "Fuentes, evidencia y trazabilidad."
+  }
+];
 
 export function SiteFooter() {
   return (
     <footer className="site-footer section section--compact">
       <div className="site-footer__panel glass">
         <div className="site-footer__brand">
-          <Image
-            src="/assets/logos/logo_black.svg"
-            alt="Noisia"
-            width={154}
-            height={54}
-            suppressHydrationWarning
-          />
-          <p>
-            Conversación pública convertida en decisiones defendibles.
-          </p>
+          <div>
+            <Image
+              src="/assets/logos/logo_black.svg"
+              alt="Noisia"
+              width={104}
+              height={36}
+              suppressHydrationWarning
+            />
+            <p>
+              Conversación pública convertida en decisiones defendibles para equipos de marca, producto y estrategia.
+            </p>
+          </div>
         </div>
-        <div className="site-footer__links">
-          <div>
-            <h3>Explorar</h3>
-            <Link href="/insights">Insights</Link>
-            <Link href="/manifiesto">Manifiesto</Link>
-            <Link href="/nosotros">Nosotros</Link>
-            <Link href="/contacto">Contacto</Link>
-          </div>
-          <div>
-            <h3>Metodologías</h3>
-            {methodologies.slice(0, 4).map((methodology) => (
-              <Link href={`/metodologias/${methodology.slug}`} key={methodology.slug}>
-                {methodology.name}
+
+        <div className="site-footer__content">
+          <div className="site-footer__routes" aria-label="Rutas principales">
+            {footerRoutes.map((route) => (
+              <Link className="site-footer__route" href={route.href} key={route.href}>
+                <strong>{route.label}</strong>
+                <p>{route.text}</p>
+                <small>
+                  Abrir <ArrowUpRight size={13} strokeWidth={1.9} />
+                </small>
               </Link>
             ))}
           </div>
-          <div>
-            <h3>Casos</h3>
-            {useCases.slice(0, 4).map((useCase) => (
-              <Link href={`/casos-de-uso/${useCase.slug}`} key={useCase.slug}>
-                {useCase.shortTitle}
-              </Link>
-            ))}
-          </div>
-          <div>
-            <h3>Contacto</h3>
-            <a href="mailto:hola@noisia.ai">hola@noisia.ai</a>
-            <a href="mailto:strategy@noisia.ai">strategy@noisia.ai</a>
-            <Link href="/diagnostico">Iniciar diagnóstico</Link>
-            <span>{site.eyebrow}</span>
+
+          <div className="site-footer__bottom">
+            <a className="site-footer__contact-button" href={contactHref}>
+              hola@noisia.ai
+            </a>
+            <Link className="site-footer__cta" href="/diagnostico">
+              Iniciar diagnóstico <ArrowRight size={16} strokeWidth={1.9} />
+            </Link>
           </div>
         </div>
       </div>

@@ -7,25 +7,20 @@ import { ArrowRight, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { site } from "@/content/site";
 
-const menuCards: Record<string, { deck: string; eyebrow: string }> = {
+const menuCards: Record<string, { deck: string }> = {
   Insights: {
-    eyebrow: "Lecturas",
     deck: "Ideas, señales culturales y formas de pensar mejor la categoría."
   },
   Metodologías: {
-    eyebrow: "Métodos",
     deck: "Seis formas de ordenar preguntas difíciles sin ahogarte en datos."
   },
   Arquitectura: {
-    eyebrow: "Sistema",
     deck: "Cómo se limpian, conectan y conservan las fuentes que sostienen cada respuesta."
   },
   Casos: {
-    eyebrow: "Uso",
     deck: "Situaciones concretas donde Noisia ayuda a elegir, defender o corregir una decisión."
   },
   Servicios: {
-    eyebrow: "Trabajo",
     deck: "Diagnósticos, proyectos y acompañamiento para equipos de marca, producto y estrategia."
   }
 };
@@ -184,7 +179,6 @@ export function SiteHeader() {
             <nav className="site-header__overlay-grid" aria-label="Navegacion principal">
               {site.nav.map((item, index) => {
                 const card = menuCards[item.label] ?? {
-                  eyebrow: String(index + 1).padStart(2, "0"),
                   deck: "Explorar sección."
                 };
                 const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
@@ -197,7 +191,6 @@ export function SiteHeader() {
                   onClick={closeMenu}
                   style={{ ["--menu-delay" as string]: `${index * 48}ms` }}
                 >
-                  <span className="site-header__overlay-card-kicker">{card.eyebrow}</span>
                   <strong>{item.label}</strong>
                   <p>{card.deck}</p>
                   <span className="site-header__overlay-card-cta">
