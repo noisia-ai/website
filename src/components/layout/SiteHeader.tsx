@@ -5,8 +5,30 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { MethodologyIcon } from "@/components/ui/MethodologyIcon";
-import { methodologies, site, useCases } from "@/content/site";
+import { site } from "@/content/site";
+
+const menuCards: Record<string, { deck: string; eyebrow: string }> = {
+  Insights: {
+    eyebrow: "Lecturas",
+    deck: "Ideas, señales culturales y formas de pensar mejor la categoría."
+  },
+  Metodologías: {
+    eyebrow: "Métodos",
+    deck: "Seis formas de ordenar preguntas difíciles sin ahogarte en datos."
+  },
+  Arquitectura: {
+    eyebrow: "Sistema",
+    deck: "Cómo se limpian, conectan y conservan las fuentes que sostienen cada respuesta."
+  },
+  Casos: {
+    eyebrow: "Uso",
+    deck: "Situaciones concretas donde Noisia ayuda a elegir, defender o corregir una decisión."
+  },
+  Servicios: {
+    eyebrow: "Trabajo",
+    deck: "Diagnósticos, proyectos y acompañamiento para equipos de marca, producto y estrategia."
+  }
+};
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -70,8 +92,6 @@ export function SiteHeader() {
     };
   }, [isOpen]);
 
-  const featuredMethodologies = methodologies.slice(0, 2);
-  const featuredCase = useCases[0];
   const closeMenu = () => setIsOpen(false);
 
   return (
@@ -119,98 +139,80 @@ export function SiteHeader() {
           aria-modal="true"
           aria-label="Navegacion principal"
         >
-          <div className="site-header__overlay-top">
-            <Link className="brand-link brand-link--overlay" href="/" aria-label="Noisia home" onClick={closeMenu}>
-              <Image
-                src="/assets/logos/logo_black.svg"
-                alt="Noisia"
-                width={100}
-                height={35}
-                priority
-                suppressHydrationWarning
-              />
-            </Link>
+          <div className="site-header__overlay-surface">
+            <div className="site-header__overlay-top">
+              <Link className="brand-link brand-link--overlay" href="/" aria-label="Noisia home" onClick={closeMenu}>
+                <Image
+                  src="/assets/logos/logo_black.svg"
+                  alt="Noisia"
+                  width={100}
+                  height={35}
+                  priority
+                  suppressHydrationWarning
+                />
+                <span>Social Intelligence Architects</span>
+              </Link>
 
-            <button
-              className="site-header__overlay-close"
-              type="button"
-              aria-label="Cerrar menu"
-              onClick={closeMenu}
-            >
-              <X size={22} strokeWidth={1.9} />
-            </button>
-          </div>
+              <nav className="site-header__overlay-tabs" aria-label="Secciones">
+                {site.nav.map((item) => (
+                  <Link
+                    className={pathname === item.href ? "is-active" : ""}
+                    href={item.href}
+                    key={item.href}
+                    onClick={closeMenu}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
 
-          <div className="site-header__overlay-layout">
-            <nav className="site-header__overlay-nav" aria-label="Navegacion principal">
-              {site.nav.map((item, index) => (
+              <div className="site-header__overlay-actions">
+                <Link className="site-header__overlay-login" href="/diagnostico" onClick={closeMenu}>
+                  Diagnóstico
+                </Link>
+                <button
+                  className="site-header__overlay-close"
+                  type="button"
+                  aria-label="Cerrar menu"
+                  onClick={closeMenu}
+                >
+                  <X size={20} strokeWidth={1.9} />
+                </button>
+              </div>
+            </div>
+
+            <nav className="site-header__overlay-grid" aria-label="Navegacion principal">
+              {site.nav.map((item, index) => {
+                const card = menuCards[item.label] ?? {
+                  eyebrow: String(index + 1).padStart(2, "0"),
+                  deck: "Explorar sección."
+                };
+                const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+
+                return (
                 <Link
-                  className="site-header__overlay-link"
+                  className={`site-header__overlay-card ${isActive ? "is-active" : ""}`}
                   href={item.href}
                   key={item.href}
                   onClick={closeMenu}
                   style={{ ["--menu-delay" as string]: `${index * 48}ms` }}
                 >
-                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <span className="site-header__overlay-card-kicker">{card.eyebrow}</span>
                   <strong>{item.label}</strong>
-                  <ArrowRight size={22} strokeWidth={1.8} />
+                  <p>{card.deck}</p>
+                  <span className="site-header__overlay-card-cta">
+                    Abrir <ArrowRight size={15} strokeWidth={1.9} />
+                  </span>
                 </Link>
-              ))}
-
-              <Link className="site-header__overlay-cta" href="/diagnostico" onClick={closeMenu}>
-                Iniciar diagnóstico
-              </Link>
+                );
+              })}
             </nav>
 
-            <div className="site-header__overlay-aside">
-              <section className="site-header__overlay-section">
-                <header>
-                  <h2>Metodologías</h2>
-                  <Link href="/metodologias" onClick={closeMenu}>
-                    Ver todas
-                  </Link>
-                </header>
-                <div className="site-header__overlay-chip-grid">
-                  {featuredMethodologies.map((methodology) => (
-                    <Link
-                      className="site-header__overlay-chip glass"
-                      href={`/metodologias/${methodology.slug}`}
-                      key={methodology.slug}
-                      onClick={closeMenu}
-                    >
-                      <i aria-hidden="true">
-                        <MethodologyIcon identifier={methodology.slug} />
-                      </i>
-                      <span>{methodology.name}</span>
-                      <ArrowRight size={18} strokeWidth={1.8} />
-                    </Link>
-                  ))}
-                </div>
-              </section>
-
-              <section className="site-header__overlay-section">
-                <header>
-                  <h2>Arquitectura</h2>
-                </header>
-                <Link className="site-header__overlay-pill glass" href="/arquitectura-de-datos" onClick={closeMenu}>
-                  Cómo ordenamos fuentes, señales y evidencia
-                </Link>
-              </section>
-
-              <section className="site-header__overlay-section">
-                <header>
-                  <h2>Caso</h2>
-                </header>
-                <Link
-                  className="site-header__overlay-case glass"
-                  href={`/casos-de-uso/${featuredCase.slug}`}
-                  onClick={closeMenu}
-                >
-                  <span>{featuredCase.shortTitle}</span>
-                  <h3>{featuredCase.title}</h3>
-                  <p>{featuredCase.approach}</p>
-                </Link>
-              </section>
+            <div className="site-header__overlay-footer">
+              <p>¿No sabes por dónde entrar? Describe la decisión y armamos la ruta.</p>
+              <Link className="site-header__overlay-cta" href="/diagnostico" onClick={closeMenu}>
+                Iniciar diagnóstico <ArrowRight size={16} strokeWidth={1.9} />
+              </Link>
             </div>
           </div>
         </div>

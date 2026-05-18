@@ -17,11 +17,11 @@ export default function MethodologiesPage() {
           <div className="hero-copy">
             <span className="eyebrow">METODOLOGÍAS PROPIETARIAS</span>
             <h1 className="display-lg">
-              Seis métodos para responder preguntas difíciles sin ahogarte en data.
+              La pregunta manda. El método solo entra cuando ayuda a decidir.
             </h1>
             <p className="body-lg">
-              No necesitas memorizar nombres técnicos. Cada método existe para resolver una duda concreta:
-              qué activa compra, qué frena confianza, dónde hay valor o qué voces vuelven creíble una idea.
+              Cada lectura parte de una duda concreta: qué activa compra, qué frena confianza, dónde hay valor,
+              qué voces importan o qué mensaje vuelve creíble una idea.
             </p>
             <div className="method-stats-strip">
               <div className="method-stat glass">
@@ -41,19 +41,19 @@ export default function MethodologiesPage() {
 
           <aside className="page-hero-panel glass">
             <span className="chip">Cómo opera el sistema</span>
-            <h2>La pregunta elige el método, no al revés.</h2>
+            <h2>No necesitas memorizar nombres técnicos. Necesitas reconocer la decisión.</h2>
             <ul className="page-hero-list">
               <li>
                 <b>Empieza por la decisión</b>
-                <span>Elegimos el método según lo que necesitas resolver.</span>
+                <span>Traducimos el problema a una pregunta que sí se pueda responder.</span>
               </li>
               <li>
                 <b>Puede combinarse</b>
-                <span>Si una lectura necesita más ángulos, unimos métodos.</span>
+                <span>Unimos métodos cuando la decisión necesita más de un ángulo.</span>
               </li>
               <li>
                 <b>Termina en acción</b>
-                <span>El método solo importa si deja una recomendación clara.</span>
+                <span>La salida debe dejar evidencia, recomendación y siguiente movimiento.</span>
               </li>
             </ul>
           </aside>

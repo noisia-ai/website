@@ -90,7 +90,7 @@ export function UseCaseSelector() {
           ))}
         </div>
         <div key={selectedIndex} className="use-case-selector__panel solid-panel" role="tabpanel">
-          <span className="eyebrow">Lectura activa</span>
+          <span className="eyebrow">Caso seleccionado</span>
           <h3>{selected.title}</h3>
           <p>{selected.reading}</p>
           <div className="tag-list">
@@ -107,8 +107,8 @@ export function UseCaseSelector() {
 
       <div className="use-case-carousel use-case-selector--mobile">
         <div className="use-case-carousel__meta glass">
-          <span>Protocolo activo</span>
-          <strong>{selected.timing}</strong>
+          <span>Caso seleccionado</span>
+          <strong>Caso {String(selectedIndex + 1).padStart(2, "0")}</strong>
         </div>
         <div className="use-case-carousel__tabs" ref={mobileTabsRef} role="tablist" aria-label="Preguntas de negocio">
           {tabs.map((item) => (

@@ -85,10 +85,10 @@ export default function DataArchitecturePage() {
         <div className="hero-experience__inner page-hero__inner">
           <div className="hero-copy">
             <span className="eyebrow">ARQUITECTURA DE DATOS</span>
-            <h1 className="display-lg">La evidencia tiene que estar ordenada antes de convertirse en recomendación.</h1>
+            <h1 className="display-lg">Una lectura defendible empieza antes del análisis.</h1>
             <p className="body-lg">
-              Aquí mostramos cómo cuidamos la muestra: qué entra, por qué entra, cómo se compara y cómo cada hallazgo
-              puede volver a su fuente.
+              La muestra, las fuentes y las citas se diseñan contra la pregunta. Así cada hallazgo puede explicar
+              de dónde salió, por qué importa y qué decisión sostiene.
             </p>
             <div className="hero-actions">
               <Button href="/diagnostico" variant="primary">
@@ -103,7 +103,7 @@ export default function DataArchitecturePage() {
 
           <aside className="page-hero-panel glass">
             <span className="chip">Qué hace el sistema</span>
-            <h2>La confianza no nace del volumen. Nace de poder explicar de dónde salió cada lectura.</h2>
+            <h2>La confianza no nace del volumen. Nace de poder reconstruir la lectura.</h2>
             <ul className="page-hero-list">
               <li>
                 <b>Cada señal conserva contexto</b>
@@ -111,7 +111,7 @@ export default function DataArchitecturePage() {
               </li>
               <li>
                 <b>Todo se vuelve comparable</b>
-                <span>Comparamos plataformas y formatos bajo el mismo criterio.</span>
+                <span>Normalizamos plataformas y formatos bajo un criterio común.</span>
               </li>
               <li>
                 <b>La recomendación vuelve a la fuente</b>

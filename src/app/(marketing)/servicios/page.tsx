@@ -131,11 +131,11 @@ export default function ServicesPage() {
           <div className="hero-copy">
             <span className="eyebrow">SERVICIOS</span>
             <h1 className="display-lg">
-              Tres formas de trabajar según el tamaño de la decisión.
+              Tres profundidades para una sola lógica: decidir con evidencia.
             </h1>
             <p className="body-lg">
-              No vendemos paquetes cerrados. Primero entendemos qué necesitas decidir; después definimos la profundidad
-              correcta: validar, profundizar o instalar una capacidad continua.
+              No vendemos paquetes cerrados. Primero entendemos qué necesitas decidir; después definimos si conviene
+              validar una hipótesis, profundizar una lectura o instalar una capacidad continua.
             </p>
             <div className="hero-actions">
               <Button href="/diagnostico" variant="primary">
@@ -145,11 +145,25 @@ export default function ServicesPage() {
                 Ver planes
               </Button>
             </div>
+            <div className="hero-proof">
+              <div className="glass">
+                <strong>3</strong>
+                <span>niveles de profundidad</span>
+              </div>
+              <div className="glass">
+                <strong>1</strong>
+                <span>pregunta estratégica de entrada</span>
+              </div>
+              <div className="glass">
+                <strong>0</strong>
+                <span>paquetes cerrados o rate card</span>
+              </div>
+            </div>
           </div>
 
           <aside className="page-hero-panel glass">
             <span className="chip">Cómo elegimos el nivel</span>
-            <h2>El nivel correcto no lo define el presupuesto. Lo define el riesgo.</h2>
+            <h2>El nivel correcto no lo define el presupuesto. Lo define el riesgo de decidir mal.</h2>
             <ul className="page-hero-list">
               <li>
                 <b>Foundation</b>

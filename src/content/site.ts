@@ -26,7 +26,6 @@ export type UseCase = {
   shortTitle: string;
   industries: string;
   methodologies: string[];
-  timing: string;
   approach: string;
   deliverables: string[];
   vignette: string;
@@ -61,7 +60,6 @@ export type HomeUseCase = {
   title: string;
   shortTitle: string;
   methodologies: string[];
-  timing: string;
   reading: string;
   deliverables: string[];
 };
@@ -242,7 +240,6 @@ export const homeUseCases: HomeUseCase[] = [
     shortTitle: "Lanzamiento de campaña",
     title: "Voy a lanzar campaña. ¿Qué historia tiene permiso real?",
     methodologies: ["Cultural Codes", "Triggers & Barriers"],
-    timing: "4-6 semanas",
     reading:
       "Probamos territorios contra conversación real para saber cuál conecta sin sentirse forzado. Casi nunca gana el más aspiracional: gana el que convierte una frustración cotidiana en una idea fácil de defender.",
     deliverables: ["Mapa de tensión cultural", "Brief de ángulo de campaña", "Narrativa con fuentes"]
@@ -252,7 +249,6 @@ export const homeUseCases: HomeUseCase[] = [
     shortTitle: "Optimización de medios",
     title: "Mi plan de medios no convierte. ¿Dónde se rompe el mensaje?",
     methodologies: ["Journey Friction Mapping", "Decision Velocity"],
-    timing: "4-6 semanas",
     reading:
       "Cruzamos lo que dice el funnel con lo que la gente expresa antes de comprar. A veces no falla el canal ni la frecuencia: falla una promesa que acelera a expertos y confunde a compradores nuevos.",
     deliverables: ["Mapa de fricción", "Bloqueos de velocidad", "Plan de reparación de mensaje"]
@@ -262,7 +258,6 @@ export const homeUseCases: HomeUseCase[] = [
     shortTitle: "Desarrollo de producto",
     title: "Necesito producto nuevo. ¿Qué necesidad sigue mal resuelta?",
     methodologies: ["Triggers & Barriers", "Value Perception Matrix"],
-    timing: "6-10 semanas",
     reading:
       "Leemos reviews y foros para separar deseos bonitos de oportunidades reales. Muchas veces la innovación no es otra feature: es reducir un riesgo que nadie está comunicando como valor.",
     deliverables: ["Landscape de jobs", "Reporte de whitespace", "Direcciones de concepto"]
@@ -272,7 +267,6 @@ export const homeUseCases: HomeUseCase[] = [
     shortTitle: "Entrada a México",
     title: "Vamos a entrar o crecer en México. ¿Qué nos daría permiso local?",
     methodologies: ["Cultural Codes", "Influence Architecture"],
-    timing: "6-10 semanas",
     reading:
       "Una categoría no aterriza igual en México que en otros mercados. Identificamos qué significa localmente, quién la legitima y qué narrativas la rechazan para entrar con un ángulo creíble.",
     deliverables: ["Dossier de código local", "Mapa de influencia de categoría", "Brief de entrada de mercado"]
@@ -282,7 +276,6 @@ export const homeUseCases: HomeUseCase[] = [
     shortTitle: "Defensa competitiva",
     title: "Estoy perdiendo share. ¿Qué está ganando el competidor?",
     methodologies: ["Triggers & Barriers", "Journey Friction Mapping"],
-    timing: "4-8 semanas",
     reading:
       "Analizamos las razones que la gente usa para irse: cuándo se rompe la lealtad, qué lo dispara y qué promesa del competidor se siente más justa, simple o confiable.",
     deliverables: ["Mapa de narrativas de migración", "Barreras de retención", "Brief de defensa competitiva"]
@@ -292,7 +285,6 @@ export const homeUseCases: HomeUseCase[] = [
     shortTitle: "Anticipación de tendencias",
     title: "Mi categoría se está moviendo. ¿Qué señal viene creciendo?",
     methodologies: ["Cultural Codes", "Influence Architecture"],
-    timing: "6-10 semanas",
     reading:
       "Las tendencias útiles suelen empezar como lenguaje nuevo, hábitos pequeños o voces que conectan nichos. Las detectamos antes de que se vuelvan obvias, cuando todavía puedes decidir y no solo reaccionar.",
     deliverables: ["Radar de señales débiles", "Vocabulario emergente", "Dossier de nodos tempranos"]
@@ -302,7 +294,6 @@ export const homeUseCases: HomeUseCase[] = [
     shortTitle: "Crisis",
     title: "Estamos en crisis. ¿Qué está alimentando la conversación?",
     methodologies: ["Influence Architecture", "Cultural Codes"],
-    timing: "2-4 semanas",
     reading:
       "No miramos solo volumen. Identificamos quién sostiene la narrativa, qué frase la vuelve repetible y qué tipo de respuesta puede bajarle fuerza sin amplificarla.",
     deliverables: ["Mapa narrativo de crisis", "Lista de nodos de riesgo", "Estrategia de respuesta"]
@@ -663,7 +654,6 @@ export const useCases: UseCase[] = [
     shortTitle: "Lanzamiento de campaña",
     industries: "Consumo, retail, fintech, food, movilidad",
     methodologies: ["Cultural Codes", "Triggers & Barriers"],
-    timing: "4-6 semanas",
     approach:
       "Probamos territorios contra conversación real para elegir un ángulo que la categoría sí pueda creer.",
     deliverables: ["Mapa de tensión", "Brief de campaña", "Narrativa con fuentes"],
@@ -676,7 +666,6 @@ export const useCases: UseCase[] = [
     shortTitle: "Optimización de medios",
     industries: "Agencias, ecommerce, subscription, apps",
     methodologies: ["Journey Friction Mapping", "Decision Velocity"],
-    timing: "4-6 semanas",
     approach:
       "Comparamos lo que dice el funnel con lo que la gente expresa antes de comprar para ubicar dónde se pierde tracción.",
     deliverables: ["Mapa de fricción", "Bloqueos de decisión", "Plan de reparación de mensaje"],
@@ -689,7 +678,6 @@ export const useCases: UseCase[] = [
     shortTitle: "Desarrollo de producto",
     industries: "CPG, health, beauty, SaaS, fintech",
     methodologies: ["Triggers & Barriers", "Value Perception Matrix"],
-    timing: "6-10 semanas",
     approach:
       "Leemos reviews, foros y discusiones reales para separar deseos bonitos de oportunidades que sí pueden entrar a roadmap.",
     deliverables: ["Mapa de necesidades", "Oportunidades de diferenciación", "Rutas de concepto"],
@@ -702,7 +690,6 @@ export const useCases: UseCase[] = [
     shortTitle: "Nuevo mercado",
     industries: "Marcas regionales, expansion LATAM, scaleups",
     methodologies: ["Cultural Codes", "Influence Architecture"],
-    timing: "6-10 semanas",
     approach:
       "Identificamos qué significa la categoría localmente, quién la legitima y qué narrativas conviene evitar.",
     deliverables: ["Dossier de código local", "Mapa de influencia", "Brief de entrada"],
@@ -715,7 +702,6 @@ export const useCases: UseCase[] = [
     shortTitle: "Reposicionamiento",
     industries: "Brand strategy, consumer brands, legacy brands",
     methodologies: ["Cultural Codes", "Value Perception Matrix"],
-    timing: "6-10 semanas",
     approach:
       "Mapeamos cómo se lee hoy la marca y qué espacio puede reclamar sin sonar forzada.",
     deliverables: ["Mapa de posición", "Gaps de valor", "Rutas de reposicionamiento"],
@@ -728,7 +714,6 @@ export const useCases: UseCase[] = [
     shortTitle: "Defensa competitiva",
     industries: "Retail, telecom, apps, servicios financieros",
     methodologies: ["Triggers & Barriers", "Journey Friction Mapping"],
-    timing: "4-8 semanas",
     approach:
       "Analizamos las razones que la gente usa para irse y qué promesa del competidor se siente más justa, simple o confiable.",
     deliverables: ["Mapa de migración", "Barreras de retención", "Brief de defensa competitiva"],
@@ -741,7 +726,6 @@ export const useCases: UseCase[] = [
     shortTitle: "Validación de hipótesis",
     industries: "Estrategia, planning, venture, innovacion",
     methodologies: ["Protocolo a medida"],
-    timing: "4-6 semanas",
     approach:
       "Buscamos señales a favor y en contra para saber si la tesis merece avanzar, ajustarse o frenarse.",
     deliverables: ["Brief de evidencia", "Señales en contra", "Recomendación de decisión"],
@@ -754,7 +738,6 @@ export const useCases: UseCase[] = [
     shortTitle: "Anticipación de tendencias",
     industries: "Beauty, food, gaming, cultura, tecnologia",
     methodologies: ["Cultural Codes", "Influence Architecture"],
-    timing: "6-10 semanas",
     approach:
       "Detectamos lenguaje, hábitos y voces que empiezan a crecer antes de volverse obvios.",
     deliverables: ["Radar de señales", "Vocabulario emergente", "Voces tempranas"],
@@ -767,7 +750,6 @@ export const useCases: UseCase[] = [
     shortTitle: "Crisis",
     industries: "Reputacion, consumo, instituciones, plataformas",
     methodologies: ["Influence Architecture", "Cultural Codes"],
-    timing: "2-4 semanas",
     approach:
       "Identificamos quién sostiene la narrativa, qué frase la vuelve repetible y qué respuesta puede bajarle fuerza.",
     deliverables: ["Mapa narrativo de crisis", "Voces de riesgo", "Estrategia de respuesta"],
@@ -780,7 +762,6 @@ export const useCases: UseCase[] = [
     shortTitle: "Influencia de categoría",
     industries: "Tech, gaming, belleza, finanzas personales",
     methodologies: ["Influence Architecture"],
-    timing: "6-10 semanas",
     approach:
       "Mapeamos voces que conectan comunidades, validan ideas y cambian cómo se interpreta la categoría.",
     deliverables: ["Mapa de influencia", "Dossier de voces clave", "Estrategia de activación"],
