@@ -41,12 +41,12 @@
   align-items: stretch;
 }
 
-.indexAside,
-.indexFeatureCard {
+.indexAside {
   display: grid;
-  gap: 18px;
+  grid-template-rows: 210px auto auto;
   align-content: start;
-  padding: var(--report-pad-card);
+  min-width: min(100%, var(--page-hero-panel));
+  max-width: var(--page-hero-panel);
   border: 1px solid var(--report-line);
   border-radius: var(--report-radius-panel);
   background:
@@ -54,20 +54,64 @@
     radial-gradient(circle at top right, rgba(0, 238, 238, 0.14), transparent 34%);
   box-shadow: var(--report-shadow-soft);
   backdrop-filter: blur(22px) saturate(132%);
+  overflow: hidden;
 }
 
-.indexAside h2,
-.indexFeatureCard h3 {
+.indexAsideMedia {
+  position: relative;
+  min-height: 210px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 28% 16%, rgba(0, 171, 181, 0.14), transparent 44%),
+    rgba(244, 244, 244, 0.8);
+}
+
+.indexAsideMedia img,
+.indexInsightMedia img {
+  object-fit: cover;
+  transform: scale(1.01);
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.indexAsideBody {
+  display: grid;
+  gap: 12px;
+  padding: var(--report-pad-card) var(--report-pad-card) 0;
+}
+
+.indexAside h2 {
   color: var(--ink);
   font-size: var(--report-display-lg);
   line-height: 1.08;
   text-wrap: balance;
 }
 
-.indexAside p,
-.indexFeatureCard p {
+.indexAside p {
   color: var(--neutral-10);
   line-height: 1.55;
+}
+
+.indexMetric {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: end;
+  padding-top: 10px;
+  border-top: 1px solid rgba(26, 26, 26, 0.08);
+}
+
+.indexMetric strong {
+  color: var(--ink);
+  font-size: 1.25rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.indexMetric span {
+  color: var(--neutral-10);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 .indexReportShelf {
@@ -78,9 +122,11 @@
 .reportLinkCard {
   display: inline-flex;
   align-items: center;
+  align-self: end;
   gap: 8px;
   width: fit-content;
   min-height: 44px;
+  margin: 18px var(--report-pad-card) var(--report-pad-card);
   padding: 0 16px;
   border: 1px solid rgba(26, 26, 26, 0.14);
   border-radius: 999px;
@@ -93,6 +139,216 @@
 .reportLinkCard:hover {
   transform: translateY(-1px);
   background: #ffffff;
+}
+
+.indexLibraryMeta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-top: -6px;
+  color: var(--neutral-10);
+  font-size: var(--editorial-small);
+  font-weight: 700;
+}
+
+.indexCardGrid,
+.indexCasesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.indexInsightCard,
+.indexCaseCard {
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 220ms ease,
+    background 220ms ease;
+}
+
+.indexInsightCard {
+  display: grid;
+  grid-template-rows: 170px auto;
+  min-height: 390px;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: var(--editorial-radius-card);
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: 0 4px 16px rgba(43, 43, 43, 0.07);
+  backdrop-filter: blur(22px) saturate(128%);
+  overflow: hidden;
+}
+
+.indexInsightCard:hover,
+.indexCaseCard:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: var(--editorial-shadow-lift);
+}
+
+.indexInsightCard:hover .indexInsightMedia img {
+  transform: scale(1.045);
+}
+
+.indexInsightMedia {
+  position: relative;
+  min-height: 170px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(0, 171, 181, 0.14), transparent 44%),
+    rgba(244, 244, 244, 0.8);
+}
+
+.indexInsightBody {
+  display: grid;
+  align-content: space-between;
+  gap: 16px;
+  min-height: 220px;
+  padding: 18px;
+}
+
+.indexInsightBody h3,
+.indexCaseCard h3 {
+  color: var(--ink);
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+.indexInsightBody h3 {
+  margin-top: 10px;
+  font-size: clamp(1.18rem, 1.35vw, 1.55rem);
+  line-height: 1.08;
+}
+
+.indexInsightBody p,
+.indexCaseCard p {
+  color: var(--neutral-10);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.indexInsightBody p {
+  max-width: 620px;
+  margin-top: 8px;
+}
+
+.indexInsightFooter {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(35, 35, 39, 0.08);
+}
+
+.indexInsightFooter span {
+  display: grid;
+  gap: 4px;
+  max-width: 260px;
+  color: var(--neutral-10);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.indexInsightFooter strong {
+  color: var(--ink);
+  font-size: 1.25rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.indexInsightFooter b,
+.indexCaseCard b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--signal-dark);
+  font-size: 0.82rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.indexPagination {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding-top: 4px;
+}
+
+.indexPagination a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(230, 230, 230, 0.82);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--neutral-10);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    color 180ms ease;
+}
+
+.indexPagination a:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink);
+}
+
+.indexPagination a[aria-current="page"] {
+  border-color: var(--signal-dark);
+  background: rgba(0, 238, 238, 0.08);
+  color: var(--signal-dark);
+}
+
+.indexPagination div {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.indexPagination .paginationDisabled {
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.indexCasesBlock {
+  display: grid;
+  gap: 24px;
+  padding-top: var(--editorial-section-y);
+  border-top: 1px solid rgba(20, 20, 20, 0.08);
+}
+
+.indexCaseCard {
+  display: grid;
+  gap: 14px;
+  min-height: 100%;
+  padding: var(--ui-card-pad);
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: var(--editorial-radius-card);
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow: 0 4px 16px rgba(43, 43, 43, 0.07);
+  backdrop-filter: blur(22px) saturate(128%);
+}
+
+.indexCaseCard h3 {
+  font-size: var(--ui-card-title);
+}
+
+.indexCaseCard b {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid rgba(35, 35, 39, 0.08);
 }
 
 @keyframes chat-type-reveal {
@@ -2626,6 +2882,11 @@
 }
 
 @media (max-width: 1100px) {
+  .indexCardGrid,
+  .indexCasesGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .reportHeroInner,
   .contractGrid,
   .methodGrid,
@@ -2673,6 +2934,57 @@
 }
 
 @media (max-width: 760px) {
+  .indexHero {
+    padding-bottom: clamp(28px, 3vw, 44px);
+  }
+
+  .indexAside {
+    grid-template-rows: minmax(190px, 48vw) auto auto;
+    min-width: 0;
+    max-width: none;
+    border-radius: 24px;
+  }
+
+  .indexAsideMedia {
+    min-height: 190px;
+  }
+
+  .indexCardGrid,
+  .indexCasesGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .indexInsightCard {
+    grid-template-rows: minmax(190px, 48vw) auto;
+    min-height: auto;
+    border-radius: 24px;
+  }
+
+  .indexInsightBody {
+    gap: 18px;
+    min-height: auto;
+    padding: 18px;
+  }
+
+  .indexInsightBody h3 {
+    font-size: clamp(1.42rem, 7vw, 2rem);
+  }
+
+  .indexInsightBody p,
+  .indexCaseCard p {
+    font-size: 0.92rem;
+  }
+
+  .indexInsightFooter {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .indexPagination {
+    justify-content: center;
+  }
+
   .reportHero,
   .stickyNav {
     max-width: 100vw;

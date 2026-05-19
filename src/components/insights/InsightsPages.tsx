@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowRight, Info } from "lucide-react";
+import { ArrowLeft, ArrowRight, Info } from "lucide-react";
 import { siFacebook, siInstagram, siReddit, siTiktok, siX, siYoutube } from "simple-icons";
 import { Button } from "@/components/ui/Button";
 import { MethodologyChip } from "@/components/ui/MethodologyIcon";
 import type { InsightReport, InsightSignal } from "@/content/insights/reports";
 import { insightsReports } from "@/content/insights/reports";
+import { useCases } from "@/content/site";
 import {
   DownloadPrintButton,
   MaturityDistributionChart,
@@ -34,6 +35,7 @@ const maturityCopy: Record<InsightSignal["maturity"], { title: string; note: str
 const heroNumberOrder = ["corpus_scope", "mentions_reviewed", "period", "sources", "signals", "keywords", "evidence"];
 const maturityOrder: InsightSignal["maturity"][] = ["emergente", "acelerando", "mainstreaming"];
 const printTotalPages = "18";
+const insightsPerPage = 6;
 const linkedInIcon = {
   path: "M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124zM7.119 20.452H3.554V9h3.565v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0z"
 };
@@ -316,6 +318,16 @@ function heroVisualAsset(report: InsightReport) {
     src: "/assets/insights/cultural-foresight-hero-v2.png",
     alt: `Visual editorial para ${report.meta.study}`
   };
+}
+
+function getIndexMetric(report: InsightReport) {
+  const preferredKey = isFutureHumanReport(report) ? "mentions_reviewed" : "evidence";
+  return report.hero_numbers[preferredKey] ?? report.hero_numbers.corpus_scope;
+}
+
+function clampPage(page: number, totalPages: number) {
+  if (!Number.isFinite(page)) return 1;
+  return Math.min(Math.max(Math.trunc(page), 1), totalPages);
 }
 
 function heroSummaryChips() {
@@ -915,8 +927,15 @@ function SignalCard({
   );
 }
 
-export function InsightsIndexPage() {
+export function InsightsIndexPage({ page = 1 }: { page?: number }) {
   const [featured] = insightsReports;
+  const totalPages = Math.max(1, Math.ceil(insightsReports.length / insightsPerPage));
+  const currentPage = clampPage(page, totalPages);
+  const startIndex = (currentPage - 1) * insightsPerPage;
+  const visibleReports = insightsReports.slice(startIndex, startIndex + insightsPerPage);
+  const featuredVisual = heroVisualAsset(featured);
+  const featuredMetric = getIndexMetric(featured);
+  const selectedUseCases = useCases.slice(0, 3);
 
   return (
     <>
@@ -939,10 +958,26 @@ export function InsightsIndexPage() {
             </div>
           </div>
 
-          <aside className={styles.indexAside}>
-            <span className={styles.chartLabel}>Disponible ahora</span>
-            <h2>{featured.meta.study}</h2>
-            <p>{featured.meta.subtitle}</p>
+          <aside className={styles.indexAside} aria-label="Insight destacado">
+            <div className={styles.indexAsideMedia}>
+              <Image
+                src={featuredVisual.src}
+                alt={featuredVisual.alt}
+                fill
+                sizes="(max-width: 760px) 100vw, 420px"
+              />
+            </div>
+            <div className={styles.indexAsideBody}>
+              <span className={styles.chartLabel}>Disponible ahora</span>
+              <h2>{featured.meta.study}</h2>
+              <p>{featured.meta.subtitle}</p>
+              {featuredMetric ? (
+                <div className={styles.indexMetric}>
+                  <strong>{featuredMetric.value}</strong>
+                  <span>{featuredMetric.label}</span>
+                </div>
+              ) : null}
+            </div>
             <Link className={styles.reportLinkCard} href={`/insights/${featured.slug}`}>
               Abrir insight <ArrowRight size={16} strokeWidth={1.8} />
             </Link>
@@ -957,16 +992,105 @@ export function InsightsIndexPage() {
             title="Radares para marcas operando en México en 2026."
             lead="El formato combina lectura editorial, señales clasificadas por madurez, evidencia textual y movimientos accionables para equipos comerciales."
           />
-          {insightsReports.map((report) => (
-            <article className={styles.indexFeatureCard} key={report.slug}>
-              <span className={styles.chartLabel}>{report.indexLabel}</span>
-              <h3>{report.meta.study}</h3>
-              <p>{report.meta.subtitle}</p>
-              <Button href={`/insights/${report.slug}`} icon={<ArrowRight size={17} strokeWidth={1.8} />}>
-                Leer reporte
-              </Button>
-            </article>
-          ))}
+          <div className={styles.indexLibraryMeta}>
+            <span>
+              {insightsReports.length} insights publicados · página {currentPage} de {totalPages}
+            </span>
+            <span>La biblioteca crecerá sin cambiar este layout.</span>
+          </div>
+          <div className={styles.indexCardGrid}>
+            {visibleReports.map((report) => {
+              const visual = heroVisualAsset(report);
+              const metric = getIndexMetric(report);
+
+              return (
+                <Link className={styles.indexInsightCard} href={`/insights/${report.slug}`} key={report.slug}>
+                  <div className={styles.indexInsightMedia}>
+                    <Image
+                      src={visual.src}
+                      alt={visual.alt}
+                      fill
+                      sizes="(max-width: 760px) 100vw, (max-width: 1120px) 50vw, 33vw"
+                    />
+                  </div>
+                  <div className={styles.indexInsightBody}>
+                    <div>
+                      <span className="eyebrow">Insight Noisia</span>
+                      <h3>{report.meta.study}</h3>
+                      <p>{report.meta.subtitle}</p>
+                    </div>
+                    <div className={styles.indexInsightFooter}>
+                      {metric ? (
+                        <span>
+                          <strong>{metric.value}</strong>
+                          {metric.label}
+                        </span>
+                      ) : null}
+                      <b>
+                        Leer insight <ArrowRight size={16} strokeWidth={1.8} />
+                      </b>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+          <nav className={styles.indexPagination} aria-label="Paginación de insights">
+            <Link
+              aria-disabled={currentPage === 1}
+              className={currentPage === 1 ? styles.paginationDisabled : undefined}
+              href={`/insights?page=${Math.max(1, currentPage - 1)}`}
+            >
+              <ArrowLeft size={16} strokeWidth={1.8} />
+              Anterior
+            </Link>
+            <div>
+              {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+                <Link
+                  aria-current={pageNumber === currentPage ? "page" : undefined}
+                  href={`/insights?page=${pageNumber}`}
+                  key={pageNumber}
+                >
+                  {pageNumber}
+                </Link>
+              ))}
+            </div>
+            <Link
+              aria-disabled={currentPage === totalPages}
+              className={currentPage === totalPages ? styles.paginationDisabled : undefined}
+              href={`/insights?page=${Math.min(totalPages, currentPage + 1)}`}
+            >
+              Siguiente
+              <ArrowRight size={16} strokeWidth={1.8} />
+            </Link>
+          </nav>
+        </div>
+      </section>
+
+      <section className="section section--compact">
+        <div className={`section__inner ${styles.indexCasesBlock}`}>
+          <SectionIntro
+            eyebrow="CASOS DE USO"
+            title="Si ningún insight responde tu pregunta, empieza por una decisión."
+            lead="Estos casos ayudan a traducir una duda de negocio en fuentes, lectura y salida accionable."
+          />
+          <div className={styles.indexCasesGrid}>
+            {selectedUseCases.map((useCase) => (
+              <Link className={styles.indexCaseCard} href={`/casos-de-uso/${useCase.slug}`} key={useCase.slug}>
+                <span className="chip">{useCase.shortTitle}</span>
+                <h3>{useCase.title}</h3>
+                <p>{useCase.vignette}</p>
+                <div className="tag-list">
+                  {useCase.methodologies.map((methodology) => (
+                    <MethodologyChip identifier={methodology} key={methodology} compact />
+                  ))}
+                </div>
+                <b>
+                  Leer caso <ArrowRight size={16} strokeWidth={1.8} />
+                </b>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
     </>
