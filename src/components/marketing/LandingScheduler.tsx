@@ -1,7 +1,7 @@
 import { ArrowRight, CalendarDays, Clock3, Video } from "lucide-react";
 
 const bookingUrl =
-  "https://calendar.google.com/calendar/appointments/schedules/AcZssZ1oZIgBjg8pfSNf6_-OjmnP6NbnVliMGElto4vYR9oW0RB9Uy3QZWA2HYRVyBTrowH0800yLLFV?gv=true";
+  "https://calendar.app.google/Zhpsy2vNq7jWdHgs8";
 
 const scheduleDetails = [
   {

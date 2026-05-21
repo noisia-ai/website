@@ -29,6 +29,9 @@ export function SiteHeader() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const isMeetingPage = pathname === "/meeting";
+  const headerCtaHref = isMeetingPage ? "https://calendar.app.google/Zhpsy2vNq7jWdHgs8" : "/diagnostico";
+  const headerCtaLabel = isMeetingPage ? "Hablar con Noisia" : "Iniciar diagnóstico";
 
   useEffect(() => {
     document.body.classList.remove("menu-open");
@@ -107,8 +110,13 @@ export function SiteHeader() {
         <div className="site-header__spacer" aria-hidden="true" />
 
         <div className="site-header__actions">
-          <Link className="site-header__cta" href="/diagnostico">
-            Iniciar diagnóstico
+          <Link
+            className="site-header__cta"
+            href={headerCtaHref}
+            rel={isMeetingPage ? "noreferrer" : undefined}
+            target={isMeetingPage ? "_blank" : undefined}
+          >
+            {headerCtaLabel}
           </Link>
 
           <button
