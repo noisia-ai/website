@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { pool } from "@/lib/db";
-
 export const dynamic = "force-dynamic";
 
 const requiredEnv = [
@@ -29,6 +27,7 @@ export async function GET(request: Request) {
 
   if (deep && !missingEnv.includes("DATABASE_URL")) {
     try {
+      const { pool } = await import("@/lib/db");
       await pool.query("select 1");
       checks.database = "ok";
     } catch {
@@ -36,7 +35,7 @@ export async function GET(request: Request) {
     }
   }
 
-  const ok = missingEnv.length === 0 && (!deep || checks.database === "ok");
+  const ok = !deep || (missingEnv.length === 0 && checks.database === "ok");
 
   return NextResponse.json(
     {
