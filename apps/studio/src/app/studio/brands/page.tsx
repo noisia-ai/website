@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { StudioNav } from "@/components/layout/StudioNav";
 import { Icon } from "@/components/ui/Icon";
@@ -15,6 +16,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function BrandsPage({ searchParams }: { searchParams?: StudioSearchParams }) {
+  const t = await getTranslations("Brands");
   const session = await requireStudioUser("/studio/brands");
 
   const params = await resolveSearchParams(searchParams);
@@ -30,25 +32,25 @@ export default async function BrandsPage({ searchParams }: { searchParams?: Stud
 
   return (
     <>
-      <StudioNav activeSection="brands" crumbs={[{ label: "Marcas" }]} user={session.appUser} />
+      <StudioNav activeSection="brands" crumbs={[{ label: t("crumb") }]} user={session.appUser} />
       <main className="app-content">
         <div className="studio-page">
           {/* Header */}
           <header className="page-head">
             <div>
-              <p className="vitals-eyebrow">Studio</p>
-              <h1 className="page-head-title">Marcas</h1>
+              <p className="vitals-eyebrow">{t("eyebrow")}</p>
+              <h1 className="page-head-title">{t("title")}</h1>
               <p className="page-head-sub">
-                {result.pagination.total} {result.pagination.total === 1 ? "marca" : "marcas"} ·
-                página {result.pagination.page} de {totalPages}
+                {result.pagination.total} {result.pagination.total === 1 ? t("countSingular") : t("countPlural")} ·
+                {t("page", { page: result.pagination.page, totalPages })}
               </p>
             </div>
             <div className="page-head-actions">
               <Link className="wizard-cta wizard-cta--secondary" href="/studio/brands/new">
-                <Icon name="sparkle" size={14} /> Nueva marca
+                <Icon name="sparkle" size={14} /> {t("newBrand")}
               </Link>
               <Link className="wizard-cta" href="/studio/corpora/new">
-                <Icon name="play" size={14} /> Nuevo estudio
+                <Icon name="play" size={14} /> {t("newStudy")}
               </Link>
             </div>
           </header>
@@ -56,34 +58,34 @@ export default async function BrandsPage({ searchParams }: { searchParams?: Stud
           {/* Filter bar */}
           <form className="filter-bar-v2">
             <label className="filter-field">
-              <span className="filter-label">Organización</span>
+              <span className="filter-label">{t("filters.organization")}</span>
               <input
                 className="filter-input"
                 defaultValue={filters.organization ?? ""}
                 name="organization"
-                placeholder="slug o UUID"
+                placeholder={t("filters.organizationPlaceholder")}
               />
             </label>
             <label className="filter-field">
-              <span className="filter-label">Industria</span>
+              <span className="filter-label">{t("filters.industry")}</span>
               <input
                 className="filter-input"
                 defaultValue={filters.industry ?? ""}
                 name="industry"
-                placeholder="ej. seguros"
+                placeholder={t("filters.industryPlaceholder")}
               />
             </label>
             <label className="filter-field">
-              <span className="filter-label">Status</span>
+              <span className="filter-label">{t("filters.status")}</span>
               <select className="filter-input" defaultValue={filters.status ?? ""} name="status">
-                <option value="">Todos</option>
-                <option value="active">Active</option>
-                <option value="paused">Paused</option>
-                <option value="archived">Archived</option>
+                <option value="">{t("filters.all")}</option>
+                <option value="active">{t("filters.active")}</option>
+                <option value="paused">{t("filters.paused")}</option>
+                <option value="archived">{t("filters.archived")}</option>
               </select>
             </label>
             <button className="wizard-cta wizard-cta--secondary" type="submit">
-              <Icon name="play" size={13} /> Filtrar
+              <Icon name="play" size={13} /> {t("filters.submit")}
             </button>
           </form>
 
@@ -91,7 +93,7 @@ export default async function BrandsPage({ searchParams }: { searchParams?: Stud
           {result.data.length === 0 ? (
             <div className="empty-card">
               <Icon name="info" size={20} className="empty-card-icon" />
-              <p>No hay marcas con esos filtros.</p>
+              <p>{t("empty")}</p>
             </div>
           ) : (
             <ul className="brand-grid">
@@ -113,7 +115,7 @@ export default async function BrandsPage({ searchParams }: { searchParams?: Stud
                     </div>
 
                     <p className="brand-card-meta">
-                      {[brand.industry, brand.industrySub].filter(Boolean).join(" / ") || "Sin industria"}
+                          {[brand.industry, brand.industrySub].filter(Boolean).join(" / ") || t("noIndustry")}
                       {brand.countries && brand.countries.length > 0 && (
                         <> · {brand.countries.join(", ")}</>
                       )}
@@ -123,13 +125,13 @@ export default async function BrandsPage({ searchParams }: { searchParams?: Stud
                       <div className="brand-card-stat">
                         <span className="brand-card-stat-value">{brand.corporaCount}</span>
                         <span className="brand-card-stat-label">
-                          {brand.corporaCount === 1 ? "corpus" : "corpora"}
+                          {brand.corporaCount === 1 ? t("corpusSingular") : t("corpusPlural")}
                         </span>
                       </div>
                       {brand.corporaApproved > 0 && (
                         <div className="brand-card-stat brand-card-stat--good">
                           <span className="brand-card-stat-value">{brand.corporaApproved}</span>
-                          <span className="brand-card-stat-label">aprobados</span>
+                          <span className="brand-card-stat-label">{t("approved")}</span>
                         </div>
                       )}
                       <Icon name="arrow-right" size={16} className="brand-card-arrow" />
@@ -142,13 +144,13 @@ export default async function BrandsPage({ searchParams }: { searchParams?: Stud
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <nav className="pagination-v2" aria-label="Paginación de marcas">
+            <nav className="pagination-v2" aria-label={t("pagination.label")}>
               <Link
                 aria-disabled={filters.page <= 1}
                 className="wizard-cta wizard-cta--ghost"
                 href={`/studio/brands?page=${Math.max(1, filters.page - 1)}`}
               >
-                <Icon name="chevron-down" size={13} className="icon--flip" /> Anterior
+                <Icon name="chevron-down" size={13} className="icon--flip" /> {t("pagination.previous")}
               </Link>
               <span className="pagination-position">
                 {filters.page} / {totalPages}
@@ -158,7 +160,7 @@ export default async function BrandsPage({ searchParams }: { searchParams?: Stud
                 className="wizard-cta wizard-cta--ghost"
                 href={`/studio/brands?page=${Math.min(totalPages, filters.page + 1)}`}
               >
-                Siguiente <Icon name="arrow-right" size={13} />
+                {t("pagination.next")} <Icon name="arrow-right" size={13} />
               </Link>
             </nav>
           )}

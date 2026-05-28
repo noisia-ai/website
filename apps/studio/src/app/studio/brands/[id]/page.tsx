@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { StudioNav } from "@/components/layout/StudioNav";
@@ -11,6 +12,8 @@ import { getBrandDetailForUser } from "@/lib/data/brands";
 export const dynamic = "force-dynamic";
 
 export default async function BrandDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = await getTranslations("BrandDetail");
+  const tBrands = await getTranslations("Brands");
   const { id } = await params;
   const session = await requireStudioUser(`/studio/brands/${id}`);
 
@@ -27,7 +30,7 @@ export default async function BrandDetailPage({ params }: { params: Promise<{ id
       <StudioNav
         activeSection="brands"
         crumbs={[
-          { label: "Marcas", href: "/studio/brands" },
+          { label: tBrands("crumb"), href: "/studio/brands" },
           { label: brandLabel },
         ]}
         user={session.appUser}
@@ -37,11 +40,11 @@ export default async function BrandDetailPage({ params }: { params: Promise<{ id
           {/* Hero */}
           <header className="vitals">
             <div className="vitals-main">
-              <p className="vitals-eyebrow">{brand.organizationName ?? brand.organizationSlug ?? "Marca"}</p>
+              <p className="vitals-eyebrow">{brand.organizationName ?? brand.organizationSlug ?? t("brandFallback")}</p>
               <h1 className="vitals-name">{brandLabel}</h1>
               <div className="brand-hero-pills">
                 {brand.status === "active" ? (
-                  <SuccessPill>Activa</SuccessPill>
+                  <SuccessPill>{t("active")}</SuccessPill>
                 ) : (
                   <StatusPill tone="idle">{brand.status}</StatusPill>
                 )}
@@ -56,15 +59,15 @@ export default async function BrandDetailPage({ params }: { params: Promise<{ id
               </div>
             </div>
             <div className="vitals-stats">
-              <Stat label="Corpora" value={String(brand.corpora.length)} sub="metodologías" highlight />
-              <Stat label="Competidores" value={String(brand.competitors.length)} sub="seeds" />
+              <Stat label={t("corpora")} value={String(brand.corpora.length)} sub={t("methodologies")} highlight />
+              <Stat label={t("competitors")} value={String(brand.competitors.length)} sub={t("seeds")} />
             </div>
             <div className="brand-hero-actions">
               <Link className="wizard-cta" href={`/studio/corpora/new?brand=${brand.id}`}>
-                <Icon name="sparkle" size={14} /> Nuevo estudio
+                <Icon name="sparkle" size={14} /> {t("newStudy")}
               </Link>
               <Link className="wizard-cta wizard-cta--secondary" href={`/studio/brands/${brand.id}/edit`}>
-                <Icon name="pencil" size={14} /> Editar Brand OS
+                <Icon name="pencil" size={14} /> {t("editBrand")}
               </Link>
             </div>
           </header>
@@ -76,17 +79,17 @@ export default async function BrandDetailPage({ params }: { params: Promise<{ id
               <code className="meta-strip-value">{brand.slug}</code>
             </div>
             <div className="meta-strip-item">
-              <span className="meta-strip-label">Organización</span>
+              <span className="meta-strip-label">{t("organization")}</span>
               <span className="meta-strip-value">{brand.organizationName ?? brand.organizationSlug ?? "—"}</span>
             </div>
             <div className="meta-strip-item">
-              <span className="meta-strip-label">Industria</span>
+              <span className="meta-strip-label">{t("industry")}</span>
               <span className="meta-strip-value">
                 {[brand.industry, brand.industrySub].filter(Boolean).join(" / ") || "—"}
               </span>
             </div>
             <div className="meta-strip-item">
-              <span className="meta-strip-label">Países</span>
+              <span className="meta-strip-label">{t("countries")}</span>
               <span className="meta-strip-value">{brand.countries?.join(", ") ?? "—"}</span>
             </div>
           </section>
@@ -99,12 +102,12 @@ export default async function BrandDetailPage({ params }: { params: Promise<{ id
           {/* Corpora cards */}
           <section className="dash-section">
             <header className="dash-section-head">
-              <h2>Corpora ({brand.corpora.length})</h2>
+              <h2>{t("corpora")} ({brand.corpora.length})</h2>
             </header>
             {brand.corpora.length === 0 ? (
               <div className="empty-card">
                 <Icon name="info" size={20} className="empty-card-icon" />
-                <p>Todavía no hay corpora para esta marca.</p>
+                <p>{t("emptyCorpora")}</p>
               </div>
             ) : (
               <ul className="corpus-grid">
@@ -116,11 +119,11 @@ export default async function BrandDetailPage({ params }: { params: Promise<{ id
                           <p className="corpus-card-eyebrow">{corpus.methodologyName}</p>
                           {corpus.name && <h3 className="corpus-card-title">{corpus.name}</h3>}
                           <h3 className="corpus-card-question">
-                            {corpus.businessQuestion ?? `Ventana objetivo: ${corpus.targetWindowMonths} meses`}
+                            {corpus.businessQuestion ?? t("targetWindow", { months: corpus.targetWindowMonths ?? "—" })}
                           </h3>
                         </div>
                         {corpus.status === "corpus_approved" ? (
-                          <SuccessPill>Aprobado</SuccessPill>
+                          <SuccessPill>{t("approved")}</SuccessPill>
                         ) : (
                           <StatusPill tone="idle">
                             <Icon name="refresh" size={11} /> {corpus.status}
@@ -129,7 +132,7 @@ export default async function BrandDetailPage({ params }: { params: Promise<{ id
                       </div>
                       <footer className="corpus-card-foot">
                         <span className="corpus-card-cta">
-                          Abrir engine <Icon name="arrow-right" size={13} />
+                          {t("openEngine")} <Icon name="arrow-right" size={13} />
                         </span>
                       </footer>
                     </Link>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { NewStudyForm } from "@/components/corpus/NewStudyForm";
 import { StudioNav } from "@/components/layout/StudioNav";
@@ -11,6 +12,7 @@ import { getSearchParam, resolveSearchParams, type StudioSearchParams } from "@/
 export const dynamic = "force-dynamic";
 
 export default async function NewStudyPage({ searchParams }: { searchParams?: StudioSearchParams }) {
+  const t = await getTranslations("NewStudyPage");
   const session = await requireStudioUser("/studio/corpora/new");
   const params = await resolveSearchParams(searchParams);
   const defaultBrandId = getSearchParam(params, "brand") ?? undefined;
@@ -26,7 +28,7 @@ export default async function NewStudyPage({ searchParams }: { searchParams?: St
         activeSection={null}
         crumbs={[
           { label: "Studio", href: "/studio" },
-          { label: "Nuevo estudio" }
+          { label: t("crumb") }
         ]}
         user={session.appUser}
       />
@@ -34,17 +36,15 @@ export default async function NewStudyPage({ searchParams }: { searchParams?: St
         <div className="studio-page">
           <header className="page-head">
             <div>
-              <p className="vitals-eyebrow">Corpus setup</p>
-              <h1 className="page-head-title">Nuevo estudio</h1>
-              <p className="page-head-sub">
-                Crea el contenedor del estudio y abre el Engine para generar queries, importar CSVs y aprobar el corpus.
-              </p>
+              <p className="vitals-eyebrow">{t("eyebrow")}</p>
+              <h1 className="page-head-title">{t("title")}</h1>
+              <p className="page-head-sub">{t("subtitle")}</p>
             </div>
             <Link className="wizard-cta wizard-cta--ghost" href="/studio">
-              <Icon name="arrow-right" size={13} className="icon--flip" /> Workspace
+              <Icon name="arrow-right" size={13} className="icon--flip" /> {t("workspace")}
             </Link>
             <Link className="wizard-cta wizard-cta--secondary" href="/studio/brands/new">
-              <Icon name="tag" size={13} /> Nueva marca
+              <Icon name="tag" size={13} /> {t("newBrand")}
             </Link>
           </header>
 

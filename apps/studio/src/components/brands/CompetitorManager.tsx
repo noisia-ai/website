@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { type FormEvent, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
@@ -14,6 +15,7 @@ type Competitor = {
 };
 
 export function CompetitorManager({ brandId, competitors }: { brandId: string; competitors: Competitor[] }) {
+  const t = useTranslations("CompetitorManager");
   const router = useRouter();
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [isClearing, setIsClearing] = useState(false);
@@ -35,11 +37,11 @@ export function CompetitorManager({ brandId, competitors }: { brandId: string; c
         body: JSON.stringify({ competitors: names })
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.message ?? "No se pudieron agregar competidores.");
+      if (!res.ok) throw new Error(json?.message ?? t("fallbackAddError"));
       targetForm.reset();
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudieron agregar competidores.");
+      setError(err instanceof Error ? err.message : t("fallbackAddError"));
     } finally {
       setIsAdding(false);
     }
@@ -51,27 +53,27 @@ export function CompetitorManager({ brandId, competitors }: { brandId: string; c
     try {
       const res = await fetch(`/api/brands/${brandId}/competitors/${competitorId}`, { method: "DELETE" });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.message ?? "No se pudo borrar el competidor.");
+      if (!res.ok) throw new Error(json?.message ?? t("fallbackDeleteError"));
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo borrar el competidor.");
+      setError(err instanceof Error ? err.message : t("fallbackDeleteError"));
     } finally {
       setPendingId(null);
     }
   }
 
   async function clearAll() {
-    if (!window.confirm(`Borrar los ${competitors.length} competidores de esta marca?`)) return;
+    if (!window.confirm(t("confirmClear", { count: competitors.length }))) return;
 
     setError(null);
     setIsClearing(true);
     try {
       const res = await fetch(`/api/brands/${brandId}/competitors`, { method: "DELETE" });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.message ?? "No se pudo borrar el bloque de competidores.");
+      if (!res.ok) throw new Error(json?.message ?? t("fallbackClearError"));
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo borrar el bloque de competidores.");
+      setError(err instanceof Error ? err.message : t("fallbackClearError"));
     } finally {
       setIsClearing(false);
     }
@@ -81,11 +83,11 @@ export function CompetitorManager({ brandId, competitors }: { brandId: string; c
     <section className="dash-section">
       <header className="dash-section-head competitor-manager-head">
         <div>
-          <h2>Competidores ({competitors.length})</h2>
-          <p>Seeds competitivos editables. El research largo se conserva aparte en Knowledge Base.</p>
+          <h2>{t("title", { count: competitors.length })}</h2>
+          <p>{t("subtitle")}</p>
         </div>
         <button className="wizard-cta wizard-cta--ghost" type="button" onClick={clearAll} disabled={isClearing || competitors.length === 0}>
-          <Icon name={isClearing ? "spinner" : "x"} size={13} /> Borrar bloque
+          <Icon name={isClearing ? "spinner" : "x"} size={13} /> {t("clear")}
         </button>
       </header>
       {error && (
@@ -95,16 +97,16 @@ export function CompetitorManager({ brandId, competitors }: { brandId: string; c
       )}
       <form className="competitor-add-form" onSubmit={addCompetitors}>
         <label className="new-study-field">
-          <span>Agregar competidores</span>
+          <span>{t("addLabel")}</span>
           <textarea
             className="filter-input new-study-textarea new-study-textarea--short"
             name="competitors"
             placeholder={"Ulta Beauty\nLiverpool\nPalacio de Hierro"}
           />
-          <small className="new-study-hint">Uno por línea. Esto crea relaciones competitivas, no notas de research.</small>
+          <small className="new-study-hint">{t("hint")}</small>
         </label>
         <button className="wizard-cta wizard-cta--secondary" type="submit" disabled={isAdding}>
-          <Icon name={isAdding ? "spinner" : "tag"} size={13} /> Agregar
+          <Icon name={isAdding ? "spinner" : "tag"} size={13} /> {t("add")}
         </button>
       </form>
       <div className="competitor-chips competitor-chips--managed">
@@ -120,7 +122,7 @@ export function CompetitorManager({ brandId, competitors }: { brandId: string; c
             <button
               className="competitor-chip-remove"
               type="button"
-              aria-label={`Borrar ${competitor.canonicalName}`}
+              aria-label={t("deleteAria", { name: competitor.canonicalName })}
               onClick={() => removeOne(competitor.id)}
               disabled={pendingId === competitor.id || isClearing}
             >

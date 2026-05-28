@@ -1,6 +1,10 @@
 import Link from "next/link";
+import { getLocale, getTranslations } from "next-intl/server";
 
+import { LocaleSwitcher } from "@/components/i18n/LocaleSwitcher";
 import { Icon } from "@/components/ui/Icon";
+import { setUserLocaleAction } from "@/app/actions/locale";
+import { isAppLocale, type AppLocale } from "@/i18n/locales";
 import { displayRole } from "@/lib/auth/roles";
 
 type SessionBadgeUser = {
@@ -14,8 +18,14 @@ type SessionBadgeProps = {
   compact?: boolean;
 };
 
-export function SessionBadge({ user, compact = false }: SessionBadgeProps) {
+export async function SessionBadge({ user, compact = false }: SessionBadgeProps) {
+  const [localeValue, t] = await Promise.all([getLocale(), getTranslations("Session")]);
+  const locale = isAppLocale(localeValue) ? localeValue : "es-MX";
   const label = user.fullName || user.email;
+  const labels: Record<AppLocale, string> = {
+    "es-MX": t("languages.es-MX"),
+    "en-US": t("languages.en-US")
+  };
 
   return (
     <div className={`session-badge${compact ? " session-badge--compact" : ""}`}>
@@ -29,8 +39,9 @@ export function SessionBadge({ user, compact = false }: SessionBadgeProps) {
           {displayRole(user.primaryRole)}
         </span>
       </div>
+      <LocaleSwitcher locale={locale} labels={labels} action={setUserLocaleAction} />
       <Link className="session-badge-logout" href="/api/auth/logout">
-        Salir
+        {t("logout")}
       </Link>
     </div>
   );

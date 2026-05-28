@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 import { SessionBadge } from "@/components/layout/SessionBadge";
 import { Icon } from "@/components/ui/Icon";
@@ -23,16 +24,18 @@ type StudioNavProps = {
  * Mirrors the corpus-navbar visually (glass floating pill) but shows the
  * full nav (logo + breadcrumbs + sections) instead of corpus context.
  */
-export function StudioNav({ crumbs = [], showSections = true, activeSection = null, user }: StudioNavProps) {
+export async function StudioNav({ crumbs = [], showSections = true, activeSection = null, user }: StudioNavProps) {
+  const t = await getTranslations("Nav");
+
   return (
     <nav className="studio-navbar" aria-label="Noisia Studio">
-      <Link href="/studio" className="studio-navbar-logo" aria-label="Ir al workspace">
+      <Link href="/studio" className="studio-navbar-logo" aria-label={t("workspace")}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/assets/logos/logo_black.svg" alt="Noisia" width={84} height={29} />
       </Link>
 
       {crumbs.length > 0 && (
-        <ol className="studio-navbar-crumbs" aria-label="Breadcrumbs">
+        <ol className="studio-navbar-crumbs" aria-label={t("breadcrumbs")}>
           {crumbs.map((c, i) => (
             <li key={i} className="studio-navbar-crumb">
               {i > 0 && <Icon name="chevron-down" size={12} className="studio-navbar-sep" />}
@@ -49,10 +52,10 @@ export function StudioNav({ crumbs = [], showSections = true, activeSection = nu
       {showSections && (
         <div className="studio-navbar-sections" role="tablist">
           <SectionTab href="/studio/brands" active={activeSection === "brands"}>
-            Marcas
+            {t("brands")}
           </SectionTab>
           <SectionTab href="/studio/themes" active={activeSection === "themes"}>
-            Themes
+            {t("themes")}
           </SectionTab>
         </div>
       )}

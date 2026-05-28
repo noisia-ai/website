@@ -1,0 +1,357 @@
+{
+  "Auth": {
+    "brand": "Noisia Studio",
+    "eyebrow": "Internal research workspace",
+    "title": "Enter the analysis engine.",
+    "description": "Configure corpora, validate mentions, and version studies before turning them into client deliverables.",
+    "enter": "Enter",
+    "createAccount": "Create account",
+    "vitals": {
+      "queryEngine": "Query engine",
+      "queryEngineDetail": "SentiOne + AI",
+      "corpusQa": "Corpus QA",
+      "corpusQaDetail": "cleanup and snapshots",
+      "outputs": "Outputs",
+      "outputsDetail": "T&B first"
+    }
+  },
+  "Login": {
+    "brand": "Studio access",
+    "eyebrow": "Secure access",
+    "title": "Noisia Studio",
+    "description": "Sign in with your Noisia account. Analysts go to the engine; clients go to Signal, the published report experience.",
+    "enter": "Enter",
+    "createAccount": "Create account",
+    "hint": "If you came from an internal link, we will send you back there after sign-in."
+  },
+  "Unauthorized": {
+    "brand": "Restricted access",
+    "eyebrow": "Permissions",
+    "title": "This view is internal.",
+    "description": "Your current role is <strong>{role}</strong>. The engine and corpus browser are tools for the Noisia team; clients enter through Signal.",
+    "noSession": "No session",
+    "goSignal": "Go to Signal",
+    "goHome": "Go home",
+    "logout": "Sign out",
+    "requested": "Requested destination: {next}"
+  },
+  "Nav": {
+    "workspace": "Go to workspace",
+    "breadcrumbs": "Breadcrumbs",
+    "brands": "Brands",
+    "themes": "Themes"
+  },
+  "Session": {
+    "logout": "Sign out",
+    "language": "Language",
+    "languages": {
+      "es-MX": "ES",
+      "en-US": "EN"
+    }
+  },
+  "StudioHome": {
+    "eyebrow": "Workspace",
+    "title": "Noisia Studio",
+    "stats": {
+      "brands": "Brands",
+      "activeSingular": "active",
+      "activePlural": "active",
+      "corpora": "Corpora",
+      "approved": "approved",
+      "mentions": "Mentions",
+      "accumulated": "accumulated",
+      "approvedReady": "Approved",
+      "analysisReady": "analysis ready"
+    },
+    "actions": {
+      "brands": "Brands",
+      "brandsCopy": "Brand seeds, competitors, and corpora with applied methodologies.",
+      "newBrand": "New brand",
+      "newBrandCopy": "Configure Brand OS: aliases, competitors, and base knowledge.",
+      "newStudy": "New study",
+      "newStudyCopy": "Create the container, choose a brand, and launch the Engine to build the corpus.",
+      "themes": "Themes",
+      "themesCopy": "Theme studies not tied to one brand; category-level perspective."
+    },
+    "recent": {
+      "title": "Recent corpora",
+      "viewAll": "View all",
+      "validMentions": "valid mentions",
+      "approved": "Approved",
+      "inProgress": "In progress"
+    }
+  },
+  "Brands": {
+    "crumb": "Brands",
+    "eyebrow": "Studio",
+    "title": "Brands",
+    "countSingular": "brand",
+    "countPlural": "brands",
+    "page": "page {page} of {totalPages}",
+    "newBrand": "New brand",
+    "newStudy": "New study",
+    "filters": {
+      "organization": "Organization",
+      "organizationPlaceholder": "slug or UUID",
+      "industry": "Industry",
+      "industryPlaceholder": "e.g. insurance",
+      "status": "Status",
+      "all": "All",
+      "active": "Active",
+      "paused": "Paused",
+      "archived": "Archived",
+      "submit": "Filter"
+    },
+    "empty": "No brands match those filters.",
+    "noIndustry": "No industry",
+    "corpusSingular": "corpus",
+    "corpusPlural": "corpora",
+    "approved": "approved",
+    "pagination": {
+      "label": "Brand pagination",
+      "previous": "Previous",
+      "next": "Next"
+    }
+  },
+  "BrandOs": {
+    "new": {
+      "crumb": "New brand",
+      "eyebrow": "Control plane",
+      "title": "New brand",
+      "subtitle": "Create the base entity: organization, aliases, competitors, and initial knowledge for future studies.",
+      "back": "Brands"
+    },
+    "form": {
+      "identityEyebrow": "Brand OS",
+      "identityTitle": "Identity and category",
+      "brand": "Brand",
+      "displayName": "Display name",
+      "organization": "Organization",
+      "slug": "Slug",
+      "slugPlaceholder": "auto-generated if left empty",
+      "industry": "Industry",
+      "industryPlaceholder": "Search or type: Beauty & Personal Care, Retail...",
+      "subindustry": "Subindustry",
+      "subindustryPlaceholder": "Search or type: Makeup, Skincare, Department Stores...",
+      "description": "Strategic description",
+      "seedsEyebrow": "Knowledge seeds",
+      "seedsTitle": "Aliases, competitors, and base context",
+      "countries": "Countries",
+      "aliases": "Aliases / handles",
+      "aliasesPlaceholder": "@brand, unaccented brand name, app...",
+      "competitors": "Competitors",
+      "competitorsHint": "Competitor names only, one per line. Do not paste rankings, links, tables, or ChatGPT bullets here; that belongs in Knowledge Base notes.",
+      "notes": "Knowledge Base notes",
+      "notesPlaceholder": "What it sells, what it promises, known friction, important channels, recent campaigns, legal or operational constraints...",
+      "creating": "Creating...",
+      "create": "Create Brand OS",
+      "fallbackCreateError": "Could not create brand.",
+      "fieldFallback": "field",
+      "invalidFallback": "invalid"
+    }
+  },
+  "BrandDetail": {
+    "brandFallback": "Brand",
+    "active": "Active",
+    "corpora": "Corpora",
+    "methodologies": "methodologies",
+    "competitors": "Competitors",
+    "seeds": "seeds",
+    "newStudy": "New study",
+    "editBrand": "Edit Brand OS",
+    "organization": "Organization",
+    "industry": "Industry",
+    "countries": "Countries",
+    "emptyCorpora": "There are no corpora for this brand yet.",
+    "approved": "Approved",
+    "openEngine": "Open engine",
+    "targetWindow": "Target window: {months} months"
+  },
+  "BrandEdit": {
+    "edit": "Edit",
+    "eyebrow": "Brand OS",
+    "title": "Edit {brand}",
+    "subtitle": "Update identity, category, relationships, and Knowledge Base without recreating the brand.",
+    "back": "Back to brand",
+    "formTitle": "Edit identity and category",
+    "status": "Status",
+    "active": "Active",
+    "paused": "Paused",
+    "archived": "Archived",
+    "relationsEyebrow": "Base relationships",
+    "relationsTitle": "Aliases, handles, and markets",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "save": "Save Brand OS",
+    "fallbackSaveError": "Could not save brand."
+  },
+  "CompetitorManager": {
+    "title": "Competitors ({count})",
+    "subtitle": "Editable competitive seeds. Long-form research is kept separately in Knowledge Base.",
+    "clear": "Clear block",
+    "confirmClear": "Delete the {count} competitors for this brand?",
+    "addLabel": "Add competitors",
+    "hint": "One per line. This creates competitive relationships, not research notes.",
+    "add": "Add",
+    "deleteAria": "Delete {name}",
+    "fallbackAddError": "Could not add competitors.",
+    "fallbackDeleteError": "Could not delete competitor.",
+    "fallbackClearError": "Could not clear the competitors block."
+  },
+  "KnowledgeBaseManager": {
+    "eyebrow": "Knowledge Base",
+    "title": "Editable context blocks",
+    "fieldTitle": "Title",
+    "fieldTitlePlaceholder": "Always-on brief, Q3 campaign, competitive research...",
+    "type": "Type",
+    "content": "Content",
+    "contentPlaceholder": "Paste research, campaign context, learnings, constraints, hypotheses...",
+    "add": "Add block",
+    "empty": "There are no Knowledge Base blocks for this brand yet.",
+    "delete": "Delete",
+    "save": "Save",
+    "confirmDelete": "Delete this Knowledge Base block?",
+    "fallbackAddError": "Could not create the Knowledge Base block.",
+    "fallbackSaveError": "Could not save the block.",
+    "fallbackDeleteError": "Could not delete the block."
+  },
+  "NewStudyPage": {
+    "crumb": "New study",
+    "eyebrow": "Corpus setup",
+    "title": "New study",
+    "subtitle": "Create the study container and open the Engine to generate queries, import CSVs, and approve the corpus.",
+    "workspace": "Workspace",
+    "newBrand": "New brand"
+  },
+  "NewStudy": {
+    "steps": {
+      "brand": "Brand",
+      "objective": "Objective",
+      "sources": "Sources",
+      "brief": "Brief",
+      "launch": "Launch"
+    },
+    "rail": {
+      "eyebrow": "New study",
+      "fallbackTitle": "New study",
+      "newBrand": "New brand",
+      "noBrand": "No brand",
+      "methodology": "Methodology",
+      "aria": "Study setup"
+    },
+    "validation": {
+      "brand": "Select a brand.",
+      "methodology": "Select a methodology.",
+      "brandName": "Add the brand name.",
+      "organization": "Add the organization.",
+      "studyName": "Add a study name.",
+      "businessQuestion": "Add a concrete business question, at least 10 characters.",
+      "completeMarked": "Complete the marked fields before continuing."
+    },
+    "brand": {
+      "eyebrow": "Brand OS",
+      "title": "Brand and competitive territory",
+      "existing": "Existing brand",
+      "create": "Create brand",
+      "methodology": "Methodology",
+      "organization": "Organization",
+      "displayName": "Display name",
+      "slug": "Slug",
+      "industry": "Industry",
+      "subindustry": "Subindustry",
+      "aliases": "Aliases / handles",
+      "aliasesPlaceholder": "@brand, unaccented brand name...",
+      "competitors": "Competitors",
+      "industryPlaceholder": "Search or type: Beauty & Personal Care, Retail...",
+      "subindustryPlaceholder": "Search or type: Makeup, Skincare...",
+      "competitorsHint": "Competitor names only, one per line. Rankings, links, and long-form research belong in market notes.",
+      "marketNotes": "Market notes",
+      "marketNotesPlaceholder": "What it sells, promises, constraints, known friction, recent campaigns..."
+    },
+    "objective": {
+      "eyebrow": "Study Brief",
+      "title": "Objective, hypotheses, and limits",
+      "studyName": "Study name",
+      "businessQuestion": "Business question",
+      "businessQuestionPlaceholder": "What decision should this study enable?",
+      "decision": "Internal decision",
+      "decisionPlaceholder": "Messaging, product, operations...",
+      "audience": "Audience",
+      "audiencePlaceholder": "Consumers in Mexico",
+      "categoryContext": "Category context",
+      "hypotheses": "Initial hypotheses",
+      "constraints": "Strategic constraints",
+      "knownBarriers": "Known barriers",
+      "knownTriggers": "Known triggers",
+      "success": "Success criteria",
+      "countries": "Countries",
+      "window": "Window",
+      "months": "{count} months"
+    },
+    "sources": {
+      "eyebrow": "Knowledge Base",
+      "title": "Complementary sources",
+      "type": "Source type",
+      "files": "Files",
+      "empty": "No files selected. You can launch the Engine with only the brief if you do not have sources yet.",
+      "types": {
+        "spreadsheetArchive": "Spreadsheet archive",
+        "socialArchive": "Social archive",
+        "brandDocument": "Brand document",
+        "researchDeck": "Research / deck",
+        "searchData": "Search data",
+        "scraperExport": "Scraper export"
+      }
+    },
+    "brief": {
+      "eyebrow": "Compiled Brief",
+      "title": "What Noisia will use to start",
+      "brand": "Brand",
+      "methodology": "Methodology",
+      "question": "Question",
+      "decision": "Decision",
+      "audience": "Audience",
+      "context": "Context",
+      "hypotheses": "Hypotheses",
+      "knownBarriers": "Known barriers",
+      "knownTriggers": "Known triggers",
+      "success": "Success criteria",
+      "sources": "Sources",
+      "noFiles": "No files"
+    },
+    "launch": {
+      "eyebrow": "Launch",
+      "readyTitle": "Study ready",
+      "createTitle": "Create study and prepare Engine",
+      "preparing": "Preparing study...",
+      "processingCopy": "We are saving the brief and connecting the Knowledge Base. You can stay here; the button is working.",
+      "sourceProcessedFallback": "Source processed without a summary.",
+      "ready": "Ready to create",
+      "readyCopy": "The study will be saved, Knowledge Base will be processed, and then you can open the Engine.",
+      "openEngine": "Open Engine"
+    },
+    "actions": {
+      "back": "Back",
+      "next": "Next",
+      "processing": "Processing...",
+      "create": "Create study"
+    },
+    "progress": {
+      "creatingBrand": "Creating Brand OS...",
+      "creatingStudy": "Creating study...",
+      "uploadingKnowledge": "Uploading Knowledge Base...",
+      "readyEngine": "Ready to launch Engine.",
+      "knowledgeReady": "Knowledge Base ready.",
+      "analyzingKnowledge": "Analyzing Knowledge Base... {progress}%",
+      "fallbackBrandError": "Could not create brand.",
+      "fallbackStudyError": "Could not create the study.",
+      "fallbackKnowledgeProcessError": "Could not process Knowledge Base.",
+      "fallbackKnowledgeReadError": "Could not read the processed Knowledge Base.",
+      "fallbackJobReadError": "Could not read the Knowledge Base job.",
+      "fieldFallback": "field",
+      "invalidFallback": "invalid",
+      "knowledgeFailed": "Knowledge Base analysis failed.",
+      "knowledgeTimeout": "Knowledge Base analysis took too long."
+    }
+  }
+}

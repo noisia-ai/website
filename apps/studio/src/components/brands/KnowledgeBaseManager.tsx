@@ -2,6 +2,7 @@
 
 import { type FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { Icon } from "@/components/ui/Icon";
 
@@ -14,6 +15,7 @@ type KnowledgeSource = {
 };
 
 export function KnowledgeBaseManager({ brandId, sources }: { brandId: string; sources: KnowledgeSource[] }) {
+  const t = useTranslations("KnowledgeBaseManager");
   const router = useRouter();
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -33,11 +35,11 @@ export function KnowledgeBaseManager({ brandId, sources }: { brandId: string; so
         body: JSON.stringify(payloadFromForm(form))
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.message ?? "No se pudo crear el bloque de Knowledge Base.");
+      if (!res.ok) throw new Error(json?.message ?? t("fallbackAddError"));
       targetForm.reset();
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo crear el bloque de Knowledge Base.");
+      setError(err instanceof Error ? err.message : t("fallbackAddError"));
     } finally {
       setIsAdding(false);
     }
@@ -56,27 +58,27 @@ export function KnowledgeBaseManager({ brandId, sources }: { brandId: string; so
         body: JSON.stringify(payloadFromForm(form))
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.message ?? "No se pudo guardar el bloque.");
+      if (!res.ok) throw new Error(json?.message ?? t("fallbackSaveError"));
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo guardar el bloque.");
+      setError(err instanceof Error ? err.message : t("fallbackSaveError"));
     } finally {
       setPendingId(null);
     }
   }
 
   async function deleteSource(sourceId: string) {
-    if (!window.confirm("Borrar este bloque de Knowledge Base?")) return;
+    if (!window.confirm(t("confirmDelete"))) return;
     setError(null);
     setPendingId(sourceId);
 
     try {
       const res = await fetch(`/api/brands/${brandId}/knowledge/${sourceId}`, { method: "DELETE" });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json?.message ?? "No se pudo borrar el bloque.");
+      if (!res.ok) throw new Error(json?.message ?? t("fallbackDeleteError"));
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo borrar el bloque.");
+      setError(err instanceof Error ? err.message : t("fallbackDeleteError"));
     } finally {
       setPendingId(null);
     }
@@ -85,8 +87,8 @@ export function KnowledgeBaseManager({ brandId, sources }: { brandId: string; so
   return (
     <section className="new-study-panel knowledge-editor">
       <div className="new-study-section-head">
-        <p className="vitals-eyebrow">Knowledge Base</p>
-        <h2>Contexto editable por bloques</h2>
+        <p className="vitals-eyebrow">{t("eyebrow")}</p>
+        <h2>{t("title")}</h2>
       </div>
       {error && (
         <p className="new-study-error">
@@ -96,11 +98,11 @@ export function KnowledgeBaseManager({ brandId, sources }: { brandId: string; so
       <form className="knowledge-editor-card" onSubmit={addSource}>
         <div className="new-study-grid">
           <label className="new-study-field">
-            <span>Título</span>
-            <input className="filter-input new-study-input" name="title" placeholder="Brief always-on, campaña Q3, research competitivo..." required />
+            <span>{t("fieldTitle")}</span>
+            <input className="filter-input new-study-input" name="title" placeholder={t("fieldTitlePlaceholder")} required />
           </label>
           <label className="new-study-field">
-            <span>Tipo</span>
+            <span>{t("type")}</span>
             <select className="filter-input new-study-input" name="source_kind" defaultValue="brand_brief">
               <option value="brand_brief">Brand brief</option>
               <option value="campaign_brief">Campaign brief</option>
@@ -111,43 +113,43 @@ export function KnowledgeBaseManager({ brandId, sources }: { brandId: string; so
           </label>
         </div>
         <label className="new-study-field new-study-field--wide">
-          <span>Contenido</span>
-          <textarea className="filter-input new-study-textarea" name="raw_text" required placeholder="Pega aquí research, contexto de campaña, aprendizajes, restricciones, hipótesis..." />
+          <span>{t("content")}</span>
+          <textarea className="filter-input new-study-textarea" name="raw_text" required placeholder={t("contentPlaceholder")} />
         </label>
         <div className="knowledge-editor-actions">
           <button className="wizard-cta wizard-cta--secondary" type="submit" disabled={isAdding}>
-            <Icon name={isAdding ? "spinner" : "sparkle"} size={13} /> Agregar bloque
+            <Icon name={isAdding ? "spinner" : "sparkle"} size={13} /> {t("add")}
           </button>
         </div>
       </form>
 
       <div className="knowledge-editor-list">
         {sources.length === 0 ? (
-          <p className="new-study-helper">Todavía no hay bloques de Knowledge Base para esta marca.</p>
+          <p className="new-study-helper">{t("empty")}</p>
         ) : (
           sources.map((source) => (
             <form className="knowledge-editor-card" key={source.id} onSubmit={(event) => saveSource(event, source.id)}>
               <div className="new-study-grid">
                 <label className="new-study-field">
-                  <span>Título</span>
+                  <span>{t("fieldTitle")}</span>
                   <input className="filter-input new-study-input" name="title" defaultValue={source.title} required />
                 </label>
                 <label className="new-study-field">
-                  <span>Tipo</span>
+                  <span>{t("type")}</span>
                   <input className="filter-input new-study-input" name="source_kind" defaultValue={source.sourceKind} required />
                 </label>
               </div>
               <label className="new-study-field new-study-field--wide">
-                <span>Contenido</span>
+                <span>{t("content")}</span>
                 <textarea className="filter-input new-study-textarea" name="raw_text" defaultValue={source.rawText ?? ""} required />
               </label>
               <div className="knowledge-editor-actions">
                 <span>{source.status}</span>
                 <button className="wizard-cta wizard-cta--ghost" type="button" onClick={() => deleteSource(source.id)} disabled={pendingId === source.id}>
-                  <Icon name={pendingId === source.id ? "spinner" : "x"} size={13} /> Borrar
+                  <Icon name={pendingId === source.id ? "spinner" : "x"} size={13} /> {t("delete")}
                 </button>
                 <button className="wizard-cta" type="submit" disabled={pendingId === source.id}>
-                  <Icon name={pendingId === source.id ? "spinner" : "check"} size={13} /> Guardar
+                  <Icon name={pendingId === source.id ? "spinner" : "check"} size={13} /> {t("save")}
                 </button>
               </div>
             </form>

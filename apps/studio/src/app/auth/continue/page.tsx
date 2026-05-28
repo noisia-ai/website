@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 
+import { setLocaleCookie } from "@/app/actions/locale";
+import { getLocaleFromPreferences } from "@/i18n/locales";
 import { postLoginPath } from "@/lib/auth/redirects";
 import { getAuthenticatedAppUser } from "@/lib/auth/session";
 import { getSearchParam, resolveSearchParams, type StudioSearchParams } from "@/lib/url/search";
@@ -13,6 +15,11 @@ export default async function AuthContinuePage({ searchParams }: { searchParams?
 
   if (!session) {
     redirect(`/login${next ? `?next=${encodeURIComponent(next)}` : ""}`);
+  }
+
+  const preferredLocale = getLocaleFromPreferences(session.appUser.preferences);
+  if (preferredLocale) {
+    await setLocaleCookie(preferredLocale);
   }
 
   redirect(postLoginPath(session.appUser.primaryRole, next));

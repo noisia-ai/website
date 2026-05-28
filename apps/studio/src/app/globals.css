@@ -294,6 +294,35 @@ a { color: inherit; }
   text-transform: uppercase;
 }
 
+.locale-switcher {
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.locale-switcher select {
+  height: 28px;
+  min-width: 52px;
+  padding: 0 20px 0 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(7, 1, 19, 0.08);
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.locale-switcher select:disabled {
+  cursor: wait;
+  opacity: .62;
+}
+
 .session-badge-logout {
   height: 28px;
   padding: 0 10px;
@@ -8943,6 +8972,9 @@ body:has(.signal-report)::before { display: none; }
     padding-right: 4px;
   }
   .session-badge-main {
+    display: none;
+  }
+  .locale-switcher {
     display: none;
   }
   .session-badge-logout {

@@ -2,6 +2,7 @@
 
 import { type ChangeEvent, type FormEvent, type ReactNode, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { Icon } from "@/components/ui/Icon";
 import { INDUSTRY_OPTIONS, subindustriesForIndustry } from "@/lib/industry-catalog";
@@ -82,6 +83,7 @@ const steps = [
 ];
 
 export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudyFormProps) {
+  const t = useTranslations("NewStudy");
   const router = useRouter();
   const defaultMethodology = methodologies.find((item) => item.slug === "triggers-barriers") ?? methodologies[0];
   const defaultBrand = useMemo(
@@ -130,10 +132,10 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
   const selectedBrand = brands.find((brand) => brand.id === draft.brandId) ?? null;
   const selectedMethodology = methodologies.find((methodology) => methodology.id === draft.methodologyId) ?? defaultMethodology;
   const brandLabel = brandMode === "new"
-    ? inlineBrand.displayName || inlineBrand.name || "Marca nueva"
+    ? inlineBrand.displayName || inlineBrand.name || t("rail.newBrand")
     : selectedBrand
       ? selectedBrand.displayName ?? selectedBrand.name
-      : "Sin marca";
+      : t("rail.noBrand");
 
   function updateDraft(key: keyof Draft, value: string) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -166,18 +168,18 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
 
     if (maxStep >= 0) {
       if (brandMode === "existing") {
-        if (!draft.brandId) addError(0, "brandId", "Selecciona una marca.");
-        if (!draft.methodologyId) addError(0, "methodologyId", "Selecciona una metodología.");
+        if (!draft.brandId) addError(0, "brandId", t("validation.brand"));
+        if (!draft.methodologyId) addError(0, "methodologyId", t("validation.methodology"));
       } else {
-        if (inlineBrand.name.trim().length < 2) addError(0, "brand.name", "Pon el nombre de la marca.");
-        if (inlineBrand.organizationName.trim().length < 2) addError(0, "brand.organizationName", "Pon la organización.");
+        if (inlineBrand.name.trim().length < 2) addError(0, "brand.name", t("validation.brandName"));
+        if (inlineBrand.organizationName.trim().length < 2) addError(0, "brand.organizationName", t("validation.organization"));
       }
     }
 
     if (maxStep >= 1) {
-      if (draft.studyName.trim().length < 3) addError(1, "studyName", "Pon un nombre de estudio.");
+      if (draft.studyName.trim().length < 3) addError(1, "studyName", t("validation.studyName"));
       if (draft.businessQuestion.trim().length < 10) {
-        addError(1, "businessQuestion", "Agrega una pregunta de negocio concreta, mínimo 10 caracteres.");
+        addError(1, "businessQuestion", t("validation.businessQuestion"));
       }
     }
 
@@ -186,7 +188,7 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
       ok,
       errors,
       firstInvalidStep: ok ? maxStep : firstInvalidStep,
-      message: ok ? "" : "Completa los campos marcados antes de seguir."
+      message: ok ? "" : t("validation.completeMarked")
     };
   }
 
@@ -224,11 +226,15 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
     try {
       let brandId = draft.brandId;
       if (brandMode === "new") {
-        setProgressLabel("Creando Brand OS...");
-        brandId = await createInlineBrand(inlineBrand);
+        setProgressLabel(t("progress.creatingBrand"));
+        brandId = await createInlineBrand(inlineBrand, {
+          fallback: t("progress.fallbackBrandError"),
+          fieldFallback: t("progress.fieldFallback"),
+          invalidFallback: t("progress.invalidFallback")
+        });
       }
 
-      setProgressLabel("Creando estudio...");
+      setProgressLabel(t("progress.creatingStudy"));
       const studyPayload = buildStudyPayload(draft, brandId);
       const res = await fetch("/api/corpora", {
         method: "POST",
@@ -236,10 +242,10 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
         body: JSON.stringify(studyPayload)
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(formatApiError(json, "No se pudo crear el estudio."));
+      if (!res.ok) throw new Error(formatApiError(json, t("progress.fallbackStudyError")));
 
       if (files.length > 0) {
-        setProgressLabel("Subiendo Knowledge Base...");
+        setProgressLabel(t("progress.uploadingKnowledge"));
         const upload = new FormData();
         upload.set("source_kind", draft.sourceKind);
         for (const file of files) upload.append("files", file);
@@ -248,19 +254,25 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
           body: upload
         });
         const uploadJson = await uploadRes.json().catch(() => ({}));
-        if (!uploadRes.ok) throw new Error(uploadJson?.message ?? "No se pudo procesar el Knowledge Base.");
+        if (!uploadRes.ok) throw new Error(uploadJson?.message ?? t("progress.fallbackKnowledgeProcessError"));
         if (uploadJson.job_id) {
-          await waitForJob(uploadJson.job_id, setProgressLabel);
+          await waitForJob(uploadJson.job_id, setProgressLabel, {
+            fallbackJobReadError: t("progress.fallbackJobReadError"),
+            knowledgeReady: t("progress.knowledgeReady"),
+            knowledgeFailed: t("progress.knowledgeFailed"),
+            knowledgeTimeout: t("progress.knowledgeTimeout"),
+            analyzingKnowledge: (progress) => t("progress.analyzingKnowledge", { progress })
+          });
         }
-        const sources = await fetchKnowledgeSources(json.data.id);
+        const sources = await fetchKnowledgeSources(json.data.id, t("progress.fallbackKnowledgeReadError"));
         setKnowledgeSources(sources);
       }
 
       setEngineUrl(json.data.engine_url);
       setStep(4);
-      setProgressLabel("Listo para lanzar Engine.");
+      setProgressLabel(t("progress.readyEngine"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo crear el estudio.");
+      setError(err instanceof Error ? err.message : t("progress.fallbackStudyError"));
       setProgressLabel(null);
     } finally {
       setIsSubmitting(false);
@@ -269,11 +281,11 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
 
   return (
     <form className="study-wizard-shell" onSubmit={onSubmit}>
-      <aside className="study-wizard-rail" aria-label="Setup del estudio">
+      <aside className="study-wizard-rail" aria-label={t("rail.aria")}>
         <div>
-          <p className="vitals-eyebrow">New study</p>
-          <h2>{draft.studyName || "Nuevo estudio"}</h2>
-          <p>{brandLabel} · {selectedMethodology?.name ?? "Metodología"}</p>
+          <p className="vitals-eyebrow">{t("rail.eyebrow")}</p>
+          <h2>{draft.studyName || t("rail.fallbackTitle")}</h2>
+          <p>{brandLabel} · {selectedMethodology?.name ?? t("rail.methodology")}</p>
         </div>
         <ol className="study-step-list">
           {steps.map((item, index) => (
@@ -285,7 +297,7 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
                 disabled={isSubmitting}
               >
                 <span>{index + 1}</span>
-                {item.label}
+                {t(`steps.${item.key}`)}
               </button>
             </li>
           ))}
@@ -294,7 +306,7 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
 
       <section className="study-wizard-stage">
         {step === 0 && (
-          <WizardPanel eyebrow="Brand OS" title="Marca y territorio competitivo">
+          <WizardPanel eyebrow={t("brand.eyebrow")} title={t("brand.title")}>
             <div className="study-mode-switch">
               <button
                 className={brandMode === "existing" ? "study-mode study-mode--active" : "study-mode"}
@@ -302,20 +314,20 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
                 onClick={() => setBrandMode("existing")}
                 disabled={brands.length === 0}
               >
-                Marca existente
+                {t("brand.existing")}
               </button>
               <button
                 className={brandMode === "new" ? "study-mode study-mode--active" : "study-mode"}
                 type="button"
                 onClick={() => setBrandMode("new")}
               >
-                Crear marca
+                {t("brand.create")}
               </button>
             </div>
 
             {brandMode === "existing" ? (
               <div className="new-study-grid">
-                <Field label="Marca">
+                <Field label={t("brief.brand")}>
                   <select className="filter-input new-study-input" value={draft.brandId} onChange={(event) => updateDraft("brandId", event.target.value)} required>
                     {brands.map((brand) => (
                       <option key={brand.id} value={brand.id}>
@@ -325,7 +337,7 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
                   </select>
                   {fieldErrors.brandId && <small className="new-study-field-error">{fieldErrors.brandId}</small>}
                 </Field>
-                <Field label="Metodología">
+                <Field label={t("brand.methodology")}>
                   <select className="filter-input new-study-input" value={draft.methodologyId} onChange={(event) => updateDraft("methodologyId", event.target.value)} required>
                     {methodologies.map((methodology) => (
                       <option key={methodology.id} value={methodology.id}>
@@ -339,22 +351,22 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
             ) : (
               <>
                 <div className="new-study-grid">
-                  <TextField label="Marca" value={inlineBrand.name} onChange={(value) => updateInlineBrand("name", value)} error={fieldErrors["brand.name"]} required />
-                  <TextField label="Organización" value={inlineBrand.organizationName} onChange={(value) => updateInlineBrand("organizationName", value)} error={fieldErrors["brand.organizationName"]} required />
-                  <TextField label="Display name" value={inlineBrand.displayName} onChange={(value) => updateInlineBrand("displayName", value)} />
-                  <TextField label="Slug" value={inlineBrand.slug} onChange={(value) => updateInlineBrand("slug", value)} />
+                  <TextField label={t("brief.brand")} value={inlineBrand.name} onChange={(value) => updateInlineBrand("name", value)} error={fieldErrors["brand.name"]} required />
+                  <TextField label={t("brand.organization")} value={inlineBrand.organizationName} onChange={(value) => updateInlineBrand("organizationName", value)} error={fieldErrors["brand.organizationName"]} required />
+                  <TextField label={t("brand.displayName")} value={inlineBrand.displayName} onChange={(value) => updateInlineBrand("displayName", value)} />
+                  <TextField label={t("brand.slug")} value={inlineBrand.slug} onChange={(value) => updateInlineBrand("slug", value)} />
                   <TextField
-                    label="Industria"
+                    label={t("brand.industry")}
                     value={inlineBrand.industry}
                     onChange={(value) => updateInlineBrand("industry", value)}
-                    placeholder="Busca o escribe: Beauty & Personal Care, Retail..."
+                    placeholder={t("brand.industryPlaceholder")}
                     list="wizard-industry-options"
                   />
                   <TextField
-                    label="Subindustria"
+                    label={t("brand.subindustry")}
                     value={inlineBrand.industrySub}
                     onChange={(value) => updateInlineBrand("industrySub", value)}
-                    placeholder="Busca o escribe: Makeup, Skincare..."
+                    placeholder={t("brand.subindustryPlaceholder")}
                     list="wizard-subindustry-options"
                   />
                 </div>
@@ -367,47 +379,47 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
                   ))}
                 </datalist>
                 <div className="new-study-grid">
-                  <TextAreaField label="Aliases / handles" value={inlineBrand.seedHandles} onChange={(value) => updateInlineBrand("seedHandles", value)} placeholder="@marca, marca sin acento..." compact />
+                  <TextAreaField label={t("brand.aliases")} value={inlineBrand.seedHandles} onChange={(value) => updateInlineBrand("seedHandles", value)} placeholder={t("brand.aliasesPlaceholder")} compact />
                   <TextAreaField
-                    label="Competidores"
+                    label={t("brand.competitors")}
                     value={inlineBrand.competitors}
                     onChange={(value) => updateInlineBrand("competitors", value)}
                     placeholder={"Ulta Beauty\nLiverpool\nPalacio de Hierro\nSally Beauty"}
-                    hint="Sólo nombres de competidores, uno por línea. Rankings, links y research largo van en Notas de mercado."
+                    hint={t("brand.competitorsHint")}
                     compact
                   />
                 </div>
-                <TextAreaField label="Notas de mercado" value={inlineBrand.knowledgeNotes} onChange={(value) => updateInlineBrand("knowledgeNotes", value)} placeholder="Qué vende, promesas, restricciones, fricciones conocidas, campañas recientes..." />
+                <TextAreaField label={t("brand.marketNotes")} value={inlineBrand.knowledgeNotes} onChange={(value) => updateInlineBrand("knowledgeNotes", value)} placeholder={t("brand.marketNotesPlaceholder")} />
               </>
             )}
           </WizardPanel>
         )}
 
         {step === 1 && (
-          <WizardPanel eyebrow="Study Brief" title="Objetivo, hipótesis y límites">
-            <TextField label="Nombre del estudio" value={draft.studyName} onChange={(value) => updateDraft("studyName", value)} error={fieldErrors.studyName} required />
-            <TextAreaField label="Pregunta de negocio" value={draft.businessQuestion} onChange={(value) => updateDraft("businessQuestion", value)} error={fieldErrors.businessQuestion} required placeholder="¿Qué decisión debe habilitar este estudio?" />
+          <WizardPanel eyebrow={t("objective.eyebrow")} title={t("objective.title")}>
+            <TextField label={t("objective.studyName")} value={draft.studyName} onChange={(value) => updateDraft("studyName", value)} error={fieldErrors.studyName} required />
+            <TextAreaField label={t("objective.businessQuestion")} value={draft.businessQuestion} onChange={(value) => updateDraft("businessQuestion", value)} error={fieldErrors.businessQuestion} required placeholder={t("objective.businessQuestionPlaceholder")} />
             <div className="new-study-grid">
-              <TextField label="Decisión interna" value={draft.decisionToInform} onChange={(value) => updateDraft("decisionToInform", value)} placeholder="Mensajes, producto, operación..." />
-              <TextField label="Audiencia" value={draft.audienceSegment} onChange={(value) => updateDraft("audienceSegment", value)} placeholder="Consumidores en México" />
+              <TextField label={t("objective.decision")} value={draft.decisionToInform} onChange={(value) => updateDraft("decisionToInform", value)} placeholder={t("objective.decisionPlaceholder")} />
+              <TextField label={t("objective.audience")} value={draft.audienceSegment} onChange={(value) => updateDraft("audienceSegment", value)} placeholder={t("objective.audiencePlaceholder")} />
             </div>
-            <TextAreaField label="Contexto de categoría" value={draft.categoryContext} onChange={(value) => updateDraft("categoryContext", value)} compact />
+            <TextAreaField label={t("objective.categoryContext")} value={draft.categoryContext} onChange={(value) => updateDraft("categoryContext", value)} compact />
             <div className="new-study-grid">
-              <TextAreaField label="Hipótesis iniciales" value={draft.hypotheses} onChange={(value) => updateDraft("hypotheses", value)} compact />
-              <TextAreaField label="Restricciones estratégicas" value={draft.strategicConstraints} onChange={(value) => updateDraft("strategicConstraints", value)} compact />
-              <TextAreaField label="Barriers conocidas" value={draft.knownBarriers} onChange={(value) => updateDraft("knownBarriers", value)} compact />
-              <TextAreaField label="Triggers conocidos" value={draft.knownTriggers} onChange={(value) => updateDraft("knownTriggers", value)} compact />
+              <TextAreaField label={t("objective.hypotheses")} value={draft.hypotheses} onChange={(value) => updateDraft("hypotheses", value)} compact />
+              <TextAreaField label={t("objective.constraints")} value={draft.strategicConstraints} onChange={(value) => updateDraft("strategicConstraints", value)} compact />
+              <TextAreaField label={t("objective.knownBarriers")} value={draft.knownBarriers} onChange={(value) => updateDraft("knownBarriers", value)} compact />
+              <TextAreaField label={t("objective.knownTriggers")} value={draft.knownTriggers} onChange={(value) => updateDraft("knownTriggers", value)} compact />
             </div>
-            <TextAreaField label="Criterio de éxito" value={draft.successCriteria} onChange={(value) => updateDraft("successCriteria", value)} compact />
+            <TextAreaField label={t("objective.success")} value={draft.successCriteria} onChange={(value) => updateDraft("successCriteria", value)} compact />
             <div className="new-study-grid new-study-grid--compact">
-              <TextField label="Países" value={draft.geoFocus} onChange={(value) => updateDraft("geoFocus", value)} />
-              <Field label="Ventana">
+              <TextField label={t("objective.countries")} value={draft.geoFocus} onChange={(value) => updateDraft("geoFocus", value)} />
+              <Field label={t("objective.window")}>
                 <select className="filter-input new-study-input" value={draft.targetWindowMonths} onChange={(event) => updateDraft("targetWindowMonths", event.target.value)}>
-                  <option value="3">3 meses</option>
-                  <option value="6">6 meses</option>
-                  <option value="12">12 meses</option>
-                  <option value="18">18 meses</option>
-                  <option value="24">24 meses</option>
+                  <option value="3">{t("objective.months", { count: 3 })}</option>
+                  <option value="6">{t("objective.months", { count: 6 })}</option>
+                  <option value="12">{t("objective.months", { count: 12 })}</option>
+                  <option value="18">{t("objective.months", { count: 18 })}</option>
+                  <option value="24">{t("objective.months", { count: 24 })}</option>
                 </select>
               </Field>
             </div>
@@ -415,19 +427,19 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
         )}
 
         {step === 2 && (
-          <WizardPanel eyebrow="Knowledge Base" title="Fuentes complementarias">
+          <WizardPanel eyebrow={t("sources.eyebrow")} title={t("sources.title")}>
             <div className="new-study-grid">
-              <Field label="Tipo de fuente">
+              <Field label={t("sources.type")}>
                 <select className="filter-input new-study-input" value={draft.sourceKind} onChange={(event) => updateDraft("sourceKind", event.target.value)}>
-                  <option value="spreadsheet_archive">Spreadsheet archive</option>
-                  <option value="social_archive">Social archive</option>
-                  <option value="brand_document">Documento de marca</option>
-                  <option value="research_deck">Research / deck</option>
-                  <option value="search_data">Search data</option>
-                  <option value="scraper_export">Scraper export</option>
+                  <option value="spreadsheet_archive">{t("sources.types.spreadsheetArchive")}</option>
+                  <option value="social_archive">{t("sources.types.socialArchive")}</option>
+                  <option value="brand_document">{t("sources.types.brandDocument")}</option>
+                  <option value="research_deck">{t("sources.types.researchDeck")}</option>
+                  <option value="search_data">{t("sources.types.searchData")}</option>
+                  <option value="scraper_export">{t("sources.types.scraperExport")}</option>
                 </select>
               </Field>
-              <Field label="Archivos">
+              <Field label={t("sources.files")}>
                 <input
                   className="filter-input new-study-input"
                   type="file"
@@ -439,7 +451,7 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
             </div>
             <div className="knowledge-file-list">
               {files.length === 0 ? (
-                <p>No hay archivos seleccionados. Puedes lanzar Engine sólo con el brief si todavía no tienes fuentes.</p>
+                <p>{t("sources.empty")}</p>
               ) : (
                 files.map((file) => (
                   <div className="knowledge-file-row" key={`${file.name}-${file.size}`}>
@@ -454,19 +466,19 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
         )}
 
         {step === 3 && (
-          <WizardPanel eyebrow="Compiled Brief" title="Lo que Noisia va a usar para arrancar">
+          <WizardPanel eyebrow={t("brief.eyebrow")} title={t("brief.title")}>
             <BriefPreview draft={draft} brandLabel={brandLabel} methodology={selectedMethodology?.name ?? "Triggers & Barriers"} files={files} />
           </WizardPanel>
         )}
 
         {step === 4 && (
-          <WizardPanel eyebrow="Launch" title={engineUrl ? "Estudio listo" : "Crear estudio y preparar Engine"}>
+          <WizardPanel eyebrow={t("launch.eyebrow")} title={engineUrl ? t("launch.readyTitle") : t("launch.createTitle")}>
             {isSubmitting && (
               <div className="study-processing-card">
                 <Icon name="spinner" size={18} />
                 <div>
-                  <strong>{progressLabel ?? "Preparando estudio..."}</strong>
-                  <p>Estamos guardando el brief y conectando el Knowledge Base. Puedes quedarte aquí; el botón está trabajando.</p>
+                  <strong>{progressLabel ?? t("launch.preparing")}</strong>
+                  <p>{t("launch.processingCopy")}</p>
                 </div>
               </div>
             )}
@@ -478,7 +490,7 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
                       <strong>{source.file_name ?? source.title}</strong>
                       <span>{source.status}</span>
                     </header>
-                    <p>{source.summary || source.file_understanding || "Fuente procesada sin resumen."}</p>
+                    <p>{source.summary || source.file_understanding || t("launch.sourceProcessedFallback")}</p>
                     {source.query_language.length > 0 && (
                       <div className="knowledge-tags">
                         {source.query_language.map((term) => <span key={term}>{term}</span>)}
@@ -490,16 +502,16 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
             )}
             {!engineUrl && !isSubmitting && (
               <div className="launch-card">
-                <Icon name="play" size={18} />
-                <div>
-                  <strong>Listo para crear</strong>
-                  <p>Se guardará el estudio, se procesará Knowledge Base y después podrás abrir Engine.</p>
+                  <Icon name="play" size={18} />
+                  <div>
+                  <strong>{t("launch.ready")}</strong>
+                  <p>{t("launch.readyCopy")}</p>
                 </div>
               </div>
             )}
             {engineUrl && (
               <button className="wizard-cta" type="button" onClick={() => router.push(engineUrl)}>
-                <Icon name="play" size={14} /> Abrir Engine
+                <Icon name="play" size={14} /> {t("launch.openEngine")}
               </button>
             )}
           </WizardPanel>
@@ -518,22 +530,22 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
           )}
           {step > 0 && (
             <button className="wizard-cta wizard-cta--ghost" type="button" onClick={() => goToStep(Math.max(0, step - 1))} disabled={isSubmitting}>
-              <Icon name="arrow-right" size={13} className="icon--flip" /> Atrás
+              <Icon name="arrow-right" size={13} className="icon--flip" /> {t("actions.back")}
             </button>
           )}
           {step < 4 ? (
             <button className="wizard-cta" type="button" onClick={() => goToStep(Math.min(4, step + 1))} disabled={isSubmitting}>
-              Siguiente <Icon name="arrow-right" size={13} />
+              {t("actions.next")} <Icon name="arrow-right" size={13} />
             </button>
           ) : !engineUrl ? (
             <button className="wizard-cta" type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
-                  <Icon name="spinner" size={14} /> Procesando...
+                  <Icon name="spinner" size={14} /> {t("actions.processing")}
                 </>
               ) : (
                 <>
-                  <Icon name="sparkle" size={14} /> Crear estudio
+                  <Icon name="sparkle" size={14} /> {t("actions.create")}
                 </>
               )}
             </button>
@@ -642,18 +654,19 @@ function BriefPreview({
   methodology: string;
   files: File[];
 }) {
+  const t = useTranslations("NewStudy.brief");
   const items = [
-    ["Marca", brandLabel],
-    ["Metodología", methodology],
-    ["Pregunta", draft.businessQuestion],
-    ["Decisión", draft.decisionToInform],
-    ["Audiencia", draft.audienceSegment],
-    ["Contexto", draft.categoryContext],
-    ["Hipótesis", draft.hypotheses],
-    ["Barriers conocidas", draft.knownBarriers],
-    ["Triggers conocidos", draft.knownTriggers],
-    ["Criterio de éxito", draft.successCriteria],
-    ["Fuentes", files.length > 0 ? files.map((file) => file.name).join(", ") : "Sin archivos"]
+    [t("brand"), brandLabel],
+    [t("methodology"), methodology],
+    [t("question"), draft.businessQuestion],
+    [t("decision"), draft.decisionToInform],
+    [t("audience"), draft.audienceSegment],
+    [t("context"), draft.categoryContext],
+    [t("hypotheses"), draft.hypotheses],
+    [t("knownBarriers"), draft.knownBarriers],
+    [t("knownTriggers"), draft.knownTriggers],
+    [t("success"), draft.successCriteria],
+    [t("sources"), files.length > 0 ? files.map((file) => file.name).join(", ") : t("noFiles")]
   ].filter(([, value]) => value);
 
   return (
@@ -668,7 +681,10 @@ function BriefPreview({
   );
 }
 
-async function createInlineBrand(brand: InlineBrand) {
+async function createInlineBrand(
+  brand: InlineBrand,
+  labels: { fallback: string; fieldFallback: string; invalidFallback: string }
+) {
   const payload = {
     organization_name: brand.organizationName,
     slug: brand.slug || slugify(brand.name),
@@ -688,7 +704,7 @@ async function createInlineBrand(brand: InlineBrand) {
     body: JSON.stringify(payload)
   });
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(formatApiError(json, "No se pudo crear la marca."));
+  if (!res.ok) throw new Error(formatApiError(json, labels.fallback, labels.fieldFallback, labels.invalidFallback));
   return String(json.data.id);
 }
 
@@ -711,30 +727,40 @@ function buildStudyPayload(draft: Draft, brandId: string) {
   };
 }
 
-async function fetchKnowledgeSources(corpusId: string): Promise<KnowledgeSource[]> {
+async function fetchKnowledgeSources(corpusId: string, fallback: string): Promise<KnowledgeSource[]> {
   const res = await fetch(`/api/corpora/${corpusId}/knowledge`);
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json?.message ?? "No se pudo leer el Knowledge Base procesado.");
+  if (!res.ok) throw new Error(json?.message ?? fallback);
   return Array.isArray(json.data) ? json.data : [];
 }
 
-async function waitForJob(jobId: string, onProgress: (label: string) => void) {
+async function waitForJob(
+  jobId: string,
+  onProgress: (label: string) => void,
+  labels: {
+    fallbackJobReadError: string;
+    knowledgeReady: string;
+    knowledgeFailed: string;
+    knowledgeTimeout: string;
+    analyzingKnowledge: (progress: number) => string;
+  }
+) {
   for (let attempt = 0; attempt < 220; attempt += 1) {
     const res = await fetch(`/api/jobs/${jobId}`);
     const json = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(json?.message ?? "No se pudo consultar el job de Knowledge Base.");
+    if (!res.ok) throw new Error(json?.message ?? labels.fallbackJobReadError);
     const progress = typeof json.progress === "number" ? json.progress : 0;
     if (json.status === "completed") {
-      onProgress("Knowledge Base listo.");
+      onProgress(labels.knowledgeReady);
       return;
     }
     if (json.status === "failed") {
-      throw new Error(json.failed_reason ?? "Falló el análisis del Knowledge Base.");
+      throw new Error(json.failed_reason ?? labels.knowledgeFailed);
     }
-    onProgress(`Analizando Knowledge Base... ${Math.round(progress)}%`);
+    onProgress(labels.analyzingKnowledge(Math.round(progress)));
     await new Promise((resolve) => setTimeout(resolve, 1200));
   }
-  throw new Error("El análisis del Knowledge Base tardó demasiado.");
+  throw new Error(labels.knowledgeTimeout);
 }
 
 function splitList(value: string) {
@@ -788,11 +814,16 @@ function withRawContext(notes: string, label: string, raw: string) {
   return [notes, section].filter(Boolean).join("\n\n").slice(0, 50000);
 }
 
-function formatApiError(json: { message?: string; details?: { fields?: Array<{ path?: string; message?: string }> } }, fallback: string) {
+function formatApiError(
+  json: { message?: string; details?: { fields?: Array<{ path?: string; message?: string }> } },
+  fallback: string,
+  fieldFallback = "field",
+  invalidFallback = "invalid"
+) {
   const fields = json?.details?.fields;
   if (!Array.isArray(fields) || fields.length === 0) return json?.message ?? fallback;
   return fields
-    .map((field) => `${field.path || "campo"}: ${field.message || "inválido"}`)
+    .map((field) => `${field.path || fieldFallback}: ${field.message || invalidFallback}`)
     .join(" · ");
 }
 

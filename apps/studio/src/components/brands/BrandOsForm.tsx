@@ -2,11 +2,13 @@
 
 import { type FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { Icon } from "@/components/ui/Icon";
 import { INDUSTRY_OPTIONS, subindustriesForIndustry } from "@/lib/industry-catalog";
 
 export function BrandOsForm() {
+  const t = useTranslations("BrandOs.form");
   const router = useRouter();
   const [industryValue, setIndustryValue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -44,11 +46,11 @@ export function BrandOsForm() {
         body: JSON.stringify(payload)
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(formatApiError(json, "No se pudo crear la marca."));
+      if (!res.ok) throw new Error(formatApiError(json, t("fallbackCreateError"), t("fieldFallback"), t("invalidFallback")));
       router.push(`/studio/brands/${json.data.id}`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo crear la marca.");
+      setError(err instanceof Error ? err.message : t("fallbackCreateError"));
       setIsSubmitting(false);
     }
   }
@@ -57,40 +59,40 @@ export function BrandOsForm() {
     <form className="new-study-shell brand-os-shell" onSubmit={onSubmit}>
       <section className="new-study-panel">
         <div className="new-study-section-head">
-          <p className="vitals-eyebrow">Brand OS</p>
-          <h2>Identidad y categoría</h2>
+          <p className="vitals-eyebrow">{t("identityEyebrow")}</p>
+          <h2>{t("identityTitle")}</h2>
         </div>
 
         <div className="new-study-grid">
           <label className="new-study-field">
-            <span>Marca</span>
+            <span>{t("brand")}</span>
             <input className="filter-input new-study-input" name="name" required minLength={2} maxLength={160} />
           </label>
           <label className="new-study-field">
-            <span>Display name</span>
+            <span>{t("displayName")}</span>
             <input className="filter-input new-study-input" name="display_name" maxLength={160} />
           </label>
         </div>
 
         <div className="new-study-grid">
           <label className="new-study-field">
-            <span>Organización</span>
+            <span>{t("organization")}</span>
             <input className="filter-input new-study-input" name="organization_name" required minLength={2} maxLength={180} />
           </label>
           <label className="new-study-field">
-            <span>Slug</span>
-            <input className="filter-input new-study-input" name="slug" placeholder="se-autogenera si lo dejas vacío" />
+            <span>{t("slug")}</span>
+            <input className="filter-input new-study-input" name="slug" placeholder={t("slugPlaceholder")} />
           </label>
         </div>
 
         <div className="new-study-grid">
           <label className="new-study-field">
-            <span>Industria</span>
+            <span>{t("industry")}</span>
             <input
               className="filter-input new-study-input"
               name="industry"
               list="industry-options"
-              placeholder="Busca o escribe: Beauty & Personal Care, Retail..."
+              placeholder={t("industryPlaceholder")}
               value={industryValue}
               onChange={(event) => setIndustryValue(event.target.value)}
             />
@@ -99,12 +101,12 @@ export function BrandOsForm() {
             </datalist>
           </label>
           <label className="new-study-field">
-            <span>Subindustria</span>
+            <span>{t("subindustry")}</span>
             <input
               className="filter-input new-study-input"
               name="industry_sub"
               list="subindustry-options"
-              placeholder="Busca o escribe: Makeup, Skincare, Department Stores..."
+              placeholder={t("subindustryPlaceholder")}
             />
             <datalist id="subindustry-options">
               {subindustriesForIndustry(industryValue).map((subindustry) => (
@@ -115,50 +117,50 @@ export function BrandOsForm() {
         </div>
 
         <label className="new-study-field new-study-field--wide">
-          <span>Descripción estratégica</span>
+          <span>{t("description")}</span>
           <textarea className="filter-input new-study-textarea" name="description" maxLength={12000} />
         </label>
       </section>
 
       <section className="new-study-panel">
         <div className="new-study-section-head">
-          <p className="vitals-eyebrow">Knowledge seeds</p>
-          <h2>Aliases, competidores y contexto base</h2>
+          <p className="vitals-eyebrow">{t("seedsEyebrow")}</p>
+          <h2>{t("seedsTitle")}</h2>
         </div>
 
         <div className="new-study-grid">
           <label className="new-study-field">
-            <span>Países</span>
+            <span>{t("countries")}</span>
             <input className="filter-input new-study-input" name="countries" defaultValue="MX" />
           </label>
           <label className="new-study-field">
-            <span>Aliases / handles</span>
+            <span>{t("aliases")}</span>
             <textarea
               className="filter-input new-study-textarea new-study-textarea--short"
               name="brand_seed_handles"
-              placeholder="@marca, marca sin acento, app..."
+              placeholder={t("aliasesPlaceholder")}
             />
           </label>
         </div>
 
         <label className="new-study-field new-study-field--wide">
-          <span>Competidores</span>
+          <span>{t("competitors")}</span>
           <textarea
             className="filter-input new-study-textarea new-study-textarea--short"
             name="competitors"
             placeholder={"Ulta Beauty\nLiverpool\nPalacio de Hierro\nSally Beauty"}
           />
           <small className="new-study-hint">
-            Sólo nombres de competidores, uno por línea. No pegues rankings, links, tablas o bullets de ChatGPT aquí; eso va en Notas de Knowledge Base.
+            {t("competitorsHint")}
           </small>
         </label>
 
         <label className="new-study-field new-study-field--wide">
-          <span>Notas de Knowledge Base</span>
+          <span>{t("notes")}</span>
           <textarea
             className="filter-input new-study-textarea"
             name="knowledge_notes"
-            placeholder="Qué vende, qué promete, fricciones conocidas, canales importantes, campañas recientes, restricciones legales u operativas..."
+            placeholder={t("notesPlaceholder")}
           />
         </label>
       </section>
@@ -172,11 +174,11 @@ export function BrandOsForm() {
         <button className="wizard-cta" type="submit" disabled={isSubmitting}>
           {isSubmitting ? (
             <>
-              <Icon name="spinner" size={14} /> Creando...
+              <Icon name="spinner" size={14} /> {t("creating")}
             </>
           ) : (
             <>
-              <Icon name="sparkle" size={14} /> Crear Brand OS
+              <Icon name="sparkle" size={14} /> {t("create")}
             </>
           )}
         </button>
@@ -236,11 +238,16 @@ function withRawContext(notes: string, label: string, raw: string) {
   return [notes, section].filter(Boolean).join("\n\n").slice(0, 50000);
 }
 
-function formatApiError(json: { message?: string; details?: { fields?: Array<{ path?: string; message?: string }> } }, fallback: string) {
+function formatApiError(
+  json: { message?: string; details?: { fields?: Array<{ path?: string; message?: string }> } },
+  fallback: string,
+  fieldFallback: string,
+  invalidFallback: string
+) {
   const fields = json?.details?.fields;
   if (!Array.isArray(fields) || fields.length === 0) return json?.message ?? fallback;
   return fields
-    .map((field) => `${field.path || "campo"}: ${field.message || "inválido"}`)
+    .map((field) => `${field.path || fieldFallback}: ${field.message || invalidFallback}`)
     .join(" · ");
 }
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { BrandEditForm } from "@/components/brands/BrandEditForm";
@@ -11,6 +12,8 @@ import { getBrandDetailForUser } from "@/lib/data/brands";
 export const dynamic = "force-dynamic";
 
 export default async function EditBrandPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = await getTranslations("BrandEdit");
+  const tBrands = await getTranslations("Brands");
   const { id } = await params;
   const session = await requireStudioUser(`/studio/brands/${id}/edit`);
   const brand = await getBrandDetailForUser(session.appUser, id);
@@ -26,9 +29,9 @@ export default async function EditBrandPage({ params }: { params: Promise<{ id: 
       <StudioNav
         activeSection="brands"
         crumbs={[
-          { label: "Marcas", href: "/studio/brands" },
+          { label: tBrands("crumb"), href: "/studio/brands" },
           { label: brandLabel, href: `/studio/brands/${brand.id}` },
-          { label: "Editar" }
+          { label: t("edit") }
         ]}
         user={session.appUser}
       />
@@ -36,12 +39,12 @@ export default async function EditBrandPage({ params }: { params: Promise<{ id: 
         <div className="studio-page">
           <header className="page-head">
             <div>
-              <p className="vitals-eyebrow">Brand OS</p>
-              <h1>Editar {brandLabel}</h1>
-              <p>Actualiza identidad, categoría, relaciones y Knowledge Base sin recrear la marca.</p>
+              <p className="vitals-eyebrow">{t("eyebrow")}</p>
+              <h1>{t("title", { brand: brandLabel })}</h1>
+              <p>{t("subtitle")}</p>
             </div>
             <Link className="wizard-cta wizard-cta--ghost" href={`/studio/brands/${brand.id}`}>
-              <Icon name="arrow-right" size={13} className="icon--flip" /> Volver a marca
+              <Icon name="arrow-right" size={13} className="icon--flip" /> {t("back")}
             </Link>
           </header>
 

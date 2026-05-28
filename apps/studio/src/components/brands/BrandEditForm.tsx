@@ -2,6 +2,7 @@
 
 import { type FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { Icon } from "@/components/ui/Icon";
 import { INDUSTRY_OPTIONS, subindustriesForIndustry } from "@/lib/industry-catalog";
@@ -20,6 +21,8 @@ type EditableBrand = {
 };
 
 export function BrandEditForm({ brand }: { brand: EditableBrand }) {
+  const t = useTranslations("BrandEdit");
+  const brandT = useTranslations("BrandOs.form");
   const router = useRouter();
   const [industryValue, setIndustryValue] = useState(brand.industry ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,11 +53,11 @@ export function BrandEditForm({ brand }: { brand: EditableBrand }) {
         body: JSON.stringify(payload)
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(formatApiError(json, "No se pudo guardar la marca."));
+      if (!res.ok) throw new Error(formatApiError(json, t("fallbackSaveError"), brandT("fieldFallback"), brandT("invalidFallback")));
       router.push(`/studio/brands/${brand.id}`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo guardar la marca.");
+      setError(err instanceof Error ? err.message : t("fallbackSaveError"));
       setIsSubmitting(false);
     }
   }
@@ -63,39 +66,39 @@ export function BrandEditForm({ brand }: { brand: EditableBrand }) {
     <form className="new-study-shell brand-os-shell" onSubmit={onSubmit}>
       <section className="new-study-panel">
         <div className="new-study-section-head">
-          <p className="vitals-eyebrow">Brand OS</p>
-          <h2>Editar identidad y categoría</h2>
+          <p className="vitals-eyebrow">{brandT("identityEyebrow")}</p>
+          <h2>{t("formTitle")}</h2>
         </div>
 
         <div className="new-study-grid">
           <label className="new-study-field">
-            <span>Marca</span>
+            <span>{brandT("brand")}</span>
             <input className="filter-input new-study-input" name="name" required minLength={2} maxLength={160} defaultValue={brand.name} />
           </label>
           <label className="new-study-field">
-            <span>Display name</span>
+            <span>{brandT("displayName")}</span>
             <input className="filter-input new-study-input" name="display_name" maxLength={160} defaultValue={brand.displayName ?? ""} />
           </label>
         </div>
 
         <div className="new-study-grid">
           <label className="new-study-field">
-            <span>Slug</span>
+            <span>{brandT("slug")}</span>
             <input className="filter-input new-study-input" name="slug" required defaultValue={brand.slug} />
           </label>
           <label className="new-study-field">
-            <span>Status</span>
+            <span>{t("status")}</span>
             <select className="filter-input new-study-input" name="status" defaultValue={brand.status}>
-              <option value="active">Activa</option>
-              <option value="paused">Pausada</option>
-              <option value="archived">Archivada</option>
+              <option value="active">{t("active")}</option>
+              <option value="paused">{t("paused")}</option>
+              <option value="archived">{t("archived")}</option>
             </select>
           </label>
         </div>
 
         <div className="new-study-grid">
           <label className="new-study-field">
-            <span>Industria</span>
+            <span>{brandT("industry")}</span>
             <input
               className="filter-input new-study-input"
               name="industry"
@@ -108,7 +111,7 @@ export function BrandEditForm({ brand }: { brand: EditableBrand }) {
             </datalist>
           </label>
           <label className="new-study-field">
-            <span>Subindustria</span>
+            <span>{brandT("subindustry")}</span>
             <input className="filter-input new-study-input" name="industry_sub" list="edit-subindustry-options" defaultValue={brand.industrySub ?? ""} />
             <datalist id="edit-subindustry-options">
               {subindustriesForIndustry(industryValue).map((subindustry) => (
@@ -119,23 +122,23 @@ export function BrandEditForm({ brand }: { brand: EditableBrand }) {
         </div>
 
         <label className="new-study-field new-study-field--wide">
-          <span>Descripción estratégica</span>
+          <span>{brandT("description")}</span>
           <textarea className="filter-input new-study-textarea" name="description" maxLength={12000} defaultValue={brand.description ?? ""} />
         </label>
       </section>
 
       <section className="new-study-panel">
         <div className="new-study-section-head">
-          <p className="vitals-eyebrow">Relaciones base</p>
-          <h2>Aliases, handles y mercados</h2>
+          <p className="vitals-eyebrow">{t("relationsEyebrow")}</p>
+          <h2>{t("relationsTitle")}</h2>
         </div>
         <div className="new-study-grid">
           <label className="new-study-field">
-            <span>Países</span>
+            <span>{brandT("countries")}</span>
             <input className="filter-input new-study-input" name="countries" defaultValue={(brand.countries ?? ["MX"]).join(", ")} />
           </label>
           <label className="new-study-field">
-            <span>Aliases / handles</span>
+            <span>{brandT("aliases")}</span>
             <textarea
               className="filter-input new-study-textarea new-study-textarea--short"
               name="brand_seed_handles"
@@ -153,10 +156,10 @@ export function BrandEditForm({ brand }: { brand: EditableBrand }) {
           </p>
         )}
         <button className="wizard-cta wizard-cta--ghost" type="button" onClick={() => router.push(`/studio/brands/${brand.id}`)}>
-          Cancelar
+          {t("cancel")}
         </button>
         <button className="wizard-cta" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? <><Icon name="spinner" size={14} /> Guardando...</> : <><Icon name="check" size={14} /> Guardar Brand OS</>}
+          {isSubmitting ? <><Icon name="spinner" size={14} /> {t("saving")}</> : <><Icon name="check" size={14} /> {t("save")}</>}
         </button>
       </footer>
     </form>
@@ -170,10 +173,15 @@ function splitList(value: string) {
     .filter(Boolean);
 }
 
-function formatApiError(json: { message?: string; details?: { fields?: Array<{ path?: string; message?: string }> } }, fallback: string) {
+function formatApiError(
+  json: { message?: string; details?: { fields?: Array<{ path?: string; message?: string }> } },
+  fallback: string,
+  fieldFallback: string,
+  invalidFallback: string
+) {
   const fields = json?.details?.fields;
   if (!Array.isArray(fields) || fields.length === 0) return json?.message ?? fallback;
   return fields
-    .map((field) => `${field.path || "campo"}: ${field.message || "inválido"}`)
+    .map((field) => `${field.path || fieldFallback}: ${field.message || invalidFallback}`)
     .join(" · ");
 }
