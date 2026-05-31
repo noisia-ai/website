@@ -127,6 +127,13 @@
       "when": 1779640540000,
       "tag": "0017_voyage_embedding_dimensions",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1780199240443,
+      "tag": "0018_team_invitations",
+      "breakpoints": true
     }
   ]
 }

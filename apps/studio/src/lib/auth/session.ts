@@ -1,18 +1,15 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
-import { users } from "@noisia/db";
+import { invitations, users } from "@noisia/db";
 import { db } from "@/lib/db";
 import {
+  bootstrapRoleForEmail,
   getUserType,
   isInternalRole,
-  normalizeRole,
-  pickPrimaryRole
+  normalizeRole
 } from "@/lib/auth/roles";
-import {
-  resolveOrganizationIdFromKinde,
-  syncClientBrandAccessForOrganization
-} from "@/lib/auth/org-sync";
+import { syncClientBrandAccessForOrganization } from "@/lib/auth/org-sync";
 
 export async function getAuthenticatedAppUser() {
   const session = getKindeServerSession();
@@ -30,49 +27,53 @@ export async function getAuthenticatedAppUser() {
     throw new Error("Kinde user email is required.");
   }
 
+  const email = kindeUser.email;
   const [existingUser] = await db
     .select({
       primaryRole: users.primaryRole,
       organizationId: users.organizationId
     })
     .from(users)
-    .where(eq(users.email, kindeUser.email))
+    .where(eq(users.email, email))
     .limit(1);
 
-  const kindePrimaryRole = pickPrimaryRole(kindeRoles, kindeUser.email);
-  const existingPrimaryRole = normalizeRole(existingUser?.primaryRole);
-  // TODO mejora-futura: cuando las invitaciones de Kinde sean la fuente de verdad,
-  // eliminar este fallback que conserva roles internos ya creados en la BD.
-  const primaryRole =
-    kindePrimaryRole === "client_viewer" && existingPrimaryRole
-      ? existingPrimaryRole
-      : kindePrimaryRole;
+  // En el PRIMER login (sin fila previa) buscamos una invitación pendiente para
+  // adoptar el rol y la organización que el admin asignó desde Studio. Si no hay
+  // invitación, sembramos un rol por defecto según el dominio del correo.
+  const invitation = existingUser
+    ? null
+    : await consumePendingInvitation(email);
+
+  // AuthZ = nuestra DB. Kinde sólo autentica (identidad). De aquí en adelante el
+  // rol y la organización se administran desde Studio, no desde el token de Kinde.
+  const existingRole = normalizeRole(existingUser?.primaryRole);
+  const invitedRole = normalizeRole(invitation?.primaryRole);
+  const primaryRole = existingRole ?? invitedRole ?? bootstrapRoleForEmail(email);
   const userType = getUserType(primaryRole);
   const fullName = [kindeUser.given_name, kindeUser.family_name].filter(Boolean).join(" ") || null;
   const organizationId = isInternalRole(primaryRole)
     ? null
-    : await resolveOrganizationIdFromKinde(kindeOrganization, primaryRole, existingUser?.organizationId);
+    : existingUser?.organizationId ?? invitation?.organizationId ?? null;
 
-  // TODO mejora-futura: reemplazar este upsert por un sync explicito con Kinde
-  // webhooks/management API cuando tengamos invitaciones y organizaciones reales.
   const [appUser] = await db
     .insert(users)
     .values({
-      email: kindeUser.email,
+      email,
       fullName,
       userType,
       primaryRole,
       organizationId,
-      status: "active"
+      status: "active",
+      invitedByUserId: invitation?.invitedByUserId ?? null
     })
     .onConflictDoUpdate({
       target: users.email,
+      // No sobrescribimos primaryRole ni organizationId aquí: son fuente de verdad
+      // de nuestra DB. El status conserva 'suspended' si el admin dio de baja a la
+      // persona (un login de Kinde no la reactiva); cualquier otro estado pasa a 'active'.
       set: {
         fullName,
-        userType,
-        primaryRole,
-        organizationId,
-        status: "active",
+        status: sql`CASE WHEN ${users.status} = 'suspended' THEN 'suspended' ELSE 'active' END`,
         lastLoginAt: new Date()
       }
     })
@@ -80,6 +81,14 @@ export async function getAuthenticatedAppUser() {
 
   if (!appUser) {
     throw new Error("Could not resolve app user.");
+  }
+
+  // Marca la invitación como aceptada (best-effort; no bloquea el login).
+  if (invitation?.id) {
+    await db
+      .update(invitations)
+      .set({ status: "accepted", acceptedAt: new Date(), acceptedByUserId: appUser.id, updatedAt: new Date() })
+      .where(eq(invitations.id, invitation.id));
   }
 
   await syncClientBrandAccessForOrganization({
@@ -94,4 +103,26 @@ export async function getAuthenticatedAppUser() {
     kindeOrganization,
     kindeRoles
   };
+}
+
+/** Busca una invitación pendiente y no vencida para ese correo (case-insensitive). */
+async function consumePendingInvitation(email: string) {
+  const [invitation] = await db
+    .select({
+      id: invitations.id,
+      primaryRole: invitations.primaryRole,
+      organizationId: invitations.organizationId,
+      invitedByUserId: invitations.invitedByUserId
+    })
+    .from(invitations)
+    .where(
+      and(
+        eq(sql`lower(${invitations.email})`, email.toLowerCase()),
+        eq(invitations.status, "pending"),
+        sql`(${invitations.expiresAt} IS NULL OR ${invitations.expiresAt} > now())`
+      )
+    )
+    .limit(1);
+
+  return invitation ?? null;
 }

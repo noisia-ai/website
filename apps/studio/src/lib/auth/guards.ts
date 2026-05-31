@@ -11,6 +11,10 @@ export async function requireStudioUser(next: string) {
     redirect(loginPath(next));
   }
 
+  if (session.appUser.status === "suspended") {
+    redirect(`/unauthorized?reason=suspended`);
+  }
+
   if (!canAccessStudio(session.appUser.primaryRole)) {
     redirect(`/unauthorized?next=${encodeURIComponent(next)}`);
   }
@@ -23,6 +27,10 @@ export async function requirePortalUser(next = "/portal") {
 
   if (!session) {
     redirect(loginPath(next));
+  }
+
+  if (session.appUser.status === "suspended") {
+    redirect(`/unauthorized?reason=suspended`);
   }
 
   if (!canAccessPortal(session.appUser.primaryRole)) {

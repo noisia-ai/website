@@ -7,13 +7,6 @@ export const canonicalRoles = [
   "client_viewer"
 ] as const satisfies NoisiaCanonicalRole[];
 
-const rolePriority: NoisiaCanonicalRole[] = [
-  "noisia_admin",
-  "analyst",
-  "client_admin",
-  "client_viewer"
-];
-
 const legacyRoleAliases: Record<string, NoisiaCanonicalRole> = {
   founder: "noisia_admin",
   admin: "noisia_admin",
@@ -41,31 +34,12 @@ export function normalizeRole(role: string | null | undefined): NoisiaCanonicalR
   return legacyRoleAliases[normalized] ?? null;
 }
 
-export function pickPrimaryRole(
-  kindeRoles: Array<{ key?: string; name?: string }> | null,
-  email?: string
-): NoisiaCanonicalRole {
-  const keys = new Set(
-    (kindeRoles ?? [])
-      .flatMap((role) => [role.key, role.name])
-      .filter((role): role is string => Boolean(role))
-      .map((role) => normalizeRole(role))
-      .filter((role): role is NoisiaCanonicalRole => Boolean(role))
-  );
-
-  const kindeRole = rolePriority.find((role) => keys.has(role));
-
-  if (kindeRole) {
-    return kindeRole;
-  }
-
-  // TODO mejora-futura: reemplazar este bootstrap MVP por roles Kinde
-  // obligatorios asignados desde invitaciones y organization memberships.
-  if (email && isBootstrapFounderEmail(email)) {
-    return "noisia_admin";
-  }
-
-  return "client_viewer";
+// Rol de arranque (sólo en el PRIMER login). De ahí en adelante la fuente de
+// verdad del rol es nuestra DB, gestionada desde Studio. Los correos internos
+// (dominio noisia.ai o founders configurados) arrancan como noisia_admin; el
+// resto como client_viewer hasta que una invitación les asigne acceso.
+export function bootstrapRoleForEmail(email: string): NoisiaCanonicalRole {
+  return isBootstrapFounderEmail(email) ? "noisia_admin" : "client_viewer";
 }
 
 export function getUserType(role: NoisiaPrimaryRole | string): NoisiaUserType {
@@ -84,6 +58,11 @@ export function canAccessStudio(role: string) {
 
 export function canAccessPortal(role: string) {
   return Boolean(normalizeRole(role));
+}
+
+// Sólo Noisia admin gestiona el equipo (invitar, cambiar rol, suspender).
+export function canManageTeam(role: string) {
+  return normalizeRole(role) === "noisia_admin";
 }
 
 export function canCreateBrandOrTheme(role: string) {

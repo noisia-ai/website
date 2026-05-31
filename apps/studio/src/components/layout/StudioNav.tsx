@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 
 import { SessionBadge } from "@/components/layout/SessionBadge";
 import { Icon } from "@/components/ui/Icon";
+import { canManageTeam } from "@/lib/auth/roles";
 
 type Crumb = { label: string; href?: string };
 type StudioNavUser = {
@@ -15,7 +16,7 @@ type StudioNavProps = {
   crumbs?: Crumb[];
   /** Show the Marcas/Themes pill tabs (default true on top-level pages). */
   showSections?: boolean;
-  activeSection?: "brands" | "themes" | "home" | null;
+  activeSection?: "brands" | "themes" | "home" | "team" | null;
   user?: StudioNavUser;
 };
 
@@ -57,6 +58,11 @@ export async function StudioNav({ crumbs = [], showSections = true, activeSectio
           <SectionTab href="/studio/themes" active={activeSection === "themes"}>
             {t("themes")}
           </SectionTab>
+          {user && canManageTeam(user.primaryRole) ? (
+            <SectionTab href="/studio/team" active={activeSection === "team"}>
+              {t("team")}
+            </SectionTab>
+          ) : null}
         </div>
       )}
 

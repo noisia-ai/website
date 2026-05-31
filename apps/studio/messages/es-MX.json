@@ -39,7 +39,8 @@
     "workspace": "Ir al workspace",
     "breadcrumbs": "Breadcrumbs",
     "brands": "Marcas",
-    "themes": "Themes"
+    "themes": "Themes",
+    "team": "Equipo"
   },
   "Session": {
     "logout": "Salir",
@@ -364,6 +365,58 @@
       "invalidFallback": "inválido",
       "knowledgeFailed": "Falló el análisis del Knowledge Base.",
       "knowledgeTimeout": "El análisis del Knowledge Base tardó demasiado."
+    }
+  },
+  "Team": {
+    "eyebrow": "Operación",
+    "title": "Equipo y accesos",
+    "subtitle": "Invita personas, asigna su rol y organización, y da de baja cuando haga falta. Kinde sólo autentica; los accesos los gobiernas aquí.",
+    "invite": {
+      "title": "Invitar persona",
+      "email": "Correo",
+      "role": "Rol",
+      "organization": "Organización",
+      "orgPlaceholder": "Selecciona organización",
+      "orgInternalHint": "Los roles internos no requieren organización.",
+      "submit": "Enviar invitación",
+      "submitting": "Enviando…",
+      "successSent": "Invitación enviada a {email}.",
+      "successNoEmail": "Invitación creada, pero el correo no salió ({error}). Comparte la liga a mano.",
+      "error": "No se pudo crear la invitación."
+    },
+    "members": {
+      "title": "Usuarios",
+      "empty": "Aún no hay usuarios.",
+      "you": "Tú",
+      "neverLoggedIn": "Sin primer ingreso",
+      "lastLogin": "Último ingreso: {date}",
+      "noOrg": "—"
+    },
+    "pending": {
+      "title": "Invitaciones pendientes",
+      "empty": "Sin invitaciones pendientes.",
+      "invitedBy": "Invitó: {name}",
+      "expires": "Vence: {date}",
+      "revoke": "Revocar"
+    },
+    "actions": {
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "suspend": "Suspender",
+      "reactivate": "Reactivar",
+      "saveError": "No se pudo actualizar."
+    },
+    "roles": {
+      "noisia_admin": "Noisia admin",
+      "analyst": "Analista",
+      "client_admin": "Cliente admin",
+      "client_viewer": "Cliente lector"
+    },
+    "status": {
+      "active": "Activo",
+      "invited": "Invitado",
+      "suspended": "Suspendido",
+      "pending": "Pendiente"
     }
   }
 }

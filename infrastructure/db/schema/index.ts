@@ -60,6 +60,35 @@ export const users = pgTable(
   ]
 );
 
+// Invitaciones gestionadas desde Studio (Noisia es dueña de la autorización;
+// Kinde sólo autentica). Una invitación pendiente pre-asigna rol + organización;
+// cuando la persona entra por primera vez con ese correo, el login la "consume"
+// y crea su fila en users con ese rol/organización.
+export const invitations = pgTable(
+  "invitations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    primaryRole: text("primary_role").notNull(),
+    organizationId: uuid("organization_id").references(() => organizations.id),
+    status: text("status").notNull().default("pending"),
+    token: text("token").notNull().unique(),
+    invitedByUserId: uuid("invited_by_user_id").references((): AnyPgColumn => users.id),
+    acceptedByUserId: uuid("accepted_by_user_id").references((): AnyPgColumn => users.id),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    createdAt: now(),
+    updatedAt: updatedAt()
+  },
+  (table) => [
+    // Sólo una invitación pendiente por correo (no bloquea reinvitar tras aceptar/revocar).
+    uniqueIndex("uq_invitations_pending_email")
+      .on(table.email)
+      .where(sql`${table.status} = 'pending'`),
+    index("idx_invitations_status").on(table.status)
+  ]
+);
+
 export const brands = pgTable(
   "brands",
   {

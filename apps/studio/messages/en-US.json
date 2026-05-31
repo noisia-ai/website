@@ -39,7 +39,8 @@
     "workspace": "Go to workspace",
     "breadcrumbs": "Breadcrumbs",
     "brands": "Brands",
-    "themes": "Themes"
+    "themes": "Themes",
+    "team": "Team"
   },
   "Session": {
     "logout": "Sign out",
@@ -364,6 +365,58 @@
       "invalidFallback": "invalid",
       "knowledgeFailed": "Knowledge Base analysis failed.",
       "knowledgeTimeout": "Knowledge Base analysis took too long."
+    }
+  },
+  "Team": {
+    "eyebrow": "Operations",
+    "title": "Team & access",
+    "subtitle": "Invite people, set their role and organization, and deactivate when needed. Kinde only authenticates; you govern access here.",
+    "invite": {
+      "title": "Invite person",
+      "email": "Email",
+      "role": "Role",
+      "organization": "Organization",
+      "orgPlaceholder": "Select organization",
+      "orgInternalHint": "Internal roles don't require an organization.",
+      "submit": "Send invitation",
+      "submitting": "Sending…",
+      "successSent": "Invitation sent to {email}.",
+      "successNoEmail": "Invitation created, but the email didn't send ({error}). Share the link manually.",
+      "error": "Could not create the invitation."
+    },
+    "members": {
+      "title": "Users",
+      "empty": "No users yet.",
+      "you": "You",
+      "neverLoggedIn": "No first sign-in",
+      "lastLogin": "Last sign-in: {date}",
+      "noOrg": "—"
+    },
+    "pending": {
+      "title": "Pending invitations",
+      "empty": "No pending invitations.",
+      "invitedBy": "Invited by: {name}",
+      "expires": "Expires: {date}",
+      "revoke": "Revoke"
+    },
+    "actions": {
+      "save": "Save",
+      "saving": "Saving…",
+      "suspend": "Suspend",
+      "reactivate": "Reactivate",
+      "saveError": "Could not update."
+    },
+    "roles": {
+      "noisia_admin": "Noisia admin",
+      "analyst": "Analyst",
+      "client_admin": "Client admin",
+      "client_viewer": "Client viewer"
+    },
+    "status": {
+      "active": "Active",
+      "invited": "Invited",
+      "suspended": "Suspended",
+      "pending": "Pending"
     }
   }
 }
