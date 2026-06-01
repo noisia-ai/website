@@ -5,6 +5,7 @@ import { SessionBadge } from "@/components/layout/SessionBadge";
 import { SignalCorpusChat } from "@/components/signal/SignalCorpusChat";
 import { FindingDetailWorkspace } from "@/components/signal/FindingDetailWorkspace";
 import { SignalCorpusExplorer } from "@/components/signal/SignalCorpusExplorer";
+import { SignalDeckButton } from "@/components/signal/SignalDeckButton";
 import { SignalDashboardCharts } from "@/components/signal/SignalDashboardCharts";
 import { SignalEmergingPatternsExplorer } from "@/components/signal/SignalEmergingPatternsExplorer";
 import { SignalOpportunitiesExplorer } from "@/components/signal/SignalOpportunitiesExplorer";
@@ -103,6 +104,7 @@ export default async function SignalOutputPage({
                 <SignalLocalizedText en="Published snapshot" es="Snapshot publicado" />
               )}
             </span>
+            <SignalDeckButton outputId={output.id} />
             <SessionBadge user={session.appUser} compact />
             <button className="signal-icon-btn" type="button" aria-label="Más opciones">
               <Icon name="sort" size={14} />

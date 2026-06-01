@@ -1,0 +1,387 @@
+/* ============================================================
+   Noisia Signal — Press deck (16:9, 1920×1080)
+   Reimagined report layout for the deck-stage viewer.
+   View-only; one <section.deck-slide> per page; vector-first
+   so Print → Save as PDF stays light and legible.
+   All classes are prefixed `deck-` to avoid clashing with the
+   signal-* dashboard styles loaded by globals.css.
+   ============================================================ */
+
+.deck-shell {
+  --deck-canvas:      #ffffff;
+  --deck-surface-01:  #fafafa;
+  --deck-surface-02:  #f4f5f6;
+  --deck-surface-03:  #eef0f1;
+  --deck-ink:         #0a0a0a;
+  --deck-ink-soft:    #2b2b2f;
+  --deck-fg:          #20232a;
+  --deck-fg-2:        #5b6168;
+  --deck-fg-3:        #8a9099;
+  --deck-border:      #e6e8ea;
+  --deck-signal:      #00eeee;
+  --deck-signal-dark: #008a8a;
+  --deck-tension:     #ee0b00;
+  --deck-tension-soft:#fff0ef;
+  --deck-positive:    #008f66;
+  --deck-positive-soft:#eaf8f2;
+  --deck-whisper:     #c4a8e8;
+  --deck-night:       #061218;
+
+  --deck-pad-x: 110px;
+  --deck-pad-y: 78px;
+  --deck-radius: 24px;
+  --deck-radius-sm: 14px;
+
+  --deck-font: "Product Sans", "Google Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* ---- Slide canvas ------------------------------------------------ */
+.deck-slide {
+  position: relative;
+  background: var(--deck-canvas);
+  color: var(--deck-fg);
+  font-family: var(--deck-font);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+.deck-slide * { box-sizing: border-box; }
+
+/* Atmospheric blobs — pure CSS, no raster assets */
+.deck-atmos { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+.deck-atmos::before, .deck-atmos::after {
+  content: ""; position: absolute; border-radius: 50%;
+  filter: blur(150px); opacity: 0.5; mix-blend-mode: multiply;
+}
+.deck-atmos::before { width: 1100px; height: 1100px; background: var(--deck-signal); top: -320px; right: -220px; }
+.deck-atmos::after  { width: 900px;  height: 900px;  background: var(--deck-ink-soft); bottom: -260px; left: -200px; opacity: 0.16; }
+.deck-atmos.is-warm::before { background: var(--deck-tension); opacity: 0.16; }
+.deck-atmos.is-dark::before { background: var(--deck-signal); opacity: 0.34; }
+.deck-atmos.is-dark::after  { background: var(--deck-whisper); opacity: 0.22; }
+
+.deck-frame {
+  position: relative; z-index: 1;
+  width: 100%; height: 100%;
+  padding: var(--deck-pad-y) var(--deck-pad-x);
+  display: flex; flex-direction: column;
+}
+
+/* ---- Slide chrome ----------------------------------------------- */
+.deck-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 22px; font-weight: 500; color: var(--deck-fg-2);
+  margin-bottom: 40px; flex-shrink: 0;
+}
+.deck-head .deck-head-left,
+.deck-head .deck-head-right { display: flex; align-items: center; gap: 16px; white-space: nowrap; }
+/* Logos must hold any aspect ratio (square, wide, tall) without distorting
+   or overflowing: fix the height, cap the width, contain. */
+.deck-head img.deck-logo { height: 26px; max-width: 190px; width: auto; object-fit: contain; object-position: left center; display: block; }
+.deck-logo-img { object-fit: contain; }
+.deck-cover .deck-brand-row img { height: 28px; max-width: 200px; width: auto; object-position: left center; }
+.deck-closing-logo { object-position: center; }
+.deck-head .deck-num { font-weight: 700; color: var(--deck-ink); }
+.deck-head .deck-sep { width: 1px; height: 22px; background: var(--deck-border); }
+
+.deck-eyebrow {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 10px 22px; border-radius: 999px;
+  background: var(--deck-surface-02);
+  color: var(--deck-fg-2);
+  font-size: 21px; font-weight: 700; width: fit-content;
+}
+.deck-eyebrow.is-signal { color: var(--deck-signal-dark); background: rgba(0,138,138,0.10); }
+.deck-eyebrow.is-tension { color: var(--deck-tension); background: var(--deck-tension-soft); }
+.deck-eyebrow.is-positive { color: var(--deck-positive); background: var(--deck-positive-soft); }
+.deck-eyebrow .deck-dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+
+.deck-title {
+  font-size: 64px; font-weight: 500; line-height: 1.03; letter-spacing: -0.01em;
+  color: var(--deck-ink); margin: 0; max-width: 22ch;
+}
+.deck-title.is-lg { font-size: 88px; line-height: 1.0; }
+.deck-lede { font-size: 28px; line-height: 1.5; color: var(--deck-fg-2); max-width: 46ch; margin: 0; }
+.deck-body { font-size: 24px; line-height: 1.55; color: var(--deck-fg); max-width: 60ch; }
+
+.deck-foot {
+  margin-top: auto; padding-top: 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 19px; color: var(--deck-fg-3); flex-shrink: 0;
+}
+
+/* ---- Cover ------------------------------------------------------- */
+.deck-cover-body {
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column; justify-content: center; gap: 30px;
+}
+.deck-cover .deck-brand-row {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 19px; color: var(--deck-fg-3);
+}
+.deck-cover .deck-brand-row img { height: 28px; }
+.deck-cover-meta { display: flex; gap: 64px; margin-top: 18px; }
+.deck-cover-meta > div { display: flex; flex-direction: column; gap: 6px; }
+.deck-cover-meta dt { font-size: 19px; color: var(--deck-fg-3); font-weight: 500; }
+.deck-cover-meta dd { font-size: 26px; color: var(--deck-ink); font-weight: 700; margin: 0; }
+
+/* ---- Section divider -------------------------------------------- */
+.deck-divider { background: var(--deck-night); color: #fff; }
+.deck-divider .deck-slide-fg,
+.deck-divider .deck-title { color: #fff; }
+.deck-divider .deck-frame { justify-content: center; gap: 26px; }
+.deck-divider .deck-head { color: rgba(255,255,255,0.62); }
+.deck-divider .deck-num-xl {
+  font-size: 200px; font-weight: 700; line-height: 0.8; color: rgba(255,255,255,0.10);
+  position: absolute; right: var(--deck-pad-x); bottom: 40px; z-index: 1;
+}
+.deck-divider .deck-lede { color: rgba(255,255,255,0.74); }
+.deck-divider .deck-eyebrow { background: rgba(255,255,255,0.10); color: var(--deck-signal); }
+
+/* ---- Metric band ------------------------------------------------ */
+.deck-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; margin-top: 8px; }
+.deck-metric {
+  border: 1px solid var(--deck-border); border-radius: var(--deck-radius);
+  background: var(--deck-surface-01); padding: 34px 30px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.deck-metric b { font-size: 84px; font-weight: 700; line-height: 0.86; color: var(--deck-ink); }
+.deck-metric span { font-size: 22px; color: var(--deck-fg-2); font-weight: 500; }
+.deck-metric small { font-size: 18px; color: var(--deck-fg-3); }
+.deck-metric.is-tension b { color: var(--deck-tension); }
+.deck-metric.is-signal b { color: var(--deck-signal-dark); }
+.deck-metric.is-positive b { color: var(--deck-positive); }
+
+/* ---- Compact metric band (dashboard) ---------------------------- */
+.deck-metrics.is-compact-row { grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 0; }
+.deck-metric.is-compact { padding: 20px 22px; gap: 4px; position: relative; }
+.deck-metric.is-compact b { font-size: 56px; }
+.deck-metric.is-compact span { font-size: 19px; }
+.deck-metric-ico {
+  position: absolute; top: 18px; right: 20px;
+  color: var(--deck-fg-3);
+}
+.deck-metric.is-signal .deck-metric-ico { color: var(--deck-signal-dark); }
+.deck-metric.is-tension .deck-metric-ico { color: var(--deck-tension); }
+.deck-metric.is-positive .deck-metric-ico { color: var(--deck-positive); }
+
+/* ---- Dashboard slide -------------------------------------------- */
+.deck-dashboard { display: flex; flex-direction: column; gap: 20px; flex: 1; min-height: 0; }
+.deck-charts-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; flex: 1; min-height: 0; }
+.deck-chart-card {
+  border: 1px solid var(--deck-border); border-radius: var(--deck-radius-sm);
+  background: var(--deck-surface-01); padding: 22px 24px;
+  display: flex; flex-direction: column; gap: 16px; align-items: stretch; min-height: 0;
+}
+.deck-chart-card .deck-card-eyebrow { color: var(--deck-fg-2); }
+/* Chart body grows to fill the card so charts sit centered, not top-stuck */
+.deck-chart-body { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 16px; }
+.deck-chart-body--row { gap: 20px; }
+.deck-chart-card .deck-svg-wrap { align-self: center; }
+.deck-chart-card .deck-chart-legend { align-self: center; gap: 9px; }
+.deck-chart-card .deck-chart-legend li { font-size: 18px; }
+.deck-chart-card .deck-bars { gap: 14px; }
+.deck-chart-card .deck-bar-row { grid-template-columns: 120px 1fr 64px; gap: 12px; }
+.deck-chart-card .deck-bar-row > span,
+.deck-chart-card .deck-bar-row > b { font-size: 17px; }
+/* One-line takeaway pinned to the foot of each chart card */
+.deck-chart-note {
+  border-top: 1px solid var(--deck-border); padding-top: 14px;
+  font-size: 17px; font-weight: 700; color: var(--deck-signal-dark);
+}
+
+/* ---- Two-column content ----------------------------------------- */
+.deck-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; flex: 1; min-height: 0; }
+.deck-cols.is-wide-left { grid-template-columns: 1.25fr 1fr; }
+.deck-stack { display: flex; flex-direction: column; gap: 22px; min-height: 0; }
+.deck-stack.is-center { justify-content: center; }
+
+/* ---- Cards / lists ---------------------------------------------- */
+.deck-cards { display: grid; gap: 18px; flex: 1; }
+.deck-cards.cols-2 { grid-template-columns: 1fr 1fr; }
+.deck-cards.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.deck-cards.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* Priorities: 2 feature cards on top, 4 compact below */
+.deck-priorities { display: grid; grid-template-rows: 1fr 1fr; gap: 18px; flex: 1; min-height: 0; }
+.deck-priorities .deck-cards { flex: initial; min-height: 0; }
+.deck-card.is-feature { padding: 30px 32px; }
+.deck-card.is-feature h4 { font-size: 30px; }
+.deck-card.is-feature .deck-quote { font-size: 21px; padding-left: 20px; }
+.deck-card {
+  border: 1px solid var(--deck-border); border-radius: var(--deck-radius-sm);
+  background: var(--deck-surface-01); padding: 26px 28px;
+  display: flex; flex-direction: column; gap: 12px; min-height: 0;
+}
+.deck-card .deck-card-eyebrow {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 19px; font-weight: 700; color: var(--deck-fg-3);
+}
+.deck-card .deck-card-rank {
+  width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px;
+  display: grid; place-items: center; background: var(--deck-ink); color: #fff;
+  font-size: 20px; font-weight: 700;
+}
+.deck-card h4 { font-size: 27px; font-weight: 700; line-height: 1.18; color: var(--deck-ink); }
+.deck-card p { font-size: 21px; line-height: 1.45; color: var(--deck-fg); margin: 0; }
+.deck-card .deck-card-meta { margin-top: auto; display: flex; flex-wrap: wrap; gap: 8px; }
+.deck-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 16px; font-weight: 600; color: var(--deck-fg-2);
+  background: var(--deck-surface-02); border-radius: 999px; padding: 6px 14px;
+}
+.deck-chip.is-trigger { color: var(--deck-signal-dark); background: rgba(0,138,138,0.10); }
+.deck-chip.is-barrier { color: var(--deck-tension); background: var(--deck-tension-soft); }
+
+.deck-quote {
+  border-left: 4px solid var(--deck-signal); padding: 4px 0 4px 24px;
+  font-size: 24px; line-height: 1.45; color: var(--deck-ink-soft); font-style: italic;
+}
+
+/* ---- Ranked / numbered list ------------------------------------- */
+.deck-ranked { display: flex; flex-direction: column; gap: 16px; }
+.deck-ranked li { display: flex; gap: 20px; align-items: flex-start; list-style: none; }
+.deck-ranked .deck-rk {
+  font-size: 26px; font-weight: 700; color: var(--deck-signal-dark);
+  min-width: 44px; font-variant-numeric: tabular-nums;
+}
+.deck-ranked .deck-rk-body strong { display: block; font-size: 25px; color: var(--deck-ink); line-height: 1.2; }
+.deck-ranked .deck-rk-body small { font-size: 19px; color: var(--deck-fg-2); }
+
+/* ---- Decision Field matrix (vector grid) ------------------------ */
+.deck-matrix { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
+.deck-matrix-row { display: grid; grid-template-columns: 220px repeat(4, 1fr); gap: 10px; }
+.deck-matrix-row.is-head strong {
+  font-size: 19px; font-weight: 700; color: var(--deck-fg-2); text-align: center;
+  align-self: center; text-transform: capitalize;
+}
+.deck-matrix-label { display: flex; flex-direction: column; gap: 3px; align-self: center; }
+.deck-matrix-label strong { font-size: 22px; color: var(--deck-ink); }
+.deck-matrix-label span { font-size: 16px; color: var(--deck-fg-3); }
+.deck-cell {
+  border: 1px solid var(--deck-border); border-radius: 12px; background: var(--deck-surface-01);
+  min-height: 118px; padding: 12px; display: flex; flex-direction: column; gap: 6px;
+}
+.deck-cell-chip {
+  border-radius: 9px; padding: 8px 10px; background: #fff; border: 1px solid var(--deck-border);
+  border-left: 4px solid var(--deck-fg-3);
+}
+.deck-cell-chip.is-trigger { border-left-color: var(--deck-signal-dark); }
+.deck-cell-chip.is-barrier { border-left-color: var(--deck-tension); }
+.deck-cell-chip strong { display: block; font-size: 16px; color: var(--deck-ink); line-height: 1.2; }
+.deck-cell-chip small { font-size: 13px; color: var(--deck-fg-3); }
+.deck-cell-empty { font-size: 15px; color: var(--deck-fg-3); margin: auto; }
+
+/* Explanatory note under the matrix */
+.deck-matrix-note {
+  display: flex; gap: 14px; align-items: flex-start;
+  margin-top: 20px; padding: 16px 20px;
+  background: var(--deck-surface-02); border-radius: var(--deck-radius-sm);
+  font-size: 18px; line-height: 1.45; color: var(--deck-fg-2); max-width: none;
+}
+.deck-matrix-note svg { flex-shrink: 0; margin-top: 2px; color: var(--deck-signal-dark); }
+
+/* ---- SVG chart accompaniments ----------------------------------- */
+.deck-chart-legend { display: flex; flex-direction: column; gap: 14px; }
+.deck-chart-legend li { display: flex; align-items: center; gap: 14px; list-style: none; font-size: 22px; }
+.deck-chart-legend i { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; }
+.deck-chart-legend strong { color: var(--deck-ink); font-weight: 700; }
+.deck-chart-legend span { color: var(--deck-fg-2); }
+.deck-chart-legend em { margin-left: auto; color: var(--deck-fg-3); font-style: normal; font-variant-numeric: tabular-nums; }
+.deck-svg-wrap { display: flex; align-items: center; justify-content: center; }
+.deck-svg-wrap svg { width: 100%; height: auto; max-height: 100%; }
+
+.deck-bars { display: flex; flex-direction: column; gap: 16px; }
+.deck-bar-row { display: grid; grid-template-columns: 230px 1fr 90px; align-items: center; gap: 16px; }
+.deck-bar-row > span { font-size: 21px; color: var(--deck-fg); }
+.deck-bar-track { height: 18px; border-radius: 999px; background: var(--deck-surface-02); overflow: hidden; }
+.deck-bar-fill { height: 100%; border-radius: 999px; background: var(--deck-signal-dark); }
+.deck-bar-row > b { font-size: 21px; text-align: right; color: var(--deck-ink); font-variant-numeric: tabular-nums; }
+
+/* ---- Boundaries / quality --------------------------------------- */
+.deck-notes { display: flex; flex-direction: column; gap: 16px; }
+.deck-notes li {
+  display: flex; gap: 16px; list-style: none; font-size: 22px; line-height: 1.4; color: var(--deck-fg);
+  padding-bottom: 16px; border-bottom: 1px solid var(--deck-border);
+}
+.deck-notes li svg { flex-shrink: 0; margin-top: 4px; color: var(--deck-signal-dark); }
+
+/* ---- Closing ---------------------------------------------------- */
+.deck-closing { background: var(--deck-night); color: #fff; }
+.deck-closing .deck-title { color: #fff; text-align: center; max-width: 24ch; }
+.deck-closing .deck-atmos.is-dark::before { opacity: 0.4; }
+.deck-closing-frame {
+  justify-content: center; align-items: center; gap: 40px; text-align: center;
+}
+.deck-closing-logo { height: 46px; width: auto; max-width: 360px; object-fit: contain; }
+
+/* ---- Custom uploaded logo (replaces the Noisia mark in this PDF) -
+   Two independent versions: light slides use the dark logo, dark slides
+   (which carry .deck-logo--invert) use the light logo. Once a custom logo
+   is set for a context, drop the invert filter so it shows as authored. */
+.deck-logo--invert { filter: invert(1); }
+.deck-shell.has-custom-logo-light .deck-logo-img:not(.deck-logo--invert) { filter: none; }
+.deck-shell.has-custom-logo-dark .deck-logo--invert { filter: none; }
+
+/* ============================================================
+   Host-app control bar (lives OUTSIDE the deck-stage shadow DOM,
+   so it must out-z-index the fixed :host). Download = window.print
+   → Save as PDF, which deck-stage already lays out one slide/page.
+   ============================================================ */
+.deck-controls {
+  position: fixed; top: 18px; right: 18px; z-index: 2147483000;
+  display: flex; gap: 10px; align-items: center;
+  font-family: var(--deck-font, system-ui);
+}
+.deck-controls button, .deck-controls a {
+  display: inline-flex; align-items: center; gap: 9px;
+  height: 44px; padding: 0 18px; border-radius: 999px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.14); text-decoration: none;
+  background: rgba(10,10,12,0.82); color: #fff;
+  backdrop-filter: blur(14px); transition: transform 0.16s ease, background 0.16s ease;
+}
+.deck-controls button:hover, .deck-controls a:hover { transform: translateY(-1px); background: rgba(10,10,12,0.94); }
+.deck-controls .deck-btn-primary { background: var(--deck-signal-dark); border-color: transparent; }
+.deck-controls .deck-btn-primary:hover { background: #00a0a0; }
+.deck-controls svg { width: 17px; height: 17px; }
+
+/* Logo control — button + drop-down panel asking for both logo versions.
+   Scope every rule under .deck-logo-panel so it beats `.deck-controls button`
+   (which would otherwise force a 44px height onto the slot buttons). */
+.deck-logo-control { position: relative; }
+.deck-logo-panel {
+  position: absolute; top: calc(100% + 10px); right: 0;
+  width: 440px; max-width: min(440px, calc(100vw - 36px)); padding: 20px;
+  border-radius: 18px;
+  background: rgba(18,18,22,0.97); border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(16px); box-shadow: 0 22px 60px rgba(0,0,0,0.45);
+  display: flex; flex-direction: column; gap: 14px; text-align: left; cursor: default;
+}
+.deck-logo-panel strong { color: #fff; font-size: 16px; font-weight: 700; }
+.deck-logo-panel > p { color: rgba(255,255,255,0.6); font-size: 13px; line-height: 1.45; margin: 0; max-width: none; }
+.deck-logo-panel .deck-logo-slot {
+  display: flex; align-items: center; gap: 16px; width: 100%;
+  height: auto; min-height: 64px; padding: 12px 14px; border-radius: 12px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);
+  color: #fff; text-align: left; box-shadow: none;
+}
+.deck-logo-panel .deck-logo-slot:hover { background: rgba(255,255,255,0.12); transform: none; }
+.deck-logo-panel .deck-logo-swatch {
+  width: 76px; height: 48px; border-radius: 9px; flex-shrink: 0;
+  display: grid; place-items: center; overflow: hidden; padding: 6px;
+}
+.deck-logo-panel .deck-logo-swatch img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.deck-logo-panel .deck-logo-swatch--light { background: #fff; border: 1px solid rgba(0,0,0,0.12); }
+.deck-logo-panel .deck-logo-swatch--dark { background: #061218; border: 1px solid rgba(255,255,255,0.18); }
+.deck-logo-panel .deck-logo-text { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.deck-logo-panel .deck-logo-text b { font-size: 14px; font-weight: 700; white-space: nowrap; }
+.deck-logo-panel .deck-logo-text small { font-size: 12px; color: rgba(255,255,255,0.55); font-weight: 500; line-height: 1.3; }
+.deck-logo-panel .deck-logo-slot em {
+  font-size: 12px; font-weight: 700; font-style: normal; color: var(--deck-signal);
+  border: 1px solid rgba(0,238,238,0.4); border-radius: 999px; padding: 5px 13px;
+  flex-shrink: 0; white-space: nowrap;
+}
+
+/* When printing, hide the host controls entirely. */
+@media print {
+  .deck-controls { display: none !important; }
+}
