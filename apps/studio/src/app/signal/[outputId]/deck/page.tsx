@@ -62,7 +62,7 @@ export default async function SignalDeckPage({
   const { lang: langParam } = await searchParams;
   const lang: Lang = langParam === "en" ? "en" : "es";
 
-  const session = await requirePortalUser(`/signal/${outputId}/deck`);
+  const session = await requirePortalUser(`/signal/${outputId}/deck?lang=${lang}`);
   const output = await getSignalOutputForUser(session.appUser, outputId);
   if (!output) notFound();
 
