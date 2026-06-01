@@ -28,6 +28,7 @@ type DeckRuntimeLabels = {
   inviteSending: string;
   inviteSent: string;
   inviteExists: string;
+  inviteSavedNoEmail: string;
   inviteError: string;
   logo: string;
   logoTitle: string;
@@ -157,7 +158,7 @@ export function DeckRuntime({
           });
           setEmail("");
         } else {
-          setInviteState({ tone: "warn", text: json?.email_error ?? labels.inviteError });
+          setInviteState({ tone: "warn", text: labels.inviteSavedNoEmail });
         }
       } catch (err) {
         setInviteState({ tone: "error", text: err instanceof Error ? err.message : labels.inviteError });
@@ -165,7 +166,7 @@ export function DeckRuntime({
         setSubmitting(false);
       }
     },
-    [email, labels.inviteError, labels.inviteExists, labels.inviteSent, lang, outputId],
+    [email, labels.inviteError, labels.inviteExists, labels.inviteSavedNoEmail, labels.inviteSent, lang, outputId],
   );
 
   return (
