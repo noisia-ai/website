@@ -4,6 +4,7 @@ import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { brands, methodologies, publishedOutputs, studyCorpora } from "@noisia/db";
 
 import { db } from "@/lib/db";
+import { adaptTbSignalPayload } from "@/lib/signal/adapters/tb";
 
 export type ReportingDataset =
   | "summary"
@@ -18,6 +19,23 @@ export type ReportingDataset =
   | "mobility-distribution"
   | "polarity-distribution"
   | "evidence-sample";
+
+export type ReportingV2Section =
+  | "full"
+  | "overview"
+  | "findings"
+  | "decision-field"
+  | "action-cards"
+  | "strategic-opportunities"
+  | "competitive-intelligence"
+  | "emerging-patterns"
+  | "future-signals"
+  | "market-analysis"
+  | "knowledge-impact"
+  | "evidence-deep-dives"
+  | "aggregates"
+  | "evidence-sample"
+  | "manifest";
 
 type ApiKeyConfig = {
   label: string;
@@ -76,6 +94,56 @@ const DATASET_LABELS: Record<ReportingDataset, string> = {
   "mobility-distribution": "Mobility distribution",
   "polarity-distribution": "Polarity distribution",
   "evidence-sample": "Evidence sample"
+};
+
+const V2_SECTION_ALIASES: Record<string, ReportingV2Section> = {
+  full: "full",
+  signal: "full",
+  report: "full",
+  payload: "full",
+  summary: "overview",
+  overview: "overview",
+  findings: "findings",
+  "decision-field": "decision-field",
+  "decision_field": "decision-field",
+  "tb-decision-field": "decision-field",
+  "tb_decision_field": "decision-field",
+  "action-cards": "action-cards",
+  "action_cards": "action-cards",
+  "action-studio": "action-cards",
+  "action_studio": "action-cards",
+  actions: "action-cards",
+  recommendations: "action-cards",
+  "strategic-opportunities": "strategic-opportunities",
+  "strategic_opportunities": "strategic-opportunities",
+  opportunities: "strategic-opportunities",
+  "competitive-intelligence": "competitive-intelligence",
+  "competitive_intelligence": "competitive-intelligence",
+  competitive: "competitive-intelligence",
+  "emerging-patterns": "emerging-patterns",
+  "emerging_patterns": "emerging-patterns",
+  patterns: "emerging-patterns",
+  "future-signals": "future-signals",
+  "future_signals": "future-signals",
+  futures: "future-signals",
+  "market-analysis": "market-analysis",
+  "market_analysis": "market-analysis",
+  market: "market-analysis",
+  "knowledge-impact": "knowledge-impact",
+  "knowledge_impact": "knowledge-impact",
+  knowledge: "knowledge-impact",
+  "evidence-deep-dives": "evidence-deep-dives",
+  "evidence_deep_dives": "evidence-deep-dives",
+  "deep-dives": "evidence-deep-dives",
+  "deep_dives": "evidence-deep-dives",
+  aggregates: "aggregates",
+  charts: "aggregates",
+  "evidence-sample": "evidence-sample",
+  "evidence_sample": "evidence-sample",
+  "mentions-sample": "evidence-sample",
+  "mentions_sample": "evidence-sample",
+  verbatims: "evidence-sample",
+  manifest: "manifest"
 };
 
 export async function authorizeReportingRequest(request: Request, outputId?: string) {
@@ -143,6 +211,66 @@ export async function listReportsForGrant(grant: ApiKeyGrant) {
   }));
 }
 
+export async function listReportsForGrantV2(grant: ApiKeyGrant) {
+  const where = [eq(publishedOutputs.status, "published"), isNull(publishedOutputs.archivedAt)];
+
+  if (!grant.outputs.includes("*")) {
+    where.push(inArray(publishedOutputs.id, grant.outputs));
+  }
+
+  const rows = await db
+    .select({
+      outputId: publishedOutputs.id,
+      studyCorpusId: publishedOutputs.studyCorpusId,
+      outputType: publishedOutputs.outputType,
+      title: publishedOutputs.title,
+      headline: publishedOutputs.headline,
+      summary: publishedOutputs.summary,
+      version: publishedOutputs.version,
+      manifest: publishedOutputs.manifest,
+      payload: publishedOutputs.payload,
+      publishedAt: publishedOutputs.publishedAt,
+      updatedAt: publishedOutputs.updatedAt,
+      brandName: brands.displayName,
+      brandFallbackName: brands.name,
+      methodologyName: methodologies.name,
+      methodologySlug: publishedOutputs.methodologySlug
+    })
+    .from(publishedOutputs)
+    .innerJoin(studyCorpora, eq(studyCorpora.id, publishedOutputs.studyCorpusId))
+    .innerJoin(methodologies, eq(methodologies.id, studyCorpora.methodologyId))
+    .leftJoin(brands, eq(brands.id, publishedOutputs.brandId))
+    .where(and(...where))
+    .orderBy(desc(publishedOutputs.publishedAt), desc(publishedOutputs.updatedAt));
+
+  const visibleRows = grant.outputs.includes("*") ? latestCanonicalReports(rows) : rows;
+
+  return visibleRows.map((row) => {
+    const payload = asRecord(row.payload);
+    const report = asRecord(payload.report);
+    return {
+      api_version: 2,
+      output_id: row.outputId,
+      output_type: row.outputType,
+      title: row.title,
+      headline: stringValue(report.headline) || row.headline,
+      summary: stringValue(report.summary) || row.summary,
+      report_version: row.version,
+      schema_version: numberValue(payload.schema_version) || row.version,
+      brand_name: stringValue(report.brand_name) || row.brandName || row.brandFallbackName,
+      methodology: stringValue(report.methodology_name) || row.methodologyName,
+      methodology_slug: stringValue(report.methodology_slug) || row.methodologySlug,
+      published_at: row.publishedAt?.toISOString() ?? null,
+      updated_at: row.updatedAt?.toISOString() ?? null,
+      sections: getEnabledV2Sections(row.manifest),
+      links: {
+        full: `/api/public/v2/reports/${row.outputId}`,
+        sections: `/api/public/v2/reports/${row.outputId}/sections/{section}`
+      }
+    };
+  });
+}
+
 function latestCanonicalReports<
   T extends { studyCorpusId: string; outputType: string; methodologySlug: string }
 >(rows: T[]) {
@@ -162,13 +290,16 @@ export async function getPublishedOutputForReporting(outputId: string) {
       tbAnalysisId: publishedOutputs.tbAnalysisId,
       studyCorpusId: publishedOutputs.studyCorpusId,
       brandId: publishedOutputs.brandId,
+      outputType: publishedOutputs.outputType,
       title: publishedOutputs.title,
       headline: publishedOutputs.headline,
       summary: publishedOutputs.summary,
       version: publishedOutputs.version,
+      manifest: publishedOutputs.manifest,
       payload: publishedOutputs.payload,
       publishedAt: publishedOutputs.publishedAt,
       generatedAt: publishedOutputs.createdAt,
+      updatedAt: publishedOutputs.updatedAt,
       brandName: brands.displayName,
       brandFallbackName: brands.name,
       methodologyName: methodologies.name,
@@ -192,6 +323,12 @@ export function resolveReportingDataset(dataset: string | null | undefined): Rep
 
 export function getDatasetLabel(dataset: ReportingDataset) {
   return DATASET_LABELS[dataset];
+}
+
+export function resolveReportingV2Section(section: string | null | undefined): ReportingV2Section | null {
+  if (!section) return "full";
+  const normalized = section.replace(/\.json$/i, "").toLowerCase();
+  return V2_SECTION_ALIASES[normalized] ?? null;
 }
 
 export function buildReportingDataset(output: NonNullable<PublishedOutputRow>, dataset: ReportingDataset) {
@@ -470,6 +607,126 @@ export function csvDatasetResponse(dataset: ReportingDataset, rows: Array<Record
   });
 }
 
+export function buildReportingV2Document(output: NonNullable<PublishedOutputRow>) {
+  const payload = asRecord(output.payload);
+  const viewModel = adaptTbSignalPayload(payload);
+  const aggregates = asRecord(viewModel.aggregates);
+  const corpus = asRecord(aggregates.corpus);
+  const corpusWindow = asRecord(corpus.window);
+  const metadata = {
+    api_version: 2,
+    output_id: output.outputId,
+    output_type: output.outputType,
+    report_version: output.version,
+    schema_version: numberValue(payload.schema_version) || output.version,
+    title: output.title,
+    published_at: output.publishedAt?.toISOString() ?? null,
+    generated_at: stringValue(payload.generated_at) || output.generatedAt?.toISOString() || null,
+    updated_at: output.updatedAt?.toISOString() ?? null,
+    brand_name: viewModel.report.brand_name || output.brandName || output.brandFallbackName,
+    methodology: viewModel.report.methodology_name || output.methodologyName,
+    methodology_slug: viewModel.report.methodology_slug || output.methodologySlug,
+    business_question: viewModel.report.business_question,
+    corpus: {
+      total_mentions: numberValue(corpus.total_mentions),
+      window_start: stringValue(corpusWindow.start),
+      window_end: stringValue(corpusWindow.end),
+      window_months: numberValue(corpusWindow.months)
+    }
+  };
+  const sections = {
+    overview: {
+      report: viewModel.report,
+      metrics: viewModel.metrics,
+      knowledge_impact: viewModel.knowledgeImpact,
+      client_boundaries: viewModel.clientBoundaries
+    },
+    findings: viewModel.findings,
+    decision_field: {
+      nodes: viewModel.decisionFieldNodes,
+      edges: arrayValue(payload.tb_decision_field_edges)
+    },
+    action_cards: viewModel.actionCards,
+    strategic_opportunities: viewModel.strategicOpportunities,
+    competitive_intelligence: viewModel.competitive,
+    emerging_patterns: viewModel.emergingPatterns,
+    future_signals: viewModel.futureSignals,
+    market_analysis: viewModel.marketAnalysis,
+    knowledge_impact: viewModel.knowledgeImpact,
+    evidence_deep_dives: viewModel.evidenceDeepDives,
+    aggregates: viewModel.aggregates,
+    evidence_sample: arrayValue(aggregates.mentions_sample).map(asRecord),
+    manifest: viewModel.manifest
+  };
+
+  return {
+    metadata,
+    report: viewModel.report,
+    manifest: viewModel.manifest,
+    metrics: viewModel.metrics,
+    sections
+  };
+}
+
+export function buildReportingV2Section(output: NonNullable<PublishedOutputRow>, section: ReportingV2Section) {
+  const document = buildReportingV2Document(output);
+
+  switch (section) {
+    case "full":
+      return document;
+    case "overview":
+      return document.sections.overview;
+    case "findings":
+      return document.sections.findings;
+    case "decision-field":
+      return document.sections.decision_field;
+    case "action-cards":
+      return document.sections.action_cards;
+    case "strategic-opportunities":
+      return document.sections.strategic_opportunities;
+    case "competitive-intelligence":
+      return document.sections.competitive_intelligence;
+    case "emerging-patterns":
+      return document.sections.emerging_patterns;
+    case "future-signals":
+      return document.sections.future_signals;
+    case "market-analysis":
+      return document.sections.market_analysis;
+    case "knowledge-impact":
+      return document.sections.knowledge_impact;
+    case "evidence-deep-dives":
+      return document.sections.evidence_deep_dives;
+    case "aggregates":
+      return document.sections.aggregates;
+    case "evidence-sample":
+      return document.sections.evidence_sample;
+    case "manifest":
+      return document.sections.manifest;
+  }
+}
+
+export function jsonV2Response(
+  output: NonNullable<PublishedOutputRow>,
+  section: ReportingV2Section,
+  data: unknown
+) {
+  const payload = asRecord(output.payload);
+  return Response.json(
+    {
+      data,
+      meta: {
+        api_version: 2,
+        output_id: output.outputId,
+        section,
+        report_version: output.version,
+        schema_version: numberValue(payload.schema_version) || output.version,
+        published_at: output.publishedAt?.toISOString() ?? null
+      }
+    },
+    { headers: noStoreHeaders() }
+  );
+}
+
 export function noStoreHeaders() {
   return {
     "Cache-Control": "no-store",
@@ -572,4 +829,32 @@ function numberValue(value: unknown) {
     return Number.isFinite(parsed) ? parsed : 0;
   }
   return 0;
+}
+
+function getEnabledV2Sections(manifest: unknown) {
+  const flags = asRecord(manifest);
+  const sectionMap: Array<[ReportingV2Section, string[]]> = [
+    ["overview", ["overview"]],
+    ["findings", ["overview", "tb_decision_field", "evidence"]],
+    ["decision-field", ["tb_decision_field"]],
+    ["action-cards", ["action_studio"]],
+    ["strategic-opportunities", ["opportunities"]],
+    ["competitive-intelligence", ["competitive_intelligence"]],
+    ["emerging-patterns", ["emerging_patterns"]],
+    ["future-signals", ["emerging_patterns"]],
+    ["market-analysis", ["emerging_patterns"]],
+    ["knowledge-impact", ["overview"]],
+    ["evidence-deep-dives", ["evidence"]],
+    ["aggregates", ["overview"]],
+    ["evidence-sample", ["corpus_view", "evidence"]],
+    ["manifest", ["overview"]]
+  ];
+
+  if (Object.keys(flags).length === 0) {
+    return sectionMap.map(([section]) => section);
+  }
+
+  return sectionMap
+    .filter(([, keys]) => keys.some((key) => flags[key] !== false))
+    .map(([section]) => section);
 }

@@ -1,4 +1,4 @@
-import { handlePublicV1ReportGET } from "@/lib/reporting/public-route-handlers";
+import { handlePublicV2ReportGET } from "@/lib/reporting/public-route-handlers";
 
 export const runtime = "nodejs";
 
@@ -6,5 +6,5 @@ export async function GET(
   request: Request,
   context: { params: Promise<{ outputId: string; path?: string[] }> }
 ) {
-  return handlePublicV1ReportGET(request, context);
+  return handlePublicV2ReportGET(request, context);
 }

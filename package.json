@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.14.10",
+    "tsx": "^4.22.3",
     "turbo": "^2.5.0",
     "typescript": "^5.5.4"
   }

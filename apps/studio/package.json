@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "signal:republish-v2": "../../infrastructure/db/node_modules/.bin/tsx scripts/republish-signal-v2.ts",
     "signal:backfill-intelligence": "../../infrastructure/db/node_modules/.bin/tsx scripts/backfill-intelligence-and-republish.ts",
-    "test": "echo \"No studio tests yet\""
+    "test": "node --test --import tsx src/app/api/public/public-api-routes.test.ts"
   },
   "dependencies": {
     "@kinde-oss/kinde-auth-nextjs": "^2.10.2",
