@@ -17,6 +17,19 @@ const LABELS = {
     downloadPdf: "Download PDF",
     present: "Present",
     hint: "Toggle fullscreen",
+    share: "Share",
+    shareTitle: "Share this report",
+    shareIntro: "Copy the deck link or invite someone by email. New invitees enter as Client Viewer for this study's organization.",
+    shareLink: "Report link",
+    copy: "Copy",
+    copied: "Copied",
+    inviteEmail: "Invite by email",
+    invitePlaceholder: "name@company.com",
+    inviteSend: "Send invite",
+    inviteSending: "Sending...",
+    inviteSent: "Invite sent. They will get the report by email.",
+    inviteExists: "Invite already existed. We resent the report email.",
+    inviteError: "We couldn't send the invite.",
     logo: "Logo",
     logoTitle: "Replace the logo",
     logoIntro: "Upload one version for each background. PNG or SVG, under 1MB.",
@@ -33,6 +46,19 @@ const LABELS = {
     downloadPdf: "Descargar PDF",
     present: "Presentar",
     hint: "Pantalla completa",
+    share: "Compartir",
+    shareTitle: "Compartir este reporte",
+    shareIntro: "Copia el link del deck o invita a alguien por correo. Los nuevos invitados entran como Cliente lector en la organización del estudio.",
+    shareLink: "Link del reporte",
+    copy: "Copiar",
+    copied: "Copiado",
+    inviteEmail: "Invitar por correo",
+    invitePlaceholder: "nombre@empresa.com",
+    inviteSend: "Enviar invitación",
+    inviteSending: "Enviando...",
+    inviteSent: "Invitación enviada. Recibirá el reporte por correo.",
+    inviteExists: "La invitación ya existía. Reenviamos el correo del reporte.",
+    inviteError: "No pudimos enviar la invitación.",
     logo: "Logo",
     logoTitle: "Reemplazar el logo",
     logoIntro: "Sube una versión para cada fondo. PNG o SVG, menos de 1MB.",
@@ -86,7 +112,7 @@ export default async function SignalDeckPage({
 
   return (
     <div className="deck-shell">
-      <DeckRuntime labels={LABELS[lang]}>
+      <DeckRuntime labels={LABELS[lang]} outputId={outputId} lang={lang}>
         <DeckSlides
           vm={vm}
           lang={lang}

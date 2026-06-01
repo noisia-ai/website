@@ -347,8 +347,10 @@
 /* Logo control — button + drop-down panel asking for both logo versions.
    Scope every rule under .deck-logo-panel so it beats `.deck-controls button`
    (which would otherwise force a 44px height onto the slot buttons). */
-.deck-logo-control { position: relative; }
-.deck-logo-panel {
+.deck-logo-control,
+.deck-share-control { position: relative; }
+.deck-logo-panel,
+.deck-share-panel {
   position: absolute; top: calc(100% + 10px); right: 0;
   width: 440px; max-width: min(440px, calc(100vw - 36px)); padding: 20px;
   border-radius: 18px;
@@ -356,8 +358,11 @@
   backdrop-filter: blur(16px); box-shadow: 0 22px 60px rgba(0,0,0,0.45);
   display: flex; flex-direction: column; gap: 14px; text-align: left; cursor: default;
 }
-.deck-logo-panel strong { color: #fff; font-size: 16px; font-weight: 700; }
-.deck-logo-panel > p { color: rgba(255,255,255,0.6); font-size: 13px; line-height: 1.45; margin: 0; max-width: none; }
+.deck-share-panel { position: fixed; top: 72px; right: 18px; left: auto; }
+.deck-logo-panel strong,
+.deck-share-panel strong { color: #fff; font-size: 16px; font-weight: 700; }
+.deck-logo-panel > p,
+.deck-share-panel > p { color: rgba(255,255,255,0.6); font-size: 13px; line-height: 1.45; margin: 0; max-width: none; }
 .deck-logo-panel .deck-logo-slot {
   display: flex; align-items: center; gap: 16px; width: 100%;
   height: auto; min-height: 64px; padding: 12px 14px; border-radius: 12px;
@@ -380,6 +385,36 @@
   border: 1px solid rgba(0,238,238,0.4); border-radius: 999px; padding: 5px 13px;
   flex-shrink: 0; white-space: nowrap;
 }
+.deck-share-field {
+  display: flex; flex-direction: column; gap: 8px;
+  color: rgba(255,255,255,0.72); font-size: 12px; font-weight: 700;
+}
+.deck-share-field input {
+  width: 100%; height: 42px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.08); color: #fff; padding: 0 13px;
+  font: 600 13px var(--deck-font, system-ui); outline: none; min-width: 0;
+}
+.deck-share-field input:focus { border-color: rgba(0,238,238,0.72); box-shadow: 0 0 0 3px rgba(0,238,238,0.12); }
+.deck-share-copy { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.deck-share-panel .deck-share-copy button,
+.deck-share-panel .deck-share-submit {
+  height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.10); box-shadow: none; backdrop-filter: none; white-space: nowrap;
+}
+.deck-share-panel .deck-share-copy button:hover,
+.deck-share-panel .deck-share-submit:hover { transform: none; background: rgba(255,255,255,0.16); }
+.deck-share-form { display: flex; flex-direction: column; gap: 12px; margin: 0; }
+.deck-share-panel .deck-share-submit {
+  width: 100%; justify-content: center; background: var(--deck-signal-dark); border-color: transparent;
+}
+.deck-share-panel .deck-share-submit:disabled { cursor: wait; opacity: 0.68; }
+.deck-share-message {
+  margin: 0; padding: 10px 12px; border-radius: 12px;
+  font-size: 12px; line-height: 1.4; font-weight: 700; max-width: none;
+}
+.deck-share-message.is-ok { background: rgba(0,143,102,0.18); color: #99f0d2; }
+.deck-share-message.is-warn { background: rgba(196,168,232,0.16); color: #eadbff; }
+.deck-share-message.is-error { background: rgba(238,11,0,0.16); color: #ffb5ae; }
 
 /* When printing, hide the host controls entirely. */
 @media print {

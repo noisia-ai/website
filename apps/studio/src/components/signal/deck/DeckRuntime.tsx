@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useCallback, useRef, useState, type ChangeEvent, type FC, type PropsWithChildren, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FC, type FormEvent, type PropsWithChildren, type ReactNode } from "react";
 
 // <deck-stage> is a custom element defined by /deck/deck-stage.js at runtime.
 // Cast the tag to a typed component so JSX accepts it without augmenting the
@@ -16,6 +16,19 @@ type DeckRuntimeLabels = {
   downloadPdf: string;
   present: string;
   hint: string;
+  share: string;
+  shareTitle: string;
+  shareIntro: string;
+  shareLink: string;
+  copy: string;
+  copied: string;
+  inviteEmail: string;
+  invitePlaceholder: string;
+  inviteSend: string;
+  inviteSending: string;
+  inviteSent: string;
+  inviteExists: string;
+  inviteError: string;
   logo: string;
   logoTitle: string;
   logoIntro: string;
@@ -30,12 +43,36 @@ type DeckRuntimeLabels = {
 };
 
 type Variant = "light" | "dark";
+type InviteState = { tone: "ok" | "warn" | "error"; text: string } | null;
 
-export function DeckRuntime({ children, labels }: { children: ReactNode; labels: DeckRuntimeLabels }) {
+export function DeckRuntime({
+  children,
+  labels,
+  outputId,
+  lang,
+}: {
+  children: ReactNode;
+  labels: DeckRuntimeLabels;
+  outputId: string;
+  lang: "en" | "es";
+}) {
   const lightRef = useRef<HTMLInputElement | null>(null);
   const darkRef = useRef<HTMLInputElement | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [email, setEmail] = useState("");
+  const [inviteState, setInviteState] = useState<InviteState>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [preview, setPreview] = useState<{ light: string | null; dark: string | null }>({ light: null, dark: null });
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.hash = "";
+    if (!url.searchParams.has("lang")) url.searchParams.set("lang", lang);
+    setShareUrl(url.toString());
+  }, [lang]);
 
   const downloadPdf = useCallback(() => {
     // deck-stage's @media print lays out one slide per page at the design
@@ -91,6 +128,46 @@ export function DeckRuntime({ children, labels }: { children: ReactNode; labels:
     [applyLogo, labels.logoBadType, labels.logoTooBig],
   );
 
+  const copyShareUrl = useCallback(async () => {
+    if (!shareUrl) return;
+    await navigator.clipboard?.writeText(shareUrl);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  }, [shareUrl]);
+
+  const sendInvite = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      setSubmitting(true);
+      setInviteState(null);
+      try {
+        const res = await fetch(`/api/signal/${outputId}/share`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, lang })
+        });
+        const json = await res.json().catch(() => null) as
+          | { data?: { invitation_status?: string }; email_sent?: boolean; email_error?: string; message?: string }
+          | null;
+        if (!res.ok) throw new Error(json?.message ?? labels.inviteError);
+        if (json?.email_sent) {
+          setInviteState({
+            tone: json.data?.invitation_status === "already_invited" ? "warn" : "ok",
+            text: json.data?.invitation_status === "already_invited" ? labels.inviteExists : labels.inviteSent
+          });
+          setEmail("");
+        } else {
+          setInviteState({ tone: "warn", text: json?.email_error ?? labels.inviteError });
+        }
+      } catch (err) {
+        setInviteState({ tone: "error", text: err instanceof Error ? err.message : labels.inviteError });
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [email, labels.inviteError, labels.inviteExists, labels.inviteSent, lang, outputId],
+  );
+
   return (
     <>
       <div className="deck-controls" role="toolbar" aria-label="Deck controls">
@@ -99,10 +176,58 @@ export function DeckRuntime({ children, labels }: { children: ReactNode; labels:
           {labels.present}
         </button>
 
+        <div className="deck-share-control">
+          <button
+            type="button"
+            onClick={() => {
+              setShareOpen((v) => !v);
+              setPanelOpen(false);
+            }}
+            aria-expanded={shareOpen}
+            aria-label={labels.share}
+          >
+            <ShareIcon />
+            {labels.share}
+          </button>
+          {shareOpen ? (
+            <div className="deck-share-panel" role="dialog" aria-label={labels.shareTitle}>
+              <strong>{labels.shareTitle}</strong>
+              <p>{labels.shareIntro}</p>
+              <label className="deck-share-field">
+                <span>{labels.shareLink}</span>
+                <div className="deck-share-copy">
+                  <input value={shareUrl} readOnly />
+                  <button type="button" onClick={copyShareUrl}>{copied ? labels.copied : labels.copy}</button>
+                </div>
+              </label>
+              <form className="deck-share-form" onSubmit={sendInvite}>
+                <label className="deck-share-field">
+                  <span>{labels.inviteEmail}</span>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    placeholder={labels.invitePlaceholder}
+                    onChange={(event) => setEmail(event.target.value)}
+                  />
+                </label>
+                <button type="submit" className="deck-share-submit" disabled={submitting}>
+                  <SendIcon />
+                  {submitting ? labels.inviteSending : labels.inviteSend}
+                </button>
+              </form>
+              {inviteState ? <p className={`deck-share-message is-${inviteState.tone}`}>{inviteState.text}</p> : null}
+            </div>
+          ) : null}
+        </div>
+
         <div className="deck-logo-control">
           <button
             type="button"
-            onClick={() => setPanelOpen((v) => !v)}
+            onClick={() => {
+              setPanelOpen((v) => !v);
+              setShareOpen(false);
+            }}
             aria-expanded={panelOpen}
             aria-label={labels.logo}
           >
@@ -182,6 +307,27 @@ function FullscreenIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3" />
+    </svg>
+  );
+}
+
+function ShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+    </svg>
+  );
+}
+
+function SendIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="22" y1="2" x2="11" y2="13" />
+      <polygon points="22 2 15 22 11 13 2 9 22 2" />
     </svg>
   );
 }
