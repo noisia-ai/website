@@ -1,7 +1,11 @@
 import { canAccessPortal, canAccessStudio, defaultAuthenticatedPath } from "@/lib/auth/roles";
 
+// Mandamos a los usuarios sin sesión DIRECTO a Kinde (sin la pantalla
+// intermedia /login). Kinde, tras autenticar, vuelve a /auth/continue, que
+// decide el destino por rol preservando `next`.
 export function loginPath(next = "/studio") {
-  return `/login?next=${encodeURIComponent(safeRelativePath(next, "/studio"))}`;
+  const safeNext = safeRelativePath(next, "/studio");
+  return `/api/auth/login?post_login_redirect_url=${encodeURIComponent(authContinuePath(safeNext))}`;
 }
 
 export function authContinuePath(next?: string | null) {
