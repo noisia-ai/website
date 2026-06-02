@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
 import test from "node:test";
 
 process.env.DATABASE_URL ??= "postgres://unit:test@localhost:5432/noisia_test";
@@ -10,6 +11,7 @@ console.error = (...args: unknown[]) => {
 
 const routeHandlers = await import("@/lib/reporting/public-route-handlers");
 const openApiRoute = await import("./openapi.yaml/route");
+const readmePersonalizedDocsRoute = await import("../readme/personalized-docs/route");
 
 const grant = { label: "unit", outputs: ["*"] };
 const output = {
@@ -247,3 +249,77 @@ test("public OpenAPI route serves the YAML specification", async () => {
   assert.match(text, /^openapi: 3\.1\.0/m);
   assert.match(text, /\/api\/public\/v2\/reports/);
 });
+
+test("ReadMe personalized docs webhook returns security variables", async () => {
+  process.env.README_WEBHOOK_SECRET = "unit-secret";
+  process.env.NOISIA_README_API_KEYS_BY_EMAIL = JSON.stringify({
+    "client@example.com": "sk_unit_client"
+  });
+
+  const body = { email: "client@example.com" };
+  const response = await readmePersonalizedDocsRoute.POST(
+    new Request("https://studio.noisia.ai/api/readme/personalized-docs", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "readme-signature": signatureFor(body, "unit-secret")
+      },
+      body: JSON.stringify(body)
+    })
+  );
+  const data = await json(response);
+
+  assert.equal(response.status, 200);
+  assert.equal(data.bearerAuth, "sk_unit_client");
+  assert.equal(data.noisiaApiKey, "sk_unit_client");
+  assert.equal(data["x-noisia-api-key"], "sk_unit_client");
+});
+
+test("ReadMe personalized docs webhook rejects invalid signatures", async () => {
+  process.env.README_WEBHOOK_SECRET = "unit-secret";
+  process.env.NOISIA_README_DEFAULT_API_KEY = "sk_unit_default";
+
+  const response = await readmePersonalizedDocsRoute.POST(
+    new Request("https://studio.noisia.ai/api/readme/personalized-docs", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "readme-signature": "t=1,v0=invalid"
+      },
+      body: JSON.stringify({ email: "client@example.com" })
+    })
+  );
+  const data = await json(response);
+
+  assert.equal(response.status, 401);
+  assert.equal(data.error, "invalid_readme_signature");
+});
+
+test("ReadMe personalized docs webhook returns 404 when no key is mapped", async () => {
+  process.env.README_WEBHOOK_SECRET = "unit-secret";
+  delete process.env.NOISIA_README_DEFAULT_API_KEY;
+  delete process.env.NOISIA_README_API_KEYS_BY_EMAIL;
+
+  const body = { email: "unknown@example.com" };
+  const response = await readmePersonalizedDocsRoute.POST(
+    new Request("https://studio.noisia.ai/api/readme/personalized-docs", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "readme-signature": signatureFor(body, "unit-secret")
+      },
+      body: JSON.stringify(body)
+    })
+  );
+  const data = await json(response);
+
+  assert.equal(response.status, 404);
+  assert.equal(data.error, "api_key_not_found");
+});
+
+function signatureFor(body: Record<string, unknown>, secret: string) {
+  const timestamp = Date.now();
+  const unsigned = `${timestamp}.${JSON.stringify(body)}`;
+  const digest = crypto.createHmac("sha256", secret).update(unsigned).digest("hex");
+  return `t=${timestamp},v0=${digest}`;
+}

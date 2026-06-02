@@ -8,6 +8,65 @@ Sube o importa este archivo en ReadMe:
 https://studio.noisia.ai/api/public/openapi.yaml
 ```
 
+## Personalized Docs Webhook
+
+Si ReadMe muestra el wizard de **API Keys, Server Variables & More**, configura
+el webhook para pre-poblar el token del usuario en el API Explorer.
+
+### Lenguaje
+
+Selecciona **Node.js** en el wizard.
+
+### Webhook URL
+
+```txt
+https://studio.noisia.ai/api/readme/personalized-docs
+```
+
+### Variables de entorno requeridas en Studio
+
+```bash
+README_WEBHOOK_SECRET='<SECRET_DE_README>'
+```
+
+Para una sola llave default:
+
+```bash
+NOISIA_README_DEFAULT_API_KEY='<NOISIA_REPORTING_API_KEY>'
+```
+
+Para mapear llaves por email de usuario en ReadMe:
+
+```bash
+NOISIA_README_API_KEYS_BY_EMAIL='{
+  "cliente@empresa.com": "sk_cliente_xxx",
+  "otro@empresa.com": "sk_otro_xxx",
+  "default": "sk_default_xxx"
+}'
+```
+
+Las llaves devueltas por este webhook deben existir también en
+`NOISIA_REPORTING_API_KEYS`; si no, ReadMe las mostrará pero la API rechazará el
+request.
+
+### Security Scheme variables
+
+El webhook devuelve:
+
+```json
+{
+  "bearerAuth": "<NOISIA_REPORTING_API_KEY>",
+  "noisiaApiKey": "<NOISIA_REPORTING_API_KEY>",
+  "x-noisia-api-key": "<NOISIA_REPORTING_API_KEY>"
+}
+```
+
+ReadMe usa `bearerAuth` para completar:
+
+```http
+Authorization: Bearer <NOISIA_REPORTING_API_KEY>
+```
+
 ## Base URL
 
 ```txt
