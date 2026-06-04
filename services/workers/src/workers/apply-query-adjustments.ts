@@ -336,6 +336,7 @@ type CorpusContextRow = {
   geo_focus: string[] | null;
   target_window_months: number | null;
   context_form: unknown;
+  base_corpus_id: string | null;
   methodology_slug: string;
   methodology_name: string;
   brand_id: string | null;
@@ -363,6 +364,7 @@ async function loadCorpusContext(corpusId: string): Promise<QueryComposerInput> 
         sc.geo_focus,
         sc.target_window_months,
         sc.context_form,
+        sc.base_corpus_id,
         m.slug AS methodology_slug,
         m.name AS methodology_name,
         sc.brand_id,
@@ -403,6 +405,7 @@ async function loadCorpusContext(corpusId: string): Promise<QueryComposerInput> 
         [row.brand_id]
       )
     : { rows: [] as Array<{ canonical_name: string; aliases: string[] | null }> };
+  const corpusEntitySeeds = await loadCorpusEntitySeeds([row.corpus_id, row.base_corpus_id]);
   const ragContext = await loadAnalysisRagContext(row.corpus_id, row.brand_id);
 
   const subject: QueryComposerInput["subject"] = row.brand_id
@@ -448,17 +451,59 @@ async function loadCorpusContext(corpusId: string): Promise<QueryComposerInput> 
     competitors: competitorRows.rows.flatMap((competitor) => [
       competitor.canonical_name,
       ...(competitor.aliases ?? [])
-    ]),
+    ]).concat(corpusEntitySeeds.competitors),
     brandSeeds: row.brand_id
       ? [
           row.brand_name ?? "",
           row.brand_display_name ?? "",
-          ...(row.brand_seed_handles ?? [])
+          ...(row.brand_seed_handles ?? []),
+          ...corpusEntitySeeds.primaryBrand
         ].filter(Boolean)
-      : [row.theme_name ?? ""].filter(Boolean),
+      : [row.theme_name ?? "", ...corpusEntitySeeds.primaryBrand].filter(Boolean),
     knowledgeSources: ragContext.knowledgeSources,
     queryStrategyBrief: ragContext.queryStrategyBrief ?? undefined,
     memoryIndustry: [],
     memoryBrand: []
+  };
+}
+
+async function loadCorpusEntitySeeds(corpusIds: Array<string | null>) {
+  const ids = Array.from(new Set(corpusIds.filter((id): id is string => Boolean(id))));
+  if (ids.length === 0) {
+    return { competitors: [], primaryBrand: [] };
+  }
+  const result = await pool.query<{
+    entity_kind: string;
+    name: string;
+    aliases: string[] | null;
+    handles: string[] | null;
+    query_seeds: string[] | null;
+  }>(
+    `
+      SELECT entity_kind, name, aliases, handles, query_seeds
+      FROM corpus_entities
+      WHERE study_corpus_id = ANY($1::uuid[])
+        AND status = 'active'
+      ORDER BY priority NULLS LAST, name
+    `,
+    [ids]
+  );
+
+  const competitors: string[] = [];
+  const primaryBrand: string[] = [];
+  for (const row of result.rows) {
+    const seeds = [
+      row.name,
+      ...(row.aliases ?? []),
+      ...(row.handles ?? []),
+      ...(row.query_seeds ?? [])
+    ].filter(Boolean);
+    if (row.entity_kind === "competitor") competitors.push(...seeds);
+    if (row.entity_kind === "primary_brand") primaryBrand.push(...seeds);
+  }
+
+  return {
+    competitors: Array.from(new Set(competitors)).slice(0, 80),
+    primaryBrand: Array.from(new Set(primaryBrand)).slice(0, 40)
   };
 }

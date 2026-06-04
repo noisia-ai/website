@@ -5,6 +5,8 @@ import { forbidden, unauthorized, validationError } from "@/lib/api/responses";
 import { canManageCorpus } from "@/lib/auth/roles";
 import { getAuthenticatedAppUser } from "@/lib/auth/session";
 import { listBrandsForUser } from "@/lib/data/brands";
+import { listReusableIndustryCorporaForUser } from "@/lib/data/corpora";
+import { listThemesForUser } from "@/lib/data/themes";
 import { db } from "@/lib/db";
 import { createStudySchema } from "@/lib/validation/brand";
 
@@ -25,12 +27,13 @@ export async function POST(request: Request) {
     return validationError(parsed.error);
   }
 
-  const brandsResult = await listBrandsForUser(session.appUser, { pageSize: 500 });
-  const brand = brandsResult.data.find((item) => item.id === parsed.data.brand_id);
+  const subject = parsed.data.brand_id
+    ? await resolveBrandSubject(session.appUser, parsed.data.brand_id)
+    : await resolveThemeSubject(session.appUser, parsed.data.theme_id ?? "");
 
-  if (!brand) {
+  if (!subject) {
     return Response.json(
-      { error: "not_found", message: "Marca no encontrada o sin acceso." },
+      { error: "not_found", message: "Sujeto de estudio no encontrado o sin acceso." },
       { status: 404 }
     );
   }
@@ -53,10 +56,24 @@ export async function POST(request: Request) {
     );
   }
 
+  const baseCorpus = parsed.data.base_corpus_id
+    ? await resolveBaseCorpus(session.appUser, parsed.data.base_corpus_id)
+    : null;
+  if (parsed.data.base_corpus_id && !baseCorpus) {
+    return Response.json(
+      { error: "not_found", message: "Corpus baseline no encontrado o sin acceso." },
+      { status: 404 }
+    );
+  }
+
   const cleanName = parsed.data.name.trim();
   const studyBrief = {
     study_name: cleanName,
-    brand_name: brand.displayName ?? brand.name,
+    subject_type: subject.type,
+    subject_name: subject.name,
+    base_corpus_id: baseCorpus?.id ?? null,
+    base_corpus_name: baseCorpus?.name ?? null,
+    base_corpus_theme: baseCorpus?.themeName ?? null,
     methodology_slug: methodology.slug,
     business_question: parsed.data.business_question.trim(),
     decision_to_inform: emptyToNull(parsed.data.decision_to_inform),
@@ -76,7 +93,9 @@ export async function POST(request: Request) {
     .insert(studyCorpora)
     .values({
       name: cleanName,
-      brandId: brand.id,
+      brandId: subject.type === "brand" ? subject.id : undefined,
+      themeId: subject.type === "theme" ? subject.id : undefined,
+      baseCorpusId: baseCorpus?.id,
       methodologyId: methodology.id,
       methodologyVersionAtCreation: methodology.version,
       businessQuestion: parsed.data.business_question.trim(),
@@ -99,8 +118,8 @@ export async function POST(request: Request) {
   }
 
   await db.insert(brandKnowledgeSources).values({
-    organizationId: brand.organizationId,
-    brandId: brand.id,
+    organizationId: subject.organizationId,
+    brandId: subject.type === "brand" ? subject.id : undefined,
     studyCorpusId: corpus.id,
     sourceKind: "study_brief",
     title: cleanName,
@@ -127,8 +146,8 @@ export async function POST(request: Request) {
 
   if (parsed.data.competitive_context?.trim()) {
     await db.insert(brandKnowledgeSources).values({
-      organizationId: brand.organizationId,
-      brandId: brand.id,
+      organizationId: subject.organizationId,
+      brandId: subject.type === "brand" ? subject.id : undefined,
       studyCorpusId: corpus.id,
       sourceKind: "competitive_brief",
       title: `${cleanName} · Competitive context`,
@@ -153,6 +172,53 @@ export async function POST(request: Request) {
     },
     { status: 201 }
   );
+}
+
+async function resolveBrandSubject(
+  appUser: NonNullable<Awaited<ReturnType<typeof getAuthenticatedAppUser>>>["appUser"],
+  brandId: string
+) {
+  const brandsResult = await listBrandsForUser(appUser, { pageSize: 500 });
+  const brand = brandsResult.data.find((item) => item.id === brandId);
+  if (!brand) return null;
+
+  return {
+    type: "brand" as const,
+    id: brand.id,
+    name: brand.displayName ?? brand.name,
+    organizationId: brand.organizationId
+  };
+}
+
+async function resolveThemeSubject(
+  appUser: NonNullable<Awaited<ReturnType<typeof getAuthenticatedAppUser>>>["appUser"],
+  themeId: string
+) {
+  const themesResult = await listThemesForUser(appUser, { pageSize: 500 });
+  const theme = themesResult.data.find((item) => item.id === themeId && item.status !== "archived");
+  if (!theme) return null;
+
+  return {
+    type: "theme" as const,
+    id: theme.id,
+    name: theme.name,
+    organizationId: theme.organizationId
+  };
+}
+
+async function resolveBaseCorpus(
+  appUser: NonNullable<Awaited<ReturnType<typeof getAuthenticatedAppUser>>>["appUser"],
+  corpusId: string
+) {
+  const corpora = await listReusableIndustryCorporaForUser(appUser);
+  const corpus = corpora.find((item) => item.id === corpusId);
+  if (!corpus) return null;
+
+  return {
+    id: corpus.id,
+    name: corpus.name,
+    themeName: corpus.themeName
+  };
 }
 
 function emptyToNull(value: string | undefined) {

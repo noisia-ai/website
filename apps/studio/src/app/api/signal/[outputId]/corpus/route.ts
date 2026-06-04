@@ -37,8 +37,9 @@ export async function GET(
 
   const filters = parsed.data;
   const offset = (filters.page - 1) * filters.limit;
-  const clauses = ["m.study_corpus_id = $1", "m.inclusion_status <> 'excluded'"];
-  const values: unknown[] = [output.studyCorpusId];
+  const scopedCorpusIds = Array.from(new Set([output.studyCorpusId, output.baseCorpusId].filter(Boolean)));
+  const clauses = ["m.study_corpus_id = ANY($1::uuid[])", "m.inclusion_status <> 'excluded'"];
+  const values: unknown[] = [scopedCorpusIds];
 
   if (filters.q.trim()) {
     values.push(`%${filters.q.trim()}%`);
@@ -81,35 +82,7 @@ export async function GET(
         m.*,
         ib.mention_type AS batch_mention_type,
         ib.entity_kind AS batch_entity_kind,
-        ib.entity_label AS batch_entity_label,
-        ib.source_file_name,
-        CASE
-          WHEN lower(COALESCE(m.raw_metadata->'row'->>'domain group', '')) LIKE '%tiktok%'
-            OR lower(COALESCE(m.raw_metadata->'row'->>'domain', '')) LIKE '%tiktok%'
-            OR lower(COALESCE(m.url, '')) LIKE '%tiktok%'
-            OR lower(COALESCE(ib.source_file_name, '')) LIKE '%tiktok%' THEN 'tiktok'
-          WHEN lower(COALESCE(m.raw_metadata->'row'->>'domain group', '')) LIKE '%twitter%'
-            OR lower(COALESCE(m.raw_metadata->'row'->>'domain group', '')) = 'x'
-            OR lower(COALESCE(m.raw_metadata->'row'->>'domain', '')) LIKE '%twitter%'
-            OR lower(COALESCE(m.raw_metadata->'row'->>'domain', '')) LIKE '%x.com%'
-            OR lower(COALESCE(m.url, '')) LIKE '%twitter.com%'
-            OR lower(COALESCE(m.url, '')) LIKE '%x.com%' THEN 'x'
-          WHEN lower(COALESCE(m.raw_metadata->'row'->>'domain group', '')) LIKE '%instagram%'
-            OR lower(COALESCE(m.raw_metadata->'row'->>'domain', '')) LIKE '%instagram%'
-            OR lower(COALESCE(m.url, '')) LIKE '%instagram%' THEN 'instagram'
-          WHEN lower(COALESCE(m.raw_metadata->'row'->>'domain group', '')) LIKE '%facebook%'
-            OR lower(COALESCE(m.raw_metadata->'row'->>'domain', '')) LIKE '%facebook%'
-            OR lower(COALESCE(m.url, '')) LIKE '%facebook%'
-            OR lower(COALESCE(m.url, '')) LIKE '%fb.com%' THEN 'facebook'
-          WHEN lower(COALESCE(m.raw_metadata->'row'->>'domain group', '')) LIKE '%youtube%'
-            OR lower(COALESCE(m.raw_metadata->'row'->>'domain', '')) LIKE '%youtube%'
-            OR lower(COALESCE(m.url, '')) LIKE '%youtube%' THEN 'youtube'
-          WHEN lower(COALESCE(m.raw_metadata->'row'->>'domain group', '')) LIKE '%reddit%'
-            OR lower(COALESCE(m.raw_metadata->'row'->>'domain', '')) LIKE '%reddit%'
-            OR lower(COALESCE(m.url, '')) LIKE '%reddit%' THEN 'reddit'
-          WHEN lower(COALESCE(m.platform, '')) IN ('comment','comments','comentario','comentarios','video','short','shorts','post','posts','tweet','tweets','article','articles','reel','reels','story','stories','image','photo','photos') THEN 'unknown'
-          ELSE COALESCE(NULLIF(lower(m.platform), ''), 'unknown')
-        END AS resolved_platform
+        ib.source_file_name
       FROM mentions m
       LEFT JOIN import_batches ib ON ib.id = m.source_file_id
     )
@@ -136,6 +109,7 @@ export async function GET(
         ${baseSql}
         SELECT DISTINCT ON (m.id)
           m.id AS mention_id,
+          CASE WHEN m.study_corpus_id = ($1::uuid[])[1] THEN 'brand' ELSE 'baseline' END AS corpus_scope,
           m.text_clean AS text,
           m.text_snippet,
           m.resolved_platform AS platform,
@@ -162,7 +136,7 @@ export async function GET(
         ${baseSql}
         SELECT COALESCE(NULLIF(m.resolved_platform, ''), 'unknown') AS platform, COUNT(*)::int AS count
         FROM scoped_mentions m
-        WHERE m.study_corpus_id = $1 AND m.inclusion_status <> 'excluded'
+        WHERE m.study_corpus_id = ANY($1::uuid[]) AND m.inclusion_status <> 'excluded'
         GROUP BY 1
         ORDER BY count DESC
         LIMIT 24

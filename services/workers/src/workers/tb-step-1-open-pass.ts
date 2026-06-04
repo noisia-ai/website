@@ -52,10 +52,19 @@ type MentionRow = {
   text_clean: string;
 };
 
+type SampleStratum = {
+  stratum_key: string;
+  mention_role: string;
+  entity_label: string;
+  count: number;
+  quota: number;
+  sampled: number;
+};
+
 const BATCH_CONCURRENCY = 4;
-const MIN_ROLE_SAMPLE_SHARE = 0.08;
-const MIN_ROLE_SAMPLE_FLOOR = 40;
-const MIN_ROLE_SAMPLE_CEILING = 500;
+const MIN_ENTITY_SAMPLE_SHARE = 0.03;
+const MIN_ENTITY_SAMPLE_FLOOR = 30;
+const MIN_ENTITY_SAMPLE_CEILING = 250;
 const LEGACY_OPEN_PASS_SAFE_MAX = 5000;
 
 /**
@@ -81,13 +90,15 @@ export async function tbStep1OpenPassJob(job: Job<StepJobData>) {
 
     // Build a stratified sample over the snapshot's mention set, capped.
     const requestedSampleSize = resolveOpenPassSampleSize(ctx);
-    const mentions = await sampleSnapshotMentions(ctx.snapshot_id, ctx.study_corpus_id, requestedSampleSize);
+    const sample = await sampleSnapshotMentions(ctx.snapshot_id, ctx.study_corpus_id, requestedSampleSize);
+    const mentions = sample.mentions;
     if (mentions.length === 0) {
       throw new Error("Snapshot tiene 0 menciones — no se puede ejecutar open pass");
     }
 
     console.log(
-      `[tb-step1] sampling ${mentions.length} mentions for open pass (${ctx.meta_json?.analysis_sample?.resolved_study_size ?? "legacy"})`
+      `[tb-step1] sampling ${mentions.length} mentions across ${sample.strata.length} strata ` +
+      `for open pass (${ctx.meta_json?.analysis_sample?.resolved_study_size ?? "legacy"})`
     );
     await job.updateProgress(15);
 
@@ -192,6 +203,8 @@ export async function tbStep1OpenPassJob(job: Job<StepJobData>) {
         snapshot_mentions: ctx.meta_json?.analysis_sample?.snapshot_mentions ?? null,
         study_size: ctx.meta_json?.analysis_sample?.resolved_study_size ?? null,
         sampling_strategy: ctx.meta_json?.analysis_sample?.strategy ?? null,
+        open_pass_sampling_strategy: sample.strategy,
+        sampled_strata: sample.strata.slice(0, 80),
         estimated_cost_usd: ctx.meta_json?.analysis_sample?.estimated_cost_usd ?? null,
         tagged_mentions: allTagged.length,
         unique_tags: uniqueTags.length,
@@ -269,12 +282,13 @@ async function sampleSnapshotMentions(
   snapshotId: string,
   corpusId: string,
   maxSample: number
-): Promise<MentionRow[]> {
+): Promise<{ mentions: MentionRow[]; strata: SampleStratum[]; strategy: string }> {
   const totalRow = await pool.query<{ total: number }>(
     `SELECT COUNT(*)::int AS total
      FROM mentions m
      JOIN corpus_snapshot_mentions csm ON csm.mention_id = m.id
-     WHERE csm.snapshot_id = $1 AND m.study_corpus_id = $2`,
+     WHERE csm.snapshot_id = $1 AND m.study_corpus_id = $2
+       AND length(m.text_clean) >= 20`,
     [snapshotId, corpusId]
   );
   const total = totalRow.rows[0]?.total ?? 0;
@@ -282,7 +296,7 @@ async function sampleSnapshotMentions(
   // Tiny corpora: take everything.
   if (total <= maxSample) {
     const r = await pool.query<MentionRow>(
-      `SELECT m.id, m.platform, m.text_snippet, m.text_clean
+      `SELECT m.id, COALESCE(m.resolved_platform, m.platform, 'unknown') AS platform, m.text_snippet, m.text_clean
        FROM mentions m
        JOIN corpus_snapshot_mentions csm ON csm.mention_id = m.id
        WHERE csm.snapshot_id = $1 AND m.study_corpus_id = $2
@@ -291,37 +305,75 @@ async function sampleSnapshotMentions(
        LIMIT $3`,
       [snapshotId, corpusId, maxSample]
     );
-    return r.rows;
+    return {
+      mentions: r.rows,
+      strategy: "full_snapshot",
+      strata: [
+        {
+          stratum_key: "all",
+          mention_role: "all",
+          entity_label: "Todas las menciones",
+          count: total,
+          quota: Math.min(total, maxSample),
+          sampled: r.rows.length
+        }
+      ]
+    };
   }
 
-  const roles = await pool.query<{ mention_role: string; cnt: number }>(
-    `SELECT COALESCE(ib.mention_type, 'unattributed') AS mention_role, COUNT(*)::int AS cnt
+  const strataRows = await pool.query<{
+    stratum_key: string;
+    mention_role: string;
+    entity_label: string;
+    cnt: number;
+  }>(
+    `SELECT
+       COALESCE(
+         ib.corpus_entity_id::text,
+         NULLIF(m.batch_entity_label, ''),
+         NULLIF(ib.entity_label, ''),
+         COALESCE(ib.mention_type, 'unattributed')
+       ) AS stratum_key,
+       COALESCE(ib.mention_type, 'unattributed') AS mention_role,
+       COALESCE(
+         NULLIF(m.batch_entity_label, ''),
+         NULLIF(ib.entity_label, ''),
+         NULLIF(ib.entity_kind, ''),
+         NULLIF(ib.mention_type, ''),
+         'unattributed'
+       ) AS entity_label,
+       COUNT(*)::int AS cnt
      FROM mentions m
      JOIN corpus_snapshot_mentions csm ON csm.mention_id = m.id
      LEFT JOIN import_batches ib ON ib.id = m.source_file_id
      WHERE csm.snapshot_id = $1 AND m.study_corpus_id = $2
        AND length(m.text_clean) >= 20
-     GROUP BY 1`,
+     GROUP BY 1, 2, 3`,
     [snapshotId, corpusId]
   );
 
-  const roleQuotas = allocateRoleQuotas({ roles: roles.rows, maxSample, total });
+  const strata = allocateEntityQuotas({ strata: strataRows.rows, maxSample, total });
   const allRows: MentionRow[] = [];
-  for (const role of roleQuotas) {
+  for (const stratum of strata) {
     const platforms = await pool.query<{ platform: string; cnt: number }>(
-      `SELECT COALESCE(m.platform, 'unknown') AS platform, COUNT(*)::int AS cnt
+      `SELECT COALESCE(m.resolved_platform, m.platform, 'unknown') AS platform, COUNT(*)::int AS cnt
        FROM mentions m
        JOIN corpus_snapshot_mentions csm ON csm.mention_id = m.id
        LEFT JOIN import_batches ib ON ib.id = m.source_file_id
        WHERE csm.snapshot_id = $1 AND m.study_corpus_id = $2
-         AND COALESCE(ib.mention_type, 'unattributed') = $3
+         AND COALESCE(
+           ib.corpus_entity_id::text,
+           NULLIF(m.batch_entity_label, ''),
+           NULLIF(ib.entity_label, ''),
+           COALESCE(ib.mention_type, 'unattributed')
+         ) = $3
          AND length(m.text_clean) >= 20
        GROUP BY 1`,
-      [snapshotId, corpusId, role.mention_role]
+      [snapshotId, corpusId, stratum.stratum_key]
     );
 
-    let remainingQuota = role.quota;
-    let remainingCount = role.count;
+    let remainingQuota = stratum.quota;
+    let remainingCount = stratum.count;
     for (let index = 0; index < platforms.rows.length; index += 1) {
       const p = platforms.rows[index];
       if (!p) continue;
@@ -333,19 +385,25 @@ async function sampleSnapshotMentions(
       );
       if (quota <= 0) continue;
       const r = await pool.query<MentionRow>(
-        `SELECT m.id, COALESCE(m.platform, 'unknown') AS platform, m.text_snippet, m.text_clean
+        `SELECT m.id, COALESCE(m.resolved_platform, m.platform, 'unknown') AS platform, m.text_snippet, m.text_clean
        FROM mentions m
        JOIN corpus_snapshot_mentions csm ON csm.mention_id = m.id
        LEFT JOIN import_batches ib ON ib.id = m.source_file_id
        WHERE csm.snapshot_id = $1 AND m.study_corpus_id = $2
-         AND COALESCE(ib.mention_type, 'unattributed') = $3
-         AND COALESCE(m.platform, 'unknown') = $4
+         AND COALESCE(
+           ib.corpus_entity_id::text,
+           NULLIF(m.batch_entity_label, ''),
+           NULLIF(ib.entity_label, ''),
+           COALESCE(ib.mention_type, 'unattributed')
+         ) = $3
+         AND COALESCE(m.resolved_platform, m.platform, 'unknown') = $4
          AND length(m.text_clean) >= 20
        ORDER BY random()
        LIMIT $5`,
-        [snapshotId, corpusId, role.mention_role, p.platform, quota]
+        [snapshotId, corpusId, stratum.stratum_key, p.platform, quota]
       );
       allRows.push(...r.rows);
+      stratum.sampled += r.rows.length;
       remainingQuota -= r.rows.length;
       remainingCount -= p.cnt;
 
@@ -356,44 +414,57 @@ async function sampleSnapshotMentions(
   // If proportional rounding pushed us over the cap, trim randomly.
   if (allRows.length > maxSample) {
     allRows.sort(() => Math.random() - 0.5);
-    return allRows.slice(0, maxSample);
+    return { mentions: allRows.slice(0, maxSample), strata, strategy: "entity_platform_stratified" };
   }
 
-  return allRows;
+  return { mentions: allRows, strata, strategy: "entity_platform_stratified" };
 }
 
-function allocateRoleQuotas(args: {
-  roles: { mention_role: string; cnt: number }[];
+function allocateEntityQuotas(args: {
+  strata: { stratum_key: string; mention_role: string; entity_label: string; cnt: number }[];
   maxSample: number;
   total: number;
-}) {
+}): SampleStratum[] {
   const minimum = Math.min(
-    MIN_ROLE_SAMPLE_CEILING,
-    Math.max(MIN_ROLE_SAMPLE_FLOOR, Math.round(args.maxSample * MIN_ROLE_SAMPLE_SHARE))
+    MIN_ENTITY_SAMPLE_CEILING,
+    Math.max(MIN_ENTITY_SAMPLE_FLOOR, Math.round(args.maxSample * MIN_ENTITY_SAMPLE_SHARE))
   );
-  const quotas = args.roles.map((role) => {
-    const proportional = Math.round(args.maxSample * (role.cnt / Math.max(1, args.total)));
+  const quotas: SampleStratum[] = args.strata.map((stratum) => {
+    const proportional = Math.round(args.maxSample * (stratum.cnt / Math.max(1, args.total)));
     const protectedMinimum =
-      role.mention_role === "competitor" || role.mention_role === "industry" || role.mention_role === "brand"
+      stratum.mention_role === "competitor" || stratum.mention_role === "industry" || stratum.mention_role === "brand"
         ? minimum
         : 1;
     return {
-      mention_role: role.mention_role,
-      count: role.cnt,
-      quota: Math.min(role.cnt, Math.max(proportional, protectedMinimum))
+      stratum_key: stratum.stratum_key,
+      mention_role: stratum.mention_role,
+      entity_label: stratum.entity_label,
+      count: stratum.cnt,
+      quota: Math.min(stratum.cnt, Math.max(proportional, protectedMinimum)),
+      sampled: 0
     };
   });
 
-  let overflow = quotas.reduce((sum, role) => sum + role.quota, 0) - args.maxSample;
+  let overflow = quotas.reduce((sum, stratum) => sum + stratum.quota, 0) - args.maxSample;
   if (overflow <= 0) return quotas.filter((role) => role.quota > 0);
 
-  for (const role of [...quotas].sort((a, b) => b.quota - a.quota)) {
-    const floor = Math.min(role.count, role.mention_role === "unattributed" ? 1 : minimum);
-    const reducible = Math.max(0, role.quota - floor);
+  for (const stratum of [...quotas].sort((a, b) => b.quota - a.quota)) {
+    const floor = Math.min(stratum.count, stratum.mention_role === "unattributed" ? 1 : minimum);
+    const reducible = Math.max(0, stratum.quota - floor);
     const reduction = Math.min(reducible, overflow);
-    role.quota -= reduction;
+    stratum.quota -= reduction;
     overflow -= reduction;
     if (overflow <= 0) break;
+  }
+
+  if (overflow > 0) {
+    for (const stratum of [...quotas].sort((a, b) => b.quota - a.quota)) {
+      const reducible = Math.max(0, stratum.quota - 1);
+      const reduction = Math.min(reducible, overflow);
+      stratum.quota -= reduction;
+      overflow -= reduction;
+      if (overflow <= 0) break;
+    }
   }
 
   return quotas.filter((role) => role.quota > 0);

@@ -257,7 +257,7 @@
   },
   "NewStudy": {
     "steps": {
-      "brand": "Brand",
+      "brand": "Subject",
       "objective": "Objective",
       "sources": "Sources",
       "brief": "Brief",
@@ -268,17 +268,28 @@
       "fallbackTitle": "New study",
       "newBrand": "New brand",
       "noBrand": "No brand",
+      "newTheme": "New theme",
+      "noTheme": "No theme",
       "methodology": "Methodology",
       "aria": "Study setup"
     },
     "validation": {
       "brand": "Select a brand.",
+      "theme": "Select a theme.",
       "methodology": "Select a methodology.",
       "brandName": "Add the brand name.",
+      "themeName": "Add the theme name.",
+      "industryFocus": "Add at least one industry or category.",
       "organization": "Add the organization.",
       "studyName": "Add a study name.",
       "businessQuestion": "Add a concrete business question, at least 10 characters.",
       "completeMarked": "Complete the marked fields before continuing."
+    },
+    "subject": {
+      "eyebrow": "Study subject",
+      "title": "What do you want to study",
+      "brand": "Brand",
+      "theme": "Industry / Theme"
     },
     "brand": {
       "eyebrow": "Brand OS",
@@ -299,6 +310,28 @@
       "competitorsHint": "Competitor names only, one per line. Rankings, links, and long-form research belong in market notes.",
       "marketNotes": "Market notes",
       "marketNotesPlaceholder": "What it sells, promises, constraints, known friction, recent campaigns..."
+    },
+    "baseline": {
+      "eyebrow": "Corpus reuse",
+      "title": "Use industry corpus as baseline",
+      "copy": "Link this brand study to an existing industry corpus. Mentions are not copied; outputs consult both corpora.",
+      "label": "Industry baseline",
+      "none": "No baseline",
+      "empty": "No industry corpora available",
+      "fallbackCorpus": "Industry corpus",
+      "selected": "Linked baseline: {name} · {count} mentions."
+    },
+    "theme": {
+      "existing": "Existing theme",
+      "create": "Create theme",
+      "theme": "Theme",
+      "name": "Theme name",
+      "slug": "Slug",
+      "industryFocus": "Industry or category",
+      "industryFocusPlaceholder": "Telecom, retail beauty, digital banking...",
+      "geoFocus": "Countries",
+      "description": "Description",
+      "descriptionPlaceholder": "What the study covers, which players are included, and what limits it should respect..."
     },
     "objective": {
       "eyebrow": "Study Brief",
@@ -348,6 +381,12 @@
       "eyebrow": "Compiled Brief",
       "title": "What Noisia will use to start",
       "brand": "Brand",
+      "subject": "Subject",
+      "subjectType": "Type",
+      "brandSubject": "Brand",
+      "themeSubject": "Industry / theme",
+      "baseline": "Baseline",
+      "baselineLinked": "Linked industry corpus",
       "methodology": "Methodology",
       "question": "Question",
       "decision": "Decision",
@@ -382,12 +421,14 @@
     },
     "progress": {
       "creatingBrand": "Creating Brand OS...",
+      "creatingTheme": "Creating theme...",
       "creatingStudy": "Creating study...",
       "uploadingKnowledge": "Uploading Knowledge Base...",
       "readyEngine": "Ready to launch Engine.",
       "knowledgeReady": "Knowledge Base ready.",
       "analyzingKnowledge": "Analyzing Knowledge Base... {progress}%",
       "fallbackBrandError": "Could not create brand.",
+      "fallbackThemeError": "Could not create theme.",
       "fallbackStudyError": "Could not create the study.",
       "fallbackKnowledgeProcessError": "Could not process Knowledge Base.",
       "fallbackKnowledgeReadError": "Could not read the processed Knowledge Base.",
@@ -395,7 +436,8 @@
       "fieldFallback": "field",
       "invalidFallback": "invalid",
       "knowledgeFailed": "Knowledge Base analysis failed.",
-      "knowledgeTimeout": "Knowledge Base analysis took too long."
+      "knowledgeTimeout": "Knowledge Base analysis took too long.",
+      "noWorker": "No worker is processing the queue. Start the workers service (pnpm --filter @noisia/workers dev) and retry."
     }
   },
   "Team": {

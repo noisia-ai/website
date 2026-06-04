@@ -37,6 +37,7 @@ type Batch = {
   queryIterationId: string | null;
   mentionType: string | null;
   competitorId: string | null;
+  corpusEntityId: string | null;
   entityKind: string | null;
   entityLabel: string | null;
   recordCount: number | null;
@@ -61,6 +62,22 @@ type CompetitorOption = {
   subVertical: string | null;
 };
 
+type CorpusEntity = {
+  id: string;
+  competitorId: string | null;
+  entityKind: string;
+  name: string;
+  aliases: string[] | null;
+  handles: string[] | null;
+  querySeeds: string[] | null;
+  notes: string | null;
+  isCategoryBaseline: boolean | null;
+  priority: number | null;
+  status: string;
+  batchCount: number;
+  includedCount: number;
+};
+
 type Assessment = {
   ready_for_study: boolean;
   confidence: number;
@@ -81,6 +98,7 @@ type Assessment = {
 type WizardProps = {
   corpusId: string;
   corpusName: string;
+  subjectType: "brand" | "theme";
   methodologyName: string | null;
   corpus: CorpusCounts;
   iterations: Iteration[];
@@ -94,6 +112,7 @@ type WizardProps = {
   snapshots: Snapshot[];
   cleanups: CleanupAction[];
   competitors: CompetitorOption[];
+  entities: CorpusEntity[];
 };
 
 type EvalNotes = {
@@ -140,6 +159,7 @@ export function EngineWizard(props: WizardProps) {
   const {
     corpusId,
     corpusName,
+    subjectType,
     methodologyName,
     corpus,
     iterations,
@@ -153,6 +173,7 @@ export function EngineWizard(props: WizardProps) {
     snapshots,
     cleanups,
     competitors,
+    entities,
   } = props;
 
   // Active step — server's computation is the source of truth, but we may
@@ -287,6 +308,8 @@ export function EngineWizard(props: WizardProps) {
               iteration={current}
               existingBatches={currentBatches}
               competitors={competitors}
+              entities={entities}
+              subjectType={subjectType}
               onComplete={() => {
                 router.refresh();
                 setActiveStep("evaluate");
@@ -525,18 +548,34 @@ function StepUpload({
   iteration,
   existingBatches,
   competitors,
+  entities,
+  subjectType,
   onComplete,
 }: {
   corpusId: string;
   iteration: Iteration;
   existingBatches: Batch[];
   competitors: CompetitorOption[];
+  entities: CorpusEntity[];
+  subjectType: "brand" | "theme";
   onComplete: () => void;
 }) {
-  const wantsIndustry = !!iteration.industryQueryText;
+  const primaryMentionType = subjectType === "theme" ? "industry" : "brand";
+  const primaryQueryText = subjectType === "theme"
+    ? iteration.industryQueryText ?? iteration.queryText
+    : iteration.queryText;
+  const wantsIndustry = subjectType === "brand" && !!iteration.industryQueryText;
   const wantsCompetitor = !!iteration.competitorQueryText;
-  const brandDone = existingBatches.some(
-    (b) => b.mentionType === "brand" && b.status === "completed"
+  const activeEntities = entities.filter((entity) => entity.status !== "archived");
+  const entityMode = activeEntities.length > 0;
+  const uploadedEntityIds = new Set(
+    existingBatches
+      .filter((batch) => batch.status === "completed" && batch.corpusEntityId)
+      .map((batch) => batch.corpusEntityId as string)
+  );
+  const doneEntityCount = activeEntities.filter((entity) => uploadedEntityIds.has(entity.id)).length;
+  const primaryDone = existingBatches.some(
+    (b) => b.mentionType === primaryMentionType && b.status === "completed"
   );
   const competitorDone = existingBatches.some(
     (b) => b.mentionType === "competitor" && b.status === "completed"
@@ -544,16 +583,8 @@ function StepUpload({
   const industryDone = existingBatches.some(
     (b) => b.mentionType === "industry" && b.status === "completed"
   );
-  const allDone = brandDone && (!wantsCompetitor || competitorDone) && (!wantsIndustry || industryDone);
-
-  // The button only appears once both required CSVs have been uploaded
-  useEffect(() => {
-    if (allDone) {
-      // tiny delay to let the success animation breathe
-      const t = setTimeout(onComplete, 600);
-      return () => clearTimeout(t);
-    }
-  }, [allDone, onComplete]);
+  const legacyUploadsDone = primaryDone && (!wantsCompetitor || competitorDone) && (!wantsIndustry || industryDone);
+  const allDone = entityMode ? doneEntityCount === activeEntities.length : legacyUploadsDone;
 
   return (
     <div className="step-body">
@@ -564,59 +595,317 @@ function StepUpload({
 
       <div className="wizard-queries">
         <QueryBlock
-          label="Query de marca"
-          accent="brand"
-          text={iteration.queryText}
+          label={subjectType === "theme" ? "Query de categoría / peer set" : "Query de marca"}
+          accent={primaryMentionType}
+          text={primaryQueryText}
         />
         {iteration.competitorQueryText && (
           <QueryBlock
-            label="Query de competencia"
+            label={subjectType === "theme" ? "Query de peers / competidores" : "Query de competencia"}
             accent="competitor"
             text={iteration.competitorQueryText}
           />
         )}
-        {iteration.industryQueryText && (
+        {subjectType === "brand" && iteration.industryQueryText && (
           <QueryBlock
-            label="Query de industria"
+            label="Query de categoría / baseline"
             accent="industry"
             text={iteration.industryQueryText}
           />
         )}
       </div>
 
-      <div className={`upload-grid${wantsIndustry || wantsCompetitor ? "" : " upload-grid--single"}`}>
-        <UploadSlot
-          corpusId={corpusId}
-          iterationId={iteration.id}
-          mentionType="brand"
-          done={brandDone}
-        />
-        {wantsCompetitor && (
+      <PeerSetPanel
+        corpusId={corpusId}
+        entities={entities}
+        existingBatches={existingBatches}
+        iterationId={iteration.id}
+      />
+
+      {entityMode ? (
+        <div className="peer-upload-requirement">
+          <Icon name={allDone ? "check" : "info"} size={14} />
+          <span>
+            CSVs por entidad activa: {doneEntityCount} / {activeEntities.length} listos.
+          </span>
+        </div>
+      ) : (
+        <div className={`upload-grid${wantsIndustry || wantsCompetitor ? "" : " upload-grid--single"}`}>
           <UploadSlot
             corpusId={corpusId}
             iterationId={iteration.id}
-            mentionType="competitor"
-            competitors={competitors}
-            done={competitorDone}
+            mentionType={primaryMentionType}
+            done={primaryDone}
           />
-        )}
-        {wantsIndustry && (
-          <UploadSlot
-            corpusId={corpusId}
-            iterationId={iteration.id}
-            mentionType="industry"
-            done={industryDone}
-          />
-        )}
-      </div>
+          {wantsCompetitor && (
+            <UploadSlot
+              corpusId={corpusId}
+              iterationId={iteration.id}
+              mentionType="competitor"
+              competitors={competitors}
+              done={competitorDone}
+            />
+          )}
+          {wantsIndustry && (
+            <UploadSlot
+              corpusId={corpusId}
+              iterationId={iteration.id}
+              mentionType="industry"
+              done={industryDone}
+            />
+          )}
+        </div>
+      )}
 
       {allDone && (
-        <p className="wizard-success-hint">
-          <Icon name="check" size={14} /> CSVs listos · pasando a evaluación…
-        </p>
+        <div className="wizard-success-actions">
+          <p className="wizard-success-hint">
+            <Icon name="check" size={14} /> CSVs listos.
+          </p>
+          <button className="wizard-cta" onClick={onComplete} type="button">
+            Continuar a evaluación
+          </button>
+        </div>
       )}
     </div>
   );
+}
+
+function PeerSetPanel({
+  corpusId,
+  entities,
+  existingBatches,
+  iterationId,
+}: {
+  corpusId: string;
+  entities: CorpusEntity[];
+  existingBatches: Batch[];
+  iterationId: string;
+}) {
+  const router = useRouter();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [entityKind, setEntityKind] = useState<"competitor" | "category" | "primary_brand">("competitor");
+  const [name, setName] = useState("");
+  const [aliases, setAliases] = useState("");
+  const [handles, setHandles] = useState("");
+  const [querySeeds, setQuerySeeds] = useState("");
+  const [notes, setNotes] = useState("");
+  const [isCategoryBaseline, setIsCategoryBaseline] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const activeEntities = entities.filter((entity) => entity.status !== "archived");
+
+  function resetForm() {
+    setEditingId(null);
+    setEntityKind("competitor");
+    setName("");
+    setAliases("");
+    setHandles("");
+    setQuerySeeds("");
+    setNotes("");
+    setIsCategoryBaseline(false);
+    setError(null);
+  }
+
+  function edit(entity: CorpusEntity) {
+    setEditingId(entity.id);
+    setEntityKind(normalizeEntityKind(entity.entityKind));
+    setName(entity.name);
+    setAliases((entity.aliases ?? []).join("\n"));
+    setHandles((entity.handles ?? []).join("\n"));
+    setQuerySeeds((entity.querySeeds ?? []).join("\n"));
+    setNotes(entity.notes ?? "");
+    setIsCategoryBaseline(Boolean(entity.isCategoryBaseline));
+    setError(null);
+  }
+
+  async function save() {
+    if (name.trim().length < 2) {
+      setError("Pon el nombre de la entidad.");
+      return;
+    }
+    setIsSaving(true);
+    setError(null);
+    try {
+      const payload = {
+        entity_kind: entityKind,
+        name: name.trim(),
+        aliases: splitEntityLines(aliases),
+        handles: splitEntityLines(handles),
+        query_seeds: splitEntityLines(querySeeds),
+        notes,
+        is_category_baseline: entityKind === "category" && isCategoryBaseline,
+        status: "active"
+      };
+      const res = await fetch(
+        editingId ? `/api/corpora/${corpusId}/entities/${editingId}` : `/api/corpora/${corpusId}/entities`,
+        {
+          method: editingId ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        }
+      );
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.message ?? "No se pudo guardar la entidad.");
+      resetForm();
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo guardar la entidad.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function archive(entity: CorpusEntity) {
+    if (!window.confirm(`¿Archivar ${entity.name}? Sus batches históricos se conservan.`)) return;
+    setError(null);
+    const res = await fetch(`/api/corpora/${corpusId}/entities/${entity.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      setError(json?.message ?? "No se pudo archivar la entidad.");
+      return;
+    }
+    router.refresh();
+  }
+
+  return (
+    <section className="peer-set-panel">
+      <header className="peer-set-head">
+        <div>
+          <p className="vitals-eyebrow">Peer set reusable</p>
+          <h3>Entidades del corpus</h3>
+          <p>Define peers, marca principal o baseline de categoría con aliases, handles y query seeds.</p>
+        </div>
+        {editingId && (
+          <button className="btn-micro" type="button" onClick={resetForm}>
+            Cancelar edición
+          </button>
+        )}
+      </header>
+
+      <div className="peer-entity-form">
+        <label>
+          <span>Tipo</span>
+          <select
+            value={entityKind}
+            onChange={(event) => {
+              const next = normalizeEntityKind(event.target.value);
+              setEntityKind(next);
+              if (next !== "category") setIsCategoryBaseline(false);
+            }}
+          >
+            <option value="competitor">Peer / competidor</option>
+            <option value="category">Category baseline</option>
+            <option value="primary_brand">Marca principal</option>
+          </select>
+        </label>
+        <label>
+          <span>Nombre</span>
+          <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Telcel, AT&T, Telefonía MX..." />
+        </label>
+        <label>
+          <span>Aliases</span>
+          <textarea value={aliases} onChange={(event) => setAliases(event.target.value)} placeholder="Uno por línea o separado por coma" />
+        </label>
+        <label>
+          <span>Handles</span>
+          <textarea value={handles} onChange={(event) => setHandles(event.target.value)} placeholder="@telcel\n@attmx" />
+        </label>
+        <label>
+          <span>Query seeds</span>
+          <textarea value={querySeeds} onChange={(event) => setQuerySeeds(event.target.value)} placeholder="términos que deben entrar a la query" />
+        </label>
+        <label>
+          <span>Notas</span>
+          <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Scope, límites, marcas del grupo, etc." />
+        </label>
+        {entityKind === "category" && (
+          <label className="peer-baseline-toggle">
+            <input checked={isCategoryBaseline} onChange={(event) => setIsCategoryBaseline(event.target.checked)} type="checkbox" />
+            <span>Usar como category baseline</span>
+          </label>
+        )}
+        <button className="wizard-cta" type="button" onClick={save} disabled={isSaving}>
+          <Icon name={isSaving ? "spinner" : "sparkle"} size={14} />
+          {editingId ? "Guardar entidad" : "Crear entidad"}
+        </button>
+      </div>
+
+      {error && (
+        <p className="wizard-error">
+          <Icon name="alert" size={14} /> {error}
+        </p>
+      )}
+
+      <div className="peer-entity-list">
+        {activeEntities.length === 0 ? (
+          <p className="peer-empty">Aún no hay entidades. Crea peers para poder subir CSVs por jugador o baseline.</p>
+        ) : (
+          activeEntities.map((entity) => {
+            const mentionType = mentionTypeForEntity(entity);
+            const done = existingBatches.some((batch) => batch.corpusEntityId === entity.id && batch.status === "completed");
+            return (
+              <article className="peer-entity-card" key={entity.id}>
+                <header>
+                  <div>
+                    <p className={`upload-slot-tag upload-slot-tag--${mentionType}`}>{entity.entityKind}</p>
+                    <h4>{entity.name}</h4>
+                    <small>{fmtNumber(entity.includedCount)} menciones · {entity.batchCount} batches</small>
+                  </div>
+                  <div className="peer-entity-actions">
+                    <button className="btn-micro" type="button" onClick={() => edit(entity)}>Editar</button>
+                    <button className="btn-micro" type="button" onClick={() => archive(entity)}>Archivar</button>
+                  </div>
+                </header>
+                <PeerSeedLine label="Aliases" values={entity.aliases ?? []} />
+                <PeerSeedLine label="Handles" values={entity.handles ?? []} />
+                <PeerSeedLine label="Seeds" values={entity.querySeeds ?? []} />
+                <UploadSlot
+                  corpusId={corpusId}
+                  entity={entity}
+                  iterationId={iterationId}
+                  mentionType={mentionType}
+                  done={done}
+                />
+              </article>
+            );
+          })
+        )}
+      </div>
+    </section>
+  );
+}
+
+function PeerSeedLine({ label, values }: { label: string; values: string[] }) {
+  if (values.length === 0) return null;
+  return (
+    <p className="peer-seed-line">
+      <span>{label}</span>
+      {values.slice(0, 8).join(", ")}
+    </p>
+  );
+}
+
+function mentionTypeForEntity(entity: Pick<CorpusEntity, "entityKind">): "brand" | "competitor" | "industry" {
+  if (entity.entityKind === "primary_brand") return "brand";
+  if (entity.entityKind === "category") return "industry";
+  return "competitor";
+}
+
+function normalizeEntityKind(value: string): "competitor" | "category" | "primary_brand" {
+  if (value === "category" || value === "primary_brand") return value;
+  return "competitor";
+}
+
+function splitEntityLines(value: string) {
+  return Array.from(
+    new Set(
+      value
+        .split(/\n|,/)
+        .map((item) => item.trim().replace(/\s+/g, " "))
+        .filter(Boolean)
+    )
+  ).slice(0, 40);
 }
 
 function QueryBlock({
@@ -640,12 +929,14 @@ function UploadSlot({
   corpusId,
   iterationId,
   mentionType,
+  entity,
   competitors = [],
   done,
 }: {
   corpusId: string;
   iterationId: string;
   mentionType: "brand" | "competitor" | "industry";
+  entity?: CorpusEntity;
   competitors?: CompetitorOption[];
   done: boolean;
 }) {
@@ -655,9 +946,9 @@ function UploadSlot({
     done ? "success" : "idle"
   );
   const [entityLabel, setEntityLabel] = useState(
-    mentionType === "competitor" ? "Pool competitivo" : mentionType === "industry" ? "Baseline de categoría" : "Marca"
+    entity?.name ?? (mentionType === "competitor" ? "Pool competitivo" : mentionType === "industry" ? "Baseline de categoría" : "Marca")
   );
-  const [competitorId, setCompetitorId] = useState<string>("");
+  const [competitorId, setCompetitorId] = useState<string>(entity?.competitorId ?? "");
   const [stats, setStats] = useState<{ included: number; excluded: number; duplicates: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
@@ -671,24 +962,31 @@ function UploadSlot({
     setError(null);
     setProgress(15);
 
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("mention_type", mentionType);
-    fd.append("query_iteration_id", iterationId);
-    fd.append("source_label", `iter_${mentionType}`);
-    if (mentionType === "competitor" && competitorId) {
-      fd.append("competitor_id", competitorId);
+    // Metadata goes in the query string; the CSV is sent as the raw request
+    // body so the browser streams it from disk and the server streams it back —
+    // multipart FormData buffers the whole file in memory and OOMs on ~0.5GB CSVs.
+    const params = new URLSearchParams();
+    params.set("mention_type", mentionType);
+    params.set("query_iteration_id", iterationId);
+    params.set("source_label", entity ? `entity_${entity.id}` : `iter_${mentionType}`);
+    params.set("file_name", file.name);
+    if (entity) {
+      params.set("corpus_entity_id", entity.id);
     }
-    fd.append("entity_label", entityLabel.trim());
-    fd.append(
+    if (mentionType === "competitor" && (entity?.competitorId || competitorId)) {
+      params.set("competitor_id", entity?.competitorId ?? competitorId);
+    }
+    params.set("entity_label", entityLabel.trim());
+    params.set(
       "entity_kind",
-      mentionType === "brand"
+      entity?.entityKind ??
+      (mentionType === "brand"
         ? "primary_brand"
         : mentionType === "industry"
           ? "category"
           : competitorId || (entityLabel.trim() && entityLabel.trim() !== "Pool competitivo")
             ? "competitor"
-            : "competitor_pool"
+            : "competitor_pool")
     );
 
     // Fake progressive feedback while server processes
@@ -697,9 +995,10 @@ function UploadSlot({
     }, 400);
 
     try {
-      const res = await fetch(`/api/corpora/${corpusId}/mentions/csv-upload`, {
+      const res = await fetch(`/api/corpora/${corpusId}/mentions/csv-upload?${params.toString()}`, {
         method: "POST",
-        body: fd,
+        headers: { "content-type": "text/csv" },
+        body: file,
       });
       clearInterval(tick);
       const json = await res.json();
@@ -710,6 +1009,25 @@ function UploadSlot({
         setError(short);
         setStatus("error");
         setProgress(0);
+        return;
+      }
+      if (json.job_id) {
+        const job = await waitForCsvIngestJob(String(json.job_id), setProgress);
+        if (job.status !== "completed") {
+          setError(job.failed_reason ?? "La ingesta quedó detenida en el worker.");
+          setStatus("error");
+          setProgress(0);
+          return;
+        }
+        const resultStats = job.result?.stats;
+        setProgress(100);
+        setStats(resultStats ? {
+          included: resultStats.included_count ?? 0,
+          excluded: resultStats.excluded_count ?? 0,
+          duplicates: resultStats.duplicate_count ?? 0,
+        } : null);
+        setStatus("success");
+        router.refresh();
         return;
       }
       setProgress(100);
@@ -764,7 +1082,7 @@ function UploadSlot({
         </>
       ) : (
         <>
-          {mentionType !== "brand" && (
+          {!entity && mentionType !== "brand" && (
             <div className="upload-entity-stack">
               {mentionType === "competitor" && competitors.length > 0 ? (
                 <label className="upload-entity-field">
@@ -835,6 +1153,43 @@ function UploadSlot({
       )}
     </div>
   );
+}
+
+type CsvIngestJobPollResult = {
+  status?: string;
+  progress?: number;
+  worker_alive?: boolean;
+  failed_reason?: string | null;
+  result?: {
+    stats?: {
+      included_count?: number;
+      excluded_count?: number;
+      duplicate_count?: number;
+    };
+  } | null;
+};
+
+async function waitForCsvIngestJob(
+  jobId: string,
+  setProgress: (next: number | ((previous: number) => number)) => void
+): Promise<CsvIngestJobPollResult> {
+  for (;;) {
+    await sleep(2500);
+    const response = await fetch(`/api/jobs/${jobId}`);
+    const job = await response.json().catch(() => ({})) as CsvIngestJobPollResult;
+    if (!response.ok) return { status: "failed", failed_reason: "No se pudo leer el estado del job." };
+    if (job.worker_alive === false) {
+      return { status: "failed", failed_reason: "El worker no está activo para procesar esta ingesta." };
+    }
+    if (typeof job.progress === "number") {
+      setProgress(Math.min(98, Math.max(20, Math.round(job.progress))));
+    }
+    if (job.status === "completed" || job.status === "failed") return job;
+  }
+}
+
+function sleep(ms: number) {
+  return new Promise((resolvePromise) => window.setTimeout(resolvePromise, ms));
 }
 
 const evaluationStages = [

@@ -259,6 +259,7 @@ export const studyCorpora = pgTable(
     name: text("name"),
     brandId: uuid("brand_id").references(() => brands.id),
     themeId: uuid("theme_id").references(() => themes.id),
+    baseCorpusId: uuid("base_corpus_id").references((): AnyPgColumn => studyCorpora.id, { onDelete: "set null" }),
     methodologyId: uuid("methodology_id")
       .notNull()
       .references(() => methodologies.id),
@@ -292,6 +293,7 @@ export const studyCorpora = pgTable(
       .on(table.brandId, table.methodologyId, table.createdAt)
       .where(sql`${table.brandId} IS NOT NULL`),
     index("idx_sc_theme").on(table.themeId),
+    index("idx_sc_base_corpus").on(table.baseCorpusId),
     index("idx_sc_theme_method_created")
       .on(table.themeId, table.methodologyId, table.createdAt)
       .where(sql`${table.themeId} IS NOT NULL`),
@@ -327,6 +329,35 @@ export const queryIterations = pgTable(
     unique("uq_query_iterations_corpus_iteration").on(table.studyCorpusId, table.iterationNumber),
     index("idx_qi_corpus").on(table.studyCorpusId),
     index("idx_qi_created").on(table.createdAt)
+  ]
+);
+
+export const corpusEntities = pgTable(
+  "corpus_entities",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    studyCorpusId: uuid("study_corpus_id")
+      .notNull()
+      .references(() => studyCorpora.id, { onDelete: "cascade" }),
+    competitorId: uuid("competitor_id").references(() => competitors.id),
+    /** primary_brand | competitor | category */
+    entityKind: text("entity_kind").notNull(),
+    name: text("name").notNull(),
+    aliases: text("aliases").array().default(emptyTextArray),
+    handles: text("handles").array().default(emptyTextArray),
+    querySeeds: text("query_seeds").array().default(emptyTextArray),
+    notes: text("notes"),
+    isCategoryBaseline: boolean("is_category_baseline").default(false),
+    priority: integer("priority"),
+    status: text("status").notNull().default("active"),
+    createdByUserId: uuid("created_by_user_id").references(() => users.id),
+    createdAt: now(),
+    updatedAt: updatedAt()
+  },
+  (table) => [
+    index("idx_corpus_entities_corpus").on(table.studyCorpusId),
+    index("idx_corpus_entities_kind").on(table.studyCorpusId, table.entityKind),
+    index("idx_corpus_entities_competitor").on(table.competitorId)
   ]
 );
 
@@ -397,6 +428,7 @@ export const importBatches = pgTable(
     /** 'brand' | 'competitor' | 'industry' | null — null = legacy/uncategorized */
     mentionType: text("mention_type"),
     competitorId: uuid("competitor_id").references(() => competitors.id),
+    corpusEntityId: uuid("corpus_entity_id").references(() => corpusEntities.id),
     /** primary_brand | competitor_pool | competitor | category | unknown */
     entityKind: text("entity_kind"),
     entityLabel: text("entity_label"),
@@ -414,6 +446,7 @@ export const importBatches = pgTable(
   (table) => [
     index("idx_import_batches_corpus").on(table.studyCorpusId),
     index("idx_import_batches_entity").on(table.studyCorpusId, table.mentionType, table.entityKind),
+    index("idx_import_batches_corpus_entity").on(table.studyCorpusId, table.corpusEntityId),
     index("idx_import_batches_competitor").on(table.studyCorpusId, table.competitorId),
     index("idx_import_batches_status").on(table.status)
   ]
@@ -436,6 +469,26 @@ export const corpusSnapshots = pgTable(
     createdAt: now()
   },
   (table) => [index("idx_snap_corpus").on(table.studyCorpusId)]
+);
+
+export const corpusSnapshotAggregates = pgTable(
+  "corpus_snapshot_aggregates",
+  {
+    snapshotId: uuid("snapshot_id")
+      .primaryKey()
+      .references(() => corpusSnapshots.id, { onDelete: "cascade" }),
+    studyCorpusId: uuid("study_corpus_id")
+      .notNull()
+      .references(() => studyCorpora.id, { onDelete: "cascade" }),
+    totalMentions: integer("total_mentions").notNull().default(0),
+    windowStart: timestamp("window_start", { withTimezone: true }),
+    windowEnd: timestamp("window_end", { withTimezone: true }),
+    platformDistribution: jsonb("platform_distribution").notNull().default(sql`'[]'::jsonb`),
+    contentTypeDistribution: jsonb("content_type_distribution").notNull().default(sql`'[]'::jsonb`),
+    volumeTimeline: jsonb("volume_timeline").notNull().default(sql`'[]'::jsonb`),
+    refreshedAt: timestamp("refreshed_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [index("idx_snapshot_aggregates_corpus").on(table.studyCorpusId)]
 );
 
 // Cleanup actions: every bulk exclusion (Claude or manual) for audit + revert.
@@ -481,6 +534,11 @@ export const mentions = pgTable(
     language: char("language", { length: 2 }),
     publishedAt: timestamp("published_at", { withTimezone: true }).notNull(),
     platform: text("platform").notNull(),
+    /** Materialized at ingest (see lib/csv/sentione.ts) so Signal dashboard
+     * aggregates don't extract platform/channel from raw_metadata jsonb per row. */
+    resolvedPlatform: text("resolved_platform"),
+    contentType: text("content_type"),
+    batchEntityLabel: text("batch_entity_label"),
     url: text("url"),
     authorId: uuid("author_id").references(() => authors.id),
     country: char("country", { length: 2 }),

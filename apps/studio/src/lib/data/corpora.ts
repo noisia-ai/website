@@ -4,6 +4,7 @@ import {
   brands,
   brandKnowledgeSources,
   cleanupActions,
+  corpusEntities,
   corpusSnapshots,
   importBatches,
   mentions,
@@ -43,6 +44,8 @@ export type MentionFilters = {
 
 export type TbAnalysisState = Awaited<ReturnType<typeof getTbAnalysisForCorpus>>;
 
+export type CorpusEntityWithStats = Awaited<ReturnType<typeof listCorpusEntitiesForCorpus>>[number];
+
 export async function getCorpusForUser(appUser: AppUser, corpusId: string) {
   const [corpus] = await db
     .select({
@@ -50,6 +53,7 @@ export async function getCorpusForUser(appUser: AppUser, corpusId: string) {
       name: studyCorpora.name,
       brandId: studyCorpora.brandId,
       themeId: studyCorpora.themeId,
+      baseCorpusId: studyCorpora.baseCorpusId,
       status: studyCorpora.status,
       businessQuestion: studyCorpora.businessQuestion,
       decisionToInform: studyCorpora.decisionToInform,
@@ -61,15 +65,37 @@ export async function getCorpusForUser(appUser: AppUser, corpusId: string) {
       brandName: brands.name,
       themeSlug: themes.slug,
       themeName: themes.name,
-      organizationId: organizations.id,
-      organizationSlug: organizations.slug,
-      organizationName: organizations.displayName
+      baseCorpusName: sql<string | null>`(
+        select name
+        from study_corpora base_corpus
+        where base_corpus.id = ${studyCorpora.baseCorpusId}
+        limit 1
+      )`,
+      baseCorpusThemeName: sql<string | null>`(
+        select t_base.name
+        from study_corpora base_corpus
+        join themes t_base on t_base.id = base_corpus.theme_id
+        where base_corpus.id = ${studyCorpora.baseCorpusId}
+        limit 1
+      )`,
+      organizationId: sql<string | null>`coalesce(${brands.organizationId}, ${themes.organizationId})`,
+      organizationSlug: sql<string | null>`(
+        select ${organizations.slug}
+        from ${organizations}
+        where ${organizations.id} = coalesce(${brands.organizationId}, ${themes.organizationId})
+        limit 1
+      )`,
+      organizationName: sql<string | null>`(
+        select ${organizations.displayName}
+        from ${organizations}
+        where ${organizations.id} = coalesce(${brands.organizationId}, ${themes.organizationId})
+        limit 1
+      )`
     })
     .from(studyCorpora)
     .innerJoin(methodologies, eq(methodologies.id, studyCorpora.methodologyId))
     .leftJoin(brands, eq(brands.id, studyCorpora.brandId))
     .leftJoin(themes, eq(themes.id, studyCorpora.themeId))
-    .leftJoin(organizations, eq(organizations.id, brands.organizationId))
     .where(eq(studyCorpora.id, corpusId))
     .limit(1);
 
@@ -146,6 +172,38 @@ export async function listActiveMethodologies() {
     .orderBy(asc(methodologies.name), desc(methodologies.version));
 }
 
+export async function listReusableIndustryCorporaForUser(appUser: AppUser) {
+  const rows = await db
+    .select({
+      id: studyCorpora.id,
+      name: studyCorpora.name,
+      status: studyCorpora.status,
+      themeName: themes.name,
+      themeSlug: themes.slug,
+      organizationId: themes.organizationId,
+      isPublic: themes.isPublic,
+      includedCount: sql<number>`coalesce((
+        select count(*)::int
+        from ${mentions}
+        where ${mentions.studyCorpusId} = ${studyCorpora.id}
+          and ${mentions.inclusionStatus} = 'included'
+      ), 0)`,
+      updatedAt: studyCorpora.updatedAt
+    })
+    .from(studyCorpora)
+    .innerJoin(themes, eq(themes.id, studyCorpora.themeId))
+    .where(ne(studyCorpora.status, "archived"))
+    .orderBy(desc(studyCorpora.updatedAt));
+
+  if (appUser.userType === "noisia_internal") {
+    return rows;
+  }
+
+  return rows.filter((row) => {
+    return row.isPublic || (!!appUser.organizationId && row.organizationId === appUser.organizationId);
+  });
+}
+
 export async function listImportBatchesForCorpus(corpusId: string) {
   return db
     .select({
@@ -154,6 +212,7 @@ export async function listImportBatchesForCorpus(corpusId: string) {
       sourceFileName: importBatches.sourceFileName,
       mentionType: importBatches.mentionType,
       competitorId: importBatches.competitorId,
+      corpusEntityId: importBatches.corpusEntityId,
       entityKind: importBatches.entityKind,
       entityLabel: importBatches.entityLabel,
       recordCount: importBatches.recordCount,
@@ -166,6 +225,45 @@ export async function listImportBatchesForCorpus(corpusId: string) {
     .from(importBatches)
     .where(eq(importBatches.studyCorpusId, corpusId))
     .orderBy(desc(importBatches.createdAt));
+}
+
+export async function listCorpusEntitiesForCorpus(corpusId: string) {
+  return db
+    .select({
+      id: corpusEntities.id,
+      studyCorpusId: corpusEntities.studyCorpusId,
+      competitorId: corpusEntities.competitorId,
+      entityKind: corpusEntities.entityKind,
+      name: corpusEntities.name,
+      aliases: corpusEntities.aliases,
+      handles: corpusEntities.handles,
+      querySeeds: corpusEntities.querySeeds,
+      notes: corpusEntities.notes,
+      isCategoryBaseline: corpusEntities.isCategoryBaseline,
+      priority: corpusEntities.priority,
+      status: corpusEntities.status,
+      createdAt: corpusEntities.createdAt,
+      updatedAt: corpusEntities.updatedAt,
+      batchCount: sql<number>`coalesce((
+        select count(*)::int
+        from ${importBatches}
+        where ${importBatches.corpusEntityId} = ${corpusEntities.id}
+      ), 0)`,
+      includedCount: sql<number>`coalesce((
+        select sum(${importBatches.includedCount})::int
+        from ${importBatches}
+        where ${importBatches.corpusEntityId} = ${corpusEntities.id}
+          and ${importBatches.status} = 'completed'
+      ), 0)`,
+      latestBatchAt: sql<Date | null>`(
+        select max(${importBatches.createdAt})
+        from ${importBatches}
+        where ${importBatches.corpusEntityId} = ${corpusEntities.id}
+      )`
+    })
+    .from(corpusEntities)
+    .where(eq(corpusEntities.studyCorpusId, corpusId))
+    .orderBy(asc(corpusEntities.priority), asc(corpusEntities.name));
 }
 
 export async function listMentionsForCorpus(corpusId: string, filters: MentionFilters = {}) {
@@ -716,6 +814,17 @@ export type SignalAggregates = {
   }[];
 };
 
+type SnapshotPlatformAggregate = { platform: string; count: number };
+type SnapshotContentTypeAggregate = { content_type: string; count: number };
+type SnapshotTimelineAggregate = { month: string; count: number };
+type SnapshotDashboardBasics = {
+  total: number;
+  windowData: { start: string | null; end: string | null };
+  platforms: SnapshotPlatformAggregate[];
+  contentTypes: SnapshotContentTypeAggregate[];
+  timeline: SnapshotTimelineAggregate[];
+};
+
 function emptySignalAggregates(): SignalAggregates {
   return {
     corpus: { total_mentions: 0, window: { start: null, end: null, months: 0 } },
@@ -749,96 +858,146 @@ async function safeLoadDashboardAggregates(args: {
   }
 }
 
-async function loadDashboardAggregates(args: {
-  snapshotId: string;
-  tbAnalysisId: string;
-}): Promise<SignalAggregates> {
+async function loadSnapshotDashboardBasics(snapshotId: string): Promise<SnapshotDashboardBasics> {
+  const cache = await loadSnapshotAggregateCache(snapshotId);
+  if (cache) return cache;
+
+  const unwrap = <T>(r: unknown): T[] =>
+    (r as { rows?: T[] }).rows ?? (r as T[]);
+
   const [
     corpusTotalRow,
     windowRow,
     platformRows,
     contentTypeRows,
-    timelineRows,
+    timelineRows
+  ] = await Promise.all([
+    db.execute<{ total: number }>(sql`
+      SELECT COUNT(*)::int AS total FROM mentions m
+      JOIN corpus_snapshot_mentions csm ON csm.mention_id = m.id
+      WHERE csm.snapshot_id = ${snapshotId}::uuid
+    `),
+    db.execute<{ start: string | null; end: string | null }>(sql`
+      SELECT MIN(published_at)::text AS start, MAX(published_at)::text AS end
+      FROM mentions m
+      JOIN corpus_snapshot_mentions csm ON csm.mention_id = m.id
+      WHERE csm.snapshot_id = ${snapshotId}::uuid
+    `),
+    db.execute<SnapshotPlatformAggregate>(sql`
+      SELECT COALESCE(NULLIF(m.resolved_platform, ''), 'unknown') AS platform, COUNT(*)::int AS count
+      FROM mentions m
+      JOIN corpus_snapshot_mentions csm ON csm.mention_id = m.id
+      WHERE csm.snapshot_id = ${snapshotId}::uuid
+      GROUP BY 1 ORDER BY count DESC LIMIT 10
+    `),
+    db.execute<SnapshotContentTypeAggregate>(sql`
+      SELECT COALESCE(NULLIF(m.content_type, ''), 'unknown') AS content_type, COUNT(*)::int AS count
+      FROM mentions m
+      JOIN corpus_snapshot_mentions csm ON csm.mention_id = m.id
+      WHERE csm.snapshot_id = ${snapshotId}::uuid
+      GROUP BY 1 ORDER BY count DESC LIMIT 10
+    `),
+    db.execute<SnapshotTimelineAggregate>(sql`
+      SELECT to_char(date_trunc('month', published_at), 'YYYY-MM') AS month, COUNT(*)::int AS count
+      FROM mentions m
+      JOIN corpus_snapshot_mentions csm ON csm.mention_id = m.id
+      WHERE csm.snapshot_id = ${snapshotId}::uuid
+      GROUP BY month ORDER BY month ASC
+    `)
+  ]);
+
+  return {
+    total: unwrap<{ total: number }>(corpusTotalRow)[0]?.total ?? 0,
+    windowData: unwrap<{ start: string | null; end: string | null }>(windowRow)[0] ?? { start: null, end: null },
+    platforms: unwrap<SnapshotPlatformAggregate>(platformRows),
+    contentTypes: unwrap<SnapshotContentTypeAggregate>(contentTypeRows),
+    timeline: unwrap<SnapshotTimelineAggregate>(timelineRows)
+  };
+}
+
+async function loadSnapshotAggregateCache(snapshotId: string): Promise<SnapshotDashboardBasics | null> {
+  type CacheRow = {
+    total_mentions: number;
+    start: string | null;
+    end: string | null;
+    platform_distribution: unknown;
+    content_type_distribution: unknown;
+    volume_timeline: unknown;
+  };
+  const result = await db.execute<CacheRow>(sql`
+    SELECT
+      total_mentions,
+      window_start::text AS start,
+      window_end::text AS end,
+      platform_distribution,
+      content_type_distribution,
+      volume_timeline
+    FROM corpus_snapshot_aggregates
+    WHERE snapshot_id = ${snapshotId}::uuid
+    LIMIT 1
+  `);
+  const rows = (result as { rows?: CacheRow[] }).rows ?? (result as unknown as CacheRow[]);
+  const row = rows[0];
+  if (!row) return null;
+
+  return {
+    total: Number(row.total_mentions ?? 0),
+    windowData: { start: row.start, end: row.end },
+    platforms: normalizePlatformAggregateRows(row.platform_distribution),
+    contentTypes: normalizeContentTypeAggregateRows(row.content_type_distribution),
+    timeline: normalizeTimelineAggregateRows(row.volume_timeline)
+  };
+}
+
+function normalizePlatformAggregateRows(value: unknown): SnapshotPlatformAggregate[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => item && typeof item === "object" ? item as Record<string, unknown> : null)
+    .filter((item): item is Record<string, unknown> => Boolean(item))
+    .map((item) => ({
+      platform: String(item.platform ?? "unknown"),
+      count: Number(item.count ?? 0)
+    }))
+    .filter((item) => item.count > 0);
+}
+
+function normalizeContentTypeAggregateRows(value: unknown): SnapshotContentTypeAggregate[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => item && typeof item === "object" ? item as Record<string, unknown> : null)
+    .filter((item): item is Record<string, unknown> => Boolean(item))
+    .map((item) => ({
+      content_type: String(item.content_type ?? "unknown"),
+      count: Number(item.count ?? 0)
+    }))
+    .filter((item) => item.count > 0);
+}
+
+function normalizeTimelineAggregateRows(value: unknown): SnapshotTimelineAggregate[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => item && typeof item === "object" ? item as Record<string, unknown> : null)
+    .filter((item): item is Record<string, unknown> => Boolean(item))
+    .map((item) => ({
+      month: String(item.month ?? ""),
+      count: Number(item.count ?? 0)
+    }))
+    .filter((item) => item.month && item.count > 0);
+}
+
+async function loadDashboardAggregates(args: {
+  snapshotId: string;
+  tbAnalysisId: string;
+}): Promise<SignalAggregates> {
+  const [
+    snapshotBasics,
     findingTimelineRows,
     polarityTimelineRows,
     findingsRows,
     voiceRows,
     sampleRows
   ] = await Promise.all([
-    db.execute<{ total: number }>(sql`
-      SELECT COUNT(*)::int AS total FROM mentions m
-      JOIN corpus_snapshot_mentions csm ON csm.mention_id = m.id
-      WHERE csm.snapshot_id = ${args.snapshotId}::uuid
-    `),
-    db.execute<{ start: string | null; end: string | null }>(sql`
-      SELECT MIN(published_at)::text AS start, MAX(published_at)::text AS end
-      FROM mentions m
-      JOIN corpus_snapshot_mentions csm ON csm.mention_id = m.id
-      WHERE csm.snapshot_id = ${args.snapshotId}::uuid
-    `),
-    db.execute<{ platform: string; count: number }>(sql`
-      WITH scoped AS (
-        SELECT
-          lower(COALESCE(NULLIF(m.platform, ''), '')) AS platform,
-          lower(COALESCE(m.url, '')) AS source_url,
-          lower(COALESCE(m.raw_metadata->'row'->>'domain group', '')) AS domain_group,
-          lower(COALESCE(m.raw_metadata->'row'->>'domain', '')) AS domain,
-          lower(COALESCE(m.raw_metadata->>'source_file_name', '')) AS source_file_name
-        FROM mentions m
-        JOIN corpus_snapshot_mentions csm ON csm.mention_id = m.id
-        WHERE csm.snapshot_id = ${args.snapshotId}::uuid
-      ),
-      resolved AS (
-        SELECT CASE
-          WHEN domain_group LIKE '%tiktok%' OR domain LIKE '%tiktok%' OR source_url LIKE '%tiktok%' OR source_file_name LIKE '%tiktok%' THEN 'tiktok'
-          WHEN domain_group LIKE '%twitter%' OR domain_group = 'x' OR domain LIKE '%twitter%' OR domain LIKE '%x.com%' OR source_url LIKE '%twitter.com%' OR source_url LIKE '%x.com%' THEN 'x'
-          WHEN domain_group LIKE '%instagram%' OR domain LIKE '%instagram%' OR source_url LIKE '%instagram%' THEN 'instagram'
-          WHEN domain_group LIKE '%facebook%' OR domain LIKE '%facebook%' OR source_url LIKE '%facebook%' OR source_url LIKE '%fb.com%' THEN 'facebook'
-          WHEN domain_group LIKE '%youtube%' OR domain LIKE '%youtube%' OR source_url LIKE '%youtube%' OR source_url LIKE '%youtu.be%' THEN 'youtube'
-          WHEN domain_group LIKE '%reddit%' OR domain LIKE '%reddit%' OR source_url LIKE '%reddit%' THEN 'reddit'
-          WHEN domain_group LIKE '%linkedin%' OR domain LIKE '%linkedin%' OR source_url LIKE '%linkedin%' THEN 'linkedin'
-          WHEN domain_group LIKE '%threads%' OR domain LIKE '%threads%' OR source_url LIKE '%threads.net%' THEN 'threads'
-          WHEN domain_group LIKE '%trustpilot%' OR domain LIKE '%trustpilot%' OR source_url LIKE '%trustpilot%' THEN 'trustpilot'
-          WHEN domain_group LIKE '%google%' OR domain LIKE '%google%' OR source_url LIKE '%google%' THEN 'google'
-          WHEN domain_group LIKE '%blog%' OR domain LIKE '%blogspot%' OR domain LIKE '%wordpress%' OR domain LIKE '%medium.com%' THEN 'blog'
-          WHEN domain_group LIKE '%forum%' OR domain_group LIKE '%community%' THEN 'forum'
-          WHEN platform IS NULL OR platform = '' OR platform IN ('comment','comments','comentario','comentarios','video','short','shorts','post','posts','tweet','tweets','article','articles','reel','reels','story','stories','image','photo','photos') THEN 'unknown'
-          ELSE platform
-        END AS platform
-        FROM scoped
-      )
-      SELECT platform, COUNT(*)::int AS count
-      FROM resolved
-      GROUP BY platform ORDER BY count DESC LIMIT 10
-    `),
-    db.execute<{ content_type: string; count: number }>(sql`
-      WITH scoped AS (
-        SELECT lower(
-          COALESCE(
-            NULLIF(m.raw_metadata->>'content_type', ''),
-            CASE
-              WHEN m.platform IN ('comment','comments','comentario','comentarios','video','short','shorts','post','posts','tweet','tweets','article','articles','reel','reels','story','stories','image','photo','photos')
-              THEN m.platform
-              ELSE NULL
-            END,
-            'unknown'
-          )
-        ) AS content_type
-        FROM mentions m
-        JOIN corpus_snapshot_mentions csm ON csm.mention_id = m.id
-        WHERE csm.snapshot_id = ${args.snapshotId}::uuid
-      )
-      SELECT content_type, COUNT(*)::int AS count
-      FROM scoped
-      GROUP BY content_type ORDER BY count DESC LIMIT 10
-    `),
-    db.execute<{ month: string; count: number }>(sql`
-      SELECT to_char(date_trunc('month', published_at), 'YYYY-MM') AS month, COUNT(*)::int AS count
-      FROM mentions m
-      JOIN corpus_snapshot_mentions csm ON csm.mention_id = m.id
-      WHERE csm.snapshot_id = ${args.snapshotId}::uuid
-      GROUP BY month ORDER BY month ASC
-    `),
+    loadSnapshotDashboardBasics(args.snapshotId),
     db.execute<{
       month: string;
       finding_id: string;
@@ -957,16 +1116,16 @@ async function loadDashboardAggregates(args: {
   const unwrap = <T>(r: unknown): T[] =>
     (r as { rows?: T[] }).rows ?? (r as T[]);
 
-  const total = unwrap<{ total: number }>(corpusTotalRow)[0]?.total ?? 0;
-  const windowData = unwrap<{ start: string | null; end: string | null }>(windowRow)[0] ?? { start: null, end: null };
+  const total = snapshotBasics.total;
+  const windowData = snapshotBasics.windowData;
   const months =
     windowData.start && windowData.end
       ? Math.max(1, Math.round((new Date(windowData.end).getTime() - new Date(windowData.start).getTime()) / (1000 * 60 * 60 * 24 * 30)))
       : 0;
 
-  const platforms = unwrap<{ platform: string; count: number }>(platformRows);
-  const contentTypes = unwrap<{ content_type: string; count: number }>(contentTypeRows);
-  const timeline = unwrap<{ month: string; count: number }>(timelineRows);
+  const platforms = snapshotBasics.platforms;
+  const contentTypes = snapshotBasics.contentTypes;
+  const timeline = snapshotBasics.timeline;
   const findingTimeline = unwrap<{
     month: string;
     finding_id: string;
@@ -1191,6 +1350,7 @@ export async function getCorpusEngineState(corpusId: string) {
 
   const [assessmentRow] = await db
     .select({
+      themeId: studyCorpora.themeId,
       latestAssessment: studyCorpora.latestAssessment,
       latestAssessedAt: studyCorpora.latestAssessedAt
     })
@@ -1204,6 +1364,7 @@ export async function getCorpusEngineState(corpusId: string) {
       queryIterationId: importBatches.queryIterationId,
       mentionType: importBatches.mentionType,
       competitorId: importBatches.competitorId,
+      corpusEntityId: importBatches.corpusEntityId,
       entityKind: importBatches.entityKind,
       entityLabel: importBatches.entityLabel,
       recordCount: importBatches.recordCount,
@@ -1216,6 +1377,11 @@ export async function getCorpusEngineState(corpusId: string) {
     .from(importBatches)
     .where(eq(importBatches.studyCorpusId, corpusId))
     .orderBy(desc(importBatches.createdAt));
+
+  const activeEntities = await db
+    .select({ id: corpusEntities.id })
+    .from(corpusEntities)
+    .where(and(eq(corpusEntities.studyCorpusId, corpusId), ne(corpusEntities.status, "archived")));
 
   // The "current" iteration is the most recently created — wizard works on it
   const current = iterations[0] ?? null;
@@ -1230,12 +1396,22 @@ export async function getCorpusEngineState(corpusId: string) {
     const currentBatches = batches.filter(
       (b) => b.queryIterationId === current.id && b.status === "completed"
     );
+    const primaryMentionType = assessmentRow?.themeId ? "industry" : "brand";
     const hasBrand = currentBatches.some((b) => b.mentionType === "brand");
     const hasCompetitor = currentBatches.some((b) => b.mentionType === "competitor");
     const hasIndustry = currentBatches.some((b) => b.mentionType === "industry");
     const wantsCompetitor = !!current.competitorQueryText;
-    const wantsIndustry = !!current.industryQueryText;
-    const csvsReady = hasBrand && (!wantsCompetitor || hasCompetitor) && (!wantsIndustry || hasIndustry);
+    const wantsIndustry = primaryMentionType === "brand" && !!current.industryQueryText;
+    const hasPrimary = primaryMentionType === "brand" ? hasBrand : hasIndustry;
+    const uploadedEntityIds = new Set(
+      currentBatches
+        .map((batch) => batch.corpusEntityId)
+        .filter((entityId): entityId is string => Boolean(entityId))
+    );
+    const entityUploadsReady = activeEntities.length > 0
+      && activeEntities.every((entity) => uploadedEntityIds.has(entity.id));
+    const legacyCsvsReady = hasPrimary && (!wantsCompetitor || hasCompetitor) && (!wantsIndustry || hasIndustry);
+    const csvsReady = activeEntities.length > 0 ? entityUploadsReady : legacyCsvsReady;
 
     if (decision === "approved") {
       activeStep = "approved";

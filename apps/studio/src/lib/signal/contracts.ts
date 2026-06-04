@@ -61,6 +61,61 @@ export type CompetitiveSignalPayload = {
   gaps: unknown[];
   recommendations: unknown[];
   limitations: string[];
+  dashboard?: ComparativeDashboardPayload | null;
+};
+
+export type ComparativeDashboardPayload = {
+  kind: "tb_comparative_dashboard";
+  summary: {
+    headline: string;
+    benchmark_available: boolean;
+    strongest_entity: string | null;
+    strongest_ownership: string | null;
+    brand_mentions: number;
+    competitor_mentions: number;
+    category_mentions: number;
+  };
+  ownership_rankings: Array<{
+    ownership: string;
+    findings_count: number;
+    top_findings: unknown[];
+  }>;
+  entity_finding_matrix: Array<{
+    entity_id: string;
+    entity_name: string;
+    entity_kind: string;
+    mention_count: number;
+    findings: Array<{
+      finding_id: string;
+      finding_name: string;
+      mention_count: number;
+      share_pct: number;
+      ownership: string;
+    }>;
+  }>;
+};
+
+export type MethodologyComparativeBlocks = {
+  vpm: {
+    title: string;
+    rows: Array<{ entity: string; value_axis: string; score: number | null; evidence_count: number }>;
+  };
+  jfm: {
+    title: string;
+    rows: Array<{ journey_phase: string; entity: string; friction_count: number; top_friction: string | null }>;
+  };
+  cultural_codes: {
+    title: string;
+    rows: Array<{ code: string; category_count: number; brand_count: number; dominant_entity: string | null }>;
+  };
+  influence_architecture: {
+    title: string;
+    rows: Array<{ node_or_community: string; entity: string; influence_score: number | null; evidence_count: number }>;
+  };
+  decision_velocity: {
+    title: string;
+    rows: Array<{ journey_phase: string; blockers: number; accelerators: number; dominant_entity: string | null }>;
+  };
 };
 
 export type EmergingPattern = {
@@ -167,6 +222,7 @@ export type SignalPayloadV2 = {
   tb_decision_field_edges: unknown[];
   action_cards: PublicActionCard[];
   competitive: CompetitiveSignalPayload;
+  methodology_blocks: MethodologyComparativeBlocks;
   emerging_patterns: EmergingPattern[];
   knowledge_impact: SignalKnowledgeImpact | null;
   strategic_opportunities: StrategicOpportunity[];

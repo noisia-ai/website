@@ -3,7 +3,7 @@ import { Job } from "bullmq";
 import { forbidden, unauthorized } from "@/lib/api/responses";
 import { canAccessStudio } from "@/lib/auth/roles";
 import { getAuthenticatedAppUser } from "@/lib/auth/session";
-import { getQueryEngineQueue } from "@/lib/queue/query-engine";
+import { getQueryEngineQueue, isQueryEngineWorkerAlive } from "@/lib/queue/query-engine";
 import { getTbAnalysisQueue } from "@/lib/queue/tb-analysis";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
@@ -29,11 +29,19 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
 
   const state = await job.getState();
 
+  // worker_alive lets the client detect a "queued but nobody is consuming"
+  // situation and fail fast instead of polling for minutes. We use an explicit
+  // heartbeat key written by the worker because getWorkers()/CLIENT LIST is
+  // unreliable on managed Redis (Upstash returns 0 even with a live worker).
+  // tb-analysis is not instrumented, so we only assert liveness for query-engine.
+  const workerAlive = queueName === "tb-analysis" ? true : await isQueryEngineWorkerAlive();
+
   return Response.json({
     id: job.id,
     name: job.name,
     status: normalizeJobState(state),
     progress: typeof job.progress === "number" ? job.progress : 0,
+    worker_alive: workerAlive,
     data: job.data,
     result: job.returnvalue ?? null,
     failed_reason: job.failedReason ?? null

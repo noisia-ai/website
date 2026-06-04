@@ -78,6 +78,7 @@ export async function getSignalOutputForUser(appUser: AppUser, outputId: string)
       id: publishedOutputs.id,
       tbAnalysisId: publishedOutputs.tbAnalysisId,
       studyCorpusId: publishedOutputs.studyCorpusId,
+      baseCorpusId: studyCorpora.baseCorpusId,
       brandId: publishedOutputs.brandId,
       title: publishedOutputs.title,
       headline: publishedOutputs.headline,

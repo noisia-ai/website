@@ -199,6 +199,7 @@ export default async function SignalOutputPage({
               competitive={viewModel.competitive}
               evidenceDeepDives={viewModel.evidenceDeepDives}
               findings={viewModel.findings}
+              methodologyBlocks={viewModel.methodologyBlocks}
             />
           </section>
         ) : null}
@@ -681,11 +682,13 @@ function CompetitivePanel({
   competitive,
   evidenceDeepDives,
   findings,
+  methodologyBlocks,
 }: {
   brandName: string;
   competitive: ReturnType<typeof adaptTbSignalPayload>["competitive"];
   evidenceDeepDives: ReturnType<typeof adaptTbSignalPayload>["evidenceDeepDives"];
   findings: PublicTbFinding[];
+  methodologyBlocks: ReturnType<typeof adaptTbSignalPayload>["methodologyBlocks"];
 }) {
   if (!competitive.enabled) {
     return (
@@ -699,6 +702,7 @@ function CompetitivePanel({
 
   const presence = competitive.finding_entity_presence.map(asRecord);
   const gaps = competitive.gaps.map(asRecord);
+  const dashboard = competitive.dashboard;
   const brandCount = competitive.entities.find((entity) => entity.entity_kind === "primary_brand")?.mention_count ?? 0;
   const competitorCount = competitive.entities.find((entity) => entity.entity_kind === "competitor_pool")?.mention_count ?? 0;
   const categoryCount = competitive.entities.find((entity) => entity.entity_kind === "category")?.mention_count ?? 0;
@@ -780,6 +784,10 @@ function CompetitivePanel({
           {ownershipInsight}
         </p>
       </section>
+
+      {dashboard ? (
+        <ComparativeDashboard dashboard={dashboard} />
+      ) : null}
 
       <section className="competitive-answer competitive-answer--benchmark">
         <div>
@@ -892,7 +900,92 @@ function CompetitivePanel({
           ))}
         </div>
       ) : null}
+      <GenericMethodologyBlocks blocks={methodologyBlocks} />
     </div>
+  );
+}
+
+function ComparativeDashboard({ dashboard }: { dashboard: NonNullable<ReturnType<typeof adaptTbSignalPayload>["competitive"]["dashboard"]> }) {
+  const topEntities = dashboard.entity_finding_matrix.slice(0, 8);
+  const ownershipRows = dashboard.ownership_rankings.slice(0, 5);
+
+  return (
+    <section className="comparative-dashboard">
+      <header>
+        <div>
+          <p className="signal-eyebrow">T&B comparative dashboard</p>
+          <h3>{dashboard.summary.headline}</h3>
+          <p>Matrix view of which entity carries each trigger or barrier.</p>
+        </div>
+        <dl>
+          <div><dt>Brand</dt><dd>{fmtCompact(dashboard.summary.brand_mentions)}</dd></div>
+          <div><dt>Peers</dt><dd>{fmtCompact(dashboard.summary.competitor_mentions)}</dd></div>
+          <div><dt>Category</dt><dd>{fmtCompact(dashboard.summary.category_mentions)}</dd></div>
+        </dl>
+      </header>
+
+      <div className="comparative-dashboard-grid">
+        <section className="comparative-matrix">
+          <h4>Entity x finding matrix</h4>
+          {topEntities.length > 0 ? topEntities.map((entity) => (
+            <article key={entity.entity_id}>
+              <header>
+                <strong>{entity.entity_name}</strong>
+                <span>{entity.entity_kind} · {fmtCompact(entity.mention_count)}</span>
+              </header>
+              <div>
+                {entity.findings.slice(0, 5).map((finding) => (
+                  <p key={`${entity.entity_id}-${finding.finding_id}`}>
+                    <span style={{ width: `${Math.max(8, Math.min(100, finding.share_pct))}%` }} />
+                    <strong>{finding.finding_name}</strong>
+                    <em>{fmtCompact(finding.mention_count)} · {Math.round(finding.share_pct)}%</em>
+                  </p>
+                ))}
+              </div>
+            </article>
+          )) : <p className="competitive-empty">No matrix evidence yet.</p>}
+        </section>
+
+        <section className="comparative-ownership-ranking">
+          <h4>Ownership ranking</h4>
+          {ownershipRows.map((row) => (
+            <article key={row.ownership}>
+              <span>{prettifyKey(row.ownership)}</span>
+              <strong>{row.findings_count}</strong>
+              <small>{row.top_findings.slice(0, 2).map((item) => stringValue(asRecord(item).finding_name)).filter(Boolean).join(" · ")}</small>
+            </article>
+          ))}
+        </section>
+      </div>
+    </section>
+  );
+}
+
+function GenericMethodologyBlocks({ blocks }: { blocks: ReturnType<typeof adaptTbSignalPayload>["methodologyBlocks"] }) {
+  const cards = [
+    { key: "vpm", title: blocks.vpm.title, count: blocks.vpm.rows.length, copy: "Matriz valor por entidad." },
+    { key: "jfm", title: blocks.jfm.title, count: blocks.jfm.rows.length, copy: "Fricciones por fase y entidad." },
+    { key: "cultural", title: blocks.cultural_codes.title, count: blocks.cultural_codes.rows.length, copy: "Códigos por categoría y marca." },
+    { key: "influence", title: blocks.influence_architecture.title, count: blocks.influence_architecture.rows.length, copy: "Nodos y comunidades por entidad." },
+    { key: "velocity", title: blocks.decision_velocity.title, count: blocks.decision_velocity.rows.length, copy: "Blockers y accelerators por journey." }
+  ];
+
+  return (
+    <section className="methodology-blocks">
+      <header>
+        <p className="signal-eyebrow">Reusable comparative blocks</p>
+        <h3>Generic output layer for future methodologies</h3>
+      </header>
+      <div>
+        {cards.map((card) => (
+          <article key={card.key}>
+            <strong>{card.title}</strong>
+            <p>{card.copy}</p>
+            <span>{card.count > 0 ? `${card.count} mapped rows` : "Waiting for methodology engine"}</span>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 

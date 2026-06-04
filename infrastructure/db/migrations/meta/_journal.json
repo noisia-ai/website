@@ -134,6 +134,48 @@
       "when": 1780199240443,
       "tag": "0018_team_invitations",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1780199250000,
+      "tag": "0019_corpus_entities",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1780199260000,
+      "tag": "0020_corpus_reuse_baseline",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1780199270000,
+      "tag": "0021_semantic_embeddings_mention_fk_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1780199280000,
+      "tag": "0022_mentions_corpus_inclusion_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1780199290000,
+      "tag": "0023_mentions_materialized_signal_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1780199300000,
+      "tag": "0024_corpus_snapshot_aggregates",
+      "breakpoints": true
     }
   ]
 }

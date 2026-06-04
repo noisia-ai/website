@@ -6,7 +6,8 @@ import { StudioNav } from "@/components/layout/StudioNav";
 import { Icon } from "@/components/ui/Icon";
 import { requireStudioUser } from "@/lib/auth/guards";
 import { listBrandsForUser } from "@/lib/data/brands";
-import { listActiveMethodologies } from "@/lib/data/corpora";
+import { listActiveMethodologies, listReusableIndustryCorporaForUser } from "@/lib/data/corpora";
+import { listThemesForUser } from "@/lib/data/themes";
 import { getSearchParam, resolveSearchParams, type StudioSearchParams } from "@/lib/url/search";
 
 export const dynamic = "force-dynamic";
@@ -17,9 +18,11 @@ export default async function NewStudyPage({ searchParams }: { searchParams?: St
   const params = await resolveSearchParams(searchParams);
   const defaultBrandId = getSearchParam(params, "brand") ?? undefined;
 
-  const [brands, methodologies] = await Promise.all([
+  const [brands, themes, methodologies, baselineCorpora] = await Promise.all([
     listBrandsForUser(session.appUser, { status: "active", pageSize: 500 }),
-    listActiveMethodologies()
+    listThemesForUser(session.appUser, { status: "active", pageSize: 500 }),
+    listActiveMethodologies(),
+    listReusableIndustryCorporaForUser(session.appUser)
   ]);
 
   return (
@@ -50,6 +53,8 @@ export default async function NewStudyPage({ searchParams }: { searchParams?: St
 
           <NewStudyForm
             brands={brands.data}
+            themes={themes.data}
+            baselineCorpora={baselineCorpora}
             methodologies={methodologies}
             defaultBrandId={defaultBrandId}
           />

@@ -13,8 +13,20 @@ import { db } from "@/lib/db";
 import { getTbAnalysisQueue } from "@/lib/queue/tb-analysis";
 
 const startBodySchema = z.object({
-  studySize: z.enum(["small", "medium", "large", "full_power"]).optional()
+  studySize: z.enum(["small", "medium", "large", "full_power"]).optional(),
+  confirmLowReadiness: z.boolean().optional()
 });
+
+type AssessmentPayload = {
+  ready_for_study?: boolean;
+  score?: number;
+  [key: string]: unknown;
+};
+
+function readAssessmentPayload(value: unknown): AssessmentPayload | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as AssessmentPayload;
+}
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const session = await getAuthenticatedAppUser();
@@ -74,6 +86,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   }
 
   let requestedStudySize: AnalysisStudySize | undefined;
+  let confirmLowReadiness = false;
   try {
     const body = await request.json();
     const parsed = startBodySchema.safeParse(body);
@@ -81,8 +94,32 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       return Response.json({ error: "invalid_body", message: "Tamaño de estudio inválido." }, { status: 400 });
     }
     requestedStudySize = parsed.data.studySize;
+    confirmLowReadiness = parsed.data.confirmLowReadiness === true;
   } catch {
     requestedStudySize = undefined;
+  }
+
+  const [readinessRow] = await db
+    .select({
+      latestAssessment: studyCorpora.latestAssessment,
+      latestAssessedAt: studyCorpora.latestAssessedAt
+    })
+    .from(studyCorpora)
+    .where(eq(studyCorpora.id, corpus.id))
+    .limit(1);
+  const latestAssessment = readAssessmentPayload(readinessRow?.latestAssessment);
+  const readyForStudy = latestAssessment?.ready_for_study;
+
+  if (readyForStudy === false && !confirmLowReadiness) {
+    return Response.json(
+      {
+        error: "corpus_not_ready",
+        message: "El diagnóstico del corpus dice que aún no está listo para estudio. Confirma explícitamente si quieres correrlo de todos modos.",
+        assessment: latestAssessment,
+        assessed_at: readinessRow?.latestAssessedAt?.toISOString() ?? null
+      },
+      { status: 409 }
+    );
   }
 
   // 1. Snapshot for reproducibility
@@ -130,7 +167,15 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
           estimated_cost_usd: studyPlan.estimatedCostUsd,
           cost_per_mention_usd: 0.00125,
           auto_full_threshold: 5000,
-          is_auto_full: studyPlan.isAutoFull
+          is_auto_full: studyPlan.isAutoFull,
+          readiness_override: readyForStudy === false
+            ? {
+                confirmed: true,
+                confirmed_by_user_id: session.appUser.id,
+                assessed_at: readinessRow?.latestAssessedAt?.toISOString() ?? null,
+                score: latestAssessment?.score ?? null
+              }
+            : null
         }
       },
       executedByUserId: session.appUser.id

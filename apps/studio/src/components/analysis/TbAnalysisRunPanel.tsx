@@ -55,8 +55,17 @@ type AnalysisState = {
   };
 } | null;
 
+type AssessmentPayload = {
+  ready_for_study?: boolean;
+  score?: number;
+  blockers?: string[];
+  warnings?: string[];
+  notes?: string;
+};
+
 type StartPayload = {
   ok?: boolean;
+  error?: string;
   tb_analysis_id?: string;
   bullmq_job_id?: string | number;
   status?: string;
@@ -115,11 +124,13 @@ export function TbAnalysisRunPanel({
   corpusId,
   corpusApproved,
   includedCount,
+  assessment,
   latestState
 }: {
   corpusId: string;
   corpusApproved: boolean;
   includedCount: number;
+  assessment: AssessmentPayload | null;
   latestState: AnalysisState;
 }) {
   const router = useRouter();
@@ -128,11 +139,13 @@ export function TbAnalysisRunPanel({
   const [isStarting, setIsStarting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [studySize, setStudySize] = useState<AnalysisStudySize>("medium");
+  const [confirmedLowReadiness, setConfirmedLowReadiness] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const analysis = state?.analysis ?? null;
   const isRunning = analysis ? !TERMINAL_STATUSES.has(analysis.status) : false;
-  const canStart = corpusApproved && includedCount > 0 && !isRunning && !isStarting;
+  const lowReadiness = corpusApproved && assessment?.ready_for_study === false;
+  const canStart = corpusApproved && includedCount > 0 && !isRunning && !isStarting && (!lowReadiness || confirmedLowReadiness);
   const progress = useMemo(() => computeProgress(state), [state]);
   const selectedPlan = useMemo(
     () => resolveAnalysisStudyPlan({ corpusMentions: includedCount, requestedSize: studySize }),
@@ -140,6 +153,10 @@ export function TbAnalysisRunPanel({
   );
   const autoFull = includedCount <= AUTO_FULL_THRESHOLD;
   const savedPlan = analysis?.metaJson?.analysis_sample ?? null;
+
+  useEffect(() => {
+    setConfirmedLowReadiness(false);
+  }, [assessment?.ready_for_study, assessment?.score]);
 
   const refreshState = useCallback(async (analysisId: string, forceRouterRefresh: boolean) => {
     setIsRefreshing(true);
@@ -186,7 +203,10 @@ export function TbAnalysisRunPanel({
     const response = await fetch(`/api/corpora/${corpusId}/tb-analysis`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ studySize })
+      body: JSON.stringify({
+        studySize,
+        confirmLowReadiness: lowReadiness ? confirmedLowReadiness : undefined
+      })
     });
     const payload = await response.json() as StartPayload;
 
@@ -276,6 +296,32 @@ export function TbAnalysisRunPanel({
               Última corrida: {savedPlan.label ?? "estudio"} · {fmtNum(savedPlan.target_mentions ?? 0)} menciones · {fmtUsd(savedPlan.estimated_cost_usd ?? 0)}
             </div>
           ) : null}
+        </div>
+      ) : null}
+
+      {lowReadiness ? (
+        <div className="analysis-run-banner analysis-run-banner--warn analysis-readiness-warning">
+          <Icon name="alert" size={16} />
+          <div>
+            <strong>El diagnóstico dice que este corpus todavía no está listo.</strong>
+            <p>
+              Score {typeof assessment?.score === "number" ? fmtScore(assessment.score) : "sin score"}.
+              {" "}Revísalo antes de gastar tokens, o confirma que quieres correr la lectura de todos modos.
+            </p>
+            {assessment?.blockers?.length ? (
+              <ul>
+                {assessment.blockers.slice(0, 3).map((blocker) => <li key={blocker}>{blocker}</li>)}
+              </ul>
+            ) : null}
+            <label className="analysis-readiness-confirm">
+              <input
+                checked={confirmedLowReadiness}
+                onChange={(event) => setConfirmedLowReadiness(event.target.checked)}
+                type="checkbox"
+              />
+              <span>Confirmo correr el estudio aunque el corpus no esté marcado como listo.</span>
+            </label>
+          </div>
         </div>
       ) : null}
 
@@ -417,6 +463,10 @@ function fmtNum(value: number) {
 
 function fmtUsd(value: number) {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(value);
+}
+
+function fmtScore(value: number) {
+  return new Intl.NumberFormat("es-MX", { maximumFractionDigits: 1 }).format(value);
 }
 
 function stageStatus(

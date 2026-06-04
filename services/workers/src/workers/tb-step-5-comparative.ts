@@ -139,43 +139,39 @@ export async function rebuildAndPersistComparativeBrief(tbAnalysisId: string) {
 }
 
 async function loadEntityCounts(tbAnalysisId: string): Promise<EntityCountRow[]> {
+  // Use the per-batch included_count already persisted at ingest instead of
+  // re-counting every mention with a full-corpus JOIN. On large corpora the old
+  // COUNT(mentions) scan timed out; the stored counts are equivalent and read
+  // just a handful of import_batches rows.
   const r = await pool.query<EntityCountRow>(
-    `WITH attributed_batches AS (
-       SELECT
-         ib.id,
-         ib.competitor_id,
-         COALESCE(
-           ib.entity_kind,
-           CASE
-             WHEN ib.mention_type = 'brand' THEN 'primary_brand'
-             WHEN ib.mention_type = 'competitor' THEN 'competitor_pool'
-             WHEN ib.mention_type = 'industry' THEN 'category'
-             ELSE 'unknown'
-           END
-         ) AS resolved_entity_kind,
-         COALESCE(
-           ib.entity_label,
-           CASE
-             WHEN ib.mention_type = 'brand' THEN 'Marca'
-             WHEN ib.mention_type = 'competitor' THEN 'Pool competitivo'
-             WHEN ib.mention_type = 'industry' THEN 'Categoria'
-             ELSE 'Sin atribucion'
-           END
-         ) AS resolved_entity_label
-       FROM tb_analyses ta
-       JOIN import_batches ib ON ib.study_corpus_id = ta.study_corpus_id
-       WHERE ta.id = $1
-     )
-     SELECT
-       ab.competitor_id,
-       ab.resolved_entity_kind AS entity_kind,
-       ab.resolved_entity_label AS entity_label,
-       COUNT(m.id)::int AS mention_count
-     FROM attributed_batches ab
-     LEFT JOIN mentions m
-       ON m.source_file_id = ab.id
-      AND m.inclusion_status = 'included'
-     GROUP BY ab.competitor_id, ab.resolved_entity_kind, ab.resolved_entity_label
+    `SELECT
+       ib.competitor_id,
+       COALESCE(
+         ib.entity_kind,
+         CASE
+           WHEN ib.mention_type = 'brand' THEN 'primary_brand'
+           WHEN ib.mention_type = 'competitor' THEN 'competitor_pool'
+           WHEN ib.mention_type = 'industry' THEN 'category'
+           ELSE 'unknown'
+         END
+       ) AS entity_kind,
+       COALESCE(
+         ib.entity_label,
+         CASE
+           WHEN ib.mention_type = 'brand' THEN 'Marca'
+           WHEN ib.mention_type = 'competitor' THEN 'Pool competitivo'
+           WHEN ib.mention_type = 'industry' THEN 'Categoria'
+           ELSE 'Sin atribucion'
+         END
+       ) AS entity_label,
+       SUM(COALESCE(ib.included_count, 0))::int AS mention_count
+     FROM tb_analyses ta
+     JOIN study_corpora sc ON sc.id = ta.study_corpus_id
+     JOIN import_batches ib
+       ON (ib.study_corpus_id = ta.study_corpus_id OR ib.study_corpus_id = sc.base_corpus_id)
+      AND ib.status = 'completed'
+     WHERE ta.id = $1
+     GROUP BY ib.competitor_id, 2, 3
      ORDER BY mention_count DESC`,
     [tbAnalysisId]
   );
@@ -208,6 +204,17 @@ async function loadFindingEntityPresence(tbAnalysisId: string): Promise<Presence
          ) AS resolved_entity_label
        FROM mentions m
        LEFT JOIN import_batches ib ON ib.id = m.source_file_id
+       LEFT JOIN tb_analyses ta_scope ON ta_scope.id = $1
+       LEFT JOIN study_corpora sc_scope ON sc_scope.id = ta_scope.study_corpus_id
+       WHERE (m.study_corpus_id = ta_scope.study_corpus_id
+          OR m.study_corpus_id = sc_scope.base_corpus_id)
+         -- Only coded mentions are ever used (the outer query joins on
+         -- tb_mention_codings), so restrict the scan to them. Avoids
+         -- materializing the entire corpus on large studies.
+         AND m.id IN (
+           SELECT mention_id FROM tb_mention_codings
+           WHERE tb_analysis_id = $1 AND mention_id IS NOT NULL
+         )
      )
      SELECT
        f.finding_id,

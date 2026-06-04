@@ -31,6 +31,7 @@ type CorpusComposerRow = {
   context_form: unknown;
   brand_id: string | null;
   theme_id: string | null;
+  base_corpus_id: string | null;
   methodology_slug: string;
   methodology_name: string;
   methodology_version: string;
@@ -245,6 +246,7 @@ async function loadComposerInput(corpusId: string): Promise<QueryComposerInput> 
         sc.context_form,
         sc.brand_id,
         sc.theme_id,
+        sc.base_corpus_id,
         m.slug AS methodology_slug,
         m.name AS methodology_name,
         m.version AS methodology_version,
@@ -291,6 +293,7 @@ async function loadBrandInput(row: CorpusComposerRow): Promise<QueryComposerInpu
     `,
     [row.brand_id]
   );
+  const corpusEntitySeeds = await loadCorpusEntitySeeds([row.corpus_id, row.base_corpus_id]);
   const industryMemory = row.brand_industry
     ? await pool.query<MemoryRow>(
         `
@@ -347,11 +350,12 @@ async function loadBrandInput(row: CorpusComposerRow): Promise<QueryComposerInpu
     competitors: competitors.rows.flatMap((competitor) => [
       competitor.canonical_name,
       ...(competitor.aliases ?? [])
-    ]),
+    ]).concat(corpusEntitySeeds.competitors),
     brandSeeds: [
       row.brand_name ?? "",
       row.brand_display_name ?? "",
-      ...(row.brand_seed_handles ?? [])
+      ...(row.brand_seed_handles ?? []),
+      ...corpusEntitySeeds.primaryBrand
     ].filter(Boolean),
     knowledgeSources: ragContext.knowledgeSources,
     queryStrategyBrief: ragContext.queryStrategyBrief ?? undefined,
@@ -360,7 +364,8 @@ async function loadBrandInput(row: CorpusComposerRow): Promise<QueryComposerInpu
   };
 }
 
-function loadThemeInput(row: CorpusComposerRow): QueryComposerInput {
+async function loadThemeInput(row: CorpusComposerRow): Promise<QueryComposerInput> {
+  const corpusEntitySeeds = await loadCorpusEntitySeeds([row.corpus_id, row.base_corpus_id]);
   return {
     corpus: {
       id: row.corpus_id,
@@ -388,12 +393,53 @@ function loadThemeInput(row: CorpusComposerRow): QueryComposerInput {
       version: row.methodology_version,
       manifest: row.manifest
     },
-    competitors: [],
-    brandSeeds: [row.theme_name ?? ""].filter(Boolean),
+    competitors: corpusEntitySeeds.competitors,
+    brandSeeds: [row.theme_name ?? "", ...corpusEntitySeeds.primaryBrand].filter(Boolean),
     knowledgeSources: [],
     queryStrategyBrief: undefined,
     memoryIndustry: [],
     memoryBrand: []
+  };
+}
+
+async function loadCorpusEntitySeeds(corpusIds: Array<string | null>) {
+  const ids = Array.from(new Set(corpusIds.filter((id): id is string => Boolean(id))));
+  if (ids.length === 0) {
+    return { competitors: [], primaryBrand: [] };
+  }
+  const result = await pool.query<{
+    entity_kind: string;
+    name: string;
+    aliases: string[] | null;
+    handles: string[] | null;
+    query_seeds: string[] | null;
+  }>(
+    `
+      SELECT entity_kind, name, aliases, handles, query_seeds
+      FROM corpus_entities
+      WHERE study_corpus_id = ANY($1::uuid[])
+        AND status = 'active'
+      ORDER BY priority NULLS LAST, name
+    `,
+    [ids]
+  );
+
+  const competitors: string[] = [];
+  const primaryBrand: string[] = [];
+  for (const row of result.rows) {
+    const seeds = [
+      row.name,
+      ...(row.aliases ?? []),
+      ...(row.handles ?? []),
+      ...(row.query_seeds ?? [])
+    ].filter(Boolean);
+    if (row.entity_kind === "competitor") competitors.push(...seeds);
+    if (row.entity_kind === "primary_brand") primaryBrand.push(...seeds);
+  }
+
+  return {
+    competitors: Array.from(new Set(competitors)).slice(0, 80),
+    primaryBrand: Array.from(new Set(primaryBrand)).slice(0, 40)
   };
 }
 

@@ -15,6 +15,7 @@ type NormalizedMention = {
   language: string | null;
   publishedAt: Date;
   platform: string;
+  contentType: string | null;
   url: string | null;
   country: string | null;
   engagement: Record<string, number>;
@@ -57,131 +58,281 @@ const engagementKeys = [
   "reach"
 ];
 
-export function parseSentioneCsv(input: string) {
-  const delimiter = detectDelimiter(input);
-  const records = parseDelimited(input, delimiter);
+// Larger batch for the streaming path: 500 rows × ~22 cols ≈ 11k params, well
+// under Postgres' 65535 limit, and fewer round-trips to the remote pooler.
+const STREAM_BATCH_SIZE = 500;
 
-  if (records.length === 0) {
-    return [];
-  }
-
-  const [header = [], ...body] = records;
-  const normalizedHeader = header.map((cell) => normalizeKey(cell));
-
-  return body
-    .filter((row) => row.some((cell) => cell.trim().length > 0))
-    .map((row) =>
-      normalizedHeader.reduce<CsvRow>((acc, key, index) => {
-        acc[key || `column_${index + 1}`] = row[index]?.trim() ?? "";
-        return acc;
-      }, {})
-    );
-}
-
-// Conservative chunk size. Postgres hard-caps a query at 65535 parameters.
-// Each mention insert binds ~22 columns, so 200 rows ≈ 4400 params — way under
-// the limit, leaves headroom, and keeps individual transactions snappy so a
-// single failed chunk doesn't roll back hours of work on huge industry CSVs.
-const BATCH_SIZE = 200;
-
-export async function ingestSentioneCsv(params: {
+// Streaming ingest for very large CSVs (hundreds of MB). The whole-string
+// ingestSentioneCsv buffers the file + parsed array in memory and OOMs the
+// server on ~0.5GB exports. This variant consumes the upload as a byte stream,
+// parses row-by-row, and inserts in bounded batches — memory stays flat
+// regardless of file size. It also computes the file hash incrementally.
+export async function ingestSentioneCsvStream(params: {
   corpusId: string;
   importBatchId: string;
   sourceFileName: string;
-  csvText: string;
-}) {
-  const rows = parseSentioneCsv(params.csvText);
+  entityLabel?: string | null;
+  stream: ReadableStream<Uint8Array>;
+}): Promise<{ stats: CsvImportStats; fileHash: string }> {
+  const hash = crypto.createHash("sha256");
+  const decoder = new TextDecoder("utf-8");
   const seenHashes = new Set<string>();
+  // mentions has TWO unique constraints: (study_corpus_id, text_hash) and
+  // (source_system, external_id). ON CONFLICT can only target one, so we also
+  // dedup external_id in-file — otherwise a CSV with repeated mention IDs makes
+  // the whole batch INSERT fail on uq_mentions_source_external.
+  const seenExternalIds = new Set<string>();
   const stats: CsvImportStats = {
-    record_count: rows.length,
+    record_count: 0,
     included_count: 0,
     excluded_count: 0,
     duplicate_count: 0
   };
 
-  const normalized = rows.map((row) => normalizeMention(row, params.sourceFileName));
+  let normalizedHeader: string[] | null = null;
+  let delimiter = "";
+  let headBuffer = "";
+  let delimiterReady = false;
 
-  // Deduplicate within this file before hitting the DB
-  const unique = normalized.filter((m) => {
-    if (seenHashes.has(m.textHash)) {
-      stats.duplicate_count += 1;
-      return false;
+  // Cross-chunk CSV parser state.
+  let cell = "";
+  let row: string[] = [];
+  let inQuotes = false;
+  let heldQuote = false; // saw a `"`, deferring escaped-vs-toggle decision
+  let lastWasCR = false;
+  let bomStripped = false;
+
+  // Insert batches concurrently — a single connection to the remote pooler tops
+  // out near ~600 rows/s (latency-bound); a handful in parallel reaches a few
+  // thousand rows/s, which is what makes ~0.5GB files finish in minutes.
+  const INSERT_CONCURRENCY = 6;
+  let batch: NormalizedMention[] = [];
+  const inFlight = new Set<Promise<void>>();
+
+  function dispatch(rows: NormalizedMention[]) {
+    const task = insertMentionChunk(rows, params, stats).finally(() => {
+      inFlight.delete(task);
+    });
+    inFlight.add(task);
+  }
+
+  async function dispatchBatch() {
+    if (batch.length === 0) return;
+    const rows = batch;
+    batch = [];
+    dispatch(rows);
+    if (inFlight.size >= INSERT_CONCURRENCY) await Promise.race(inFlight);
+  }
+
+  async function emitRow(cells: string[]) {
+    if (normalizedHeader === null) {
+      normalizedHeader = cells.map((cssll) => normalizeKey(cssll));
+      return;
     }
-    seenHashes.add(m.textHash);
-    return true;
-  });
+    if (!cells.some((value) => value.trim().length > 0)) return;
+    stats.record_count += 1;
+    const header = normalizedHeader;
+    const rowObj = header.reduce<CsvRow>((acc, key, index) => {
+      acc[key || `column_${index + 1}`] = cells[index]?.trim() ?? "";
+      return acc;
+    }, {});
+    const mention = normalizeMention(rowObj, params.sourceFileName);
+    // Dedup on either unique key before it can blow up a batch insert.
+    if (seenHashes.has(mention.textHash) || seenExternalIds.has(mention.externalId)) {
+      stats.duplicate_count += 1;
+      return;
+    }
+    seenHashes.add(mention.textHash);
+    seenExternalIds.add(mention.externalId);
+    batch.push(mention);
+    if (batch.length >= STREAM_BATCH_SIZE) await dispatchBatch();
+  }
 
-  // Batch insert in chunks. We surround each chunk in its own try/catch so a
-  // single problematic chunk (oversize row, weird character, etc.) doesn't
-  // throw away the entire CSV — the rest of the file still lands and the user
-  // gets accurate stats.
-  let failedChunks = 0;
-  const totalChunks = Math.ceil(unique.length / BATCH_SIZE);
+  async function feed(text: string) {
+    for (let index = 0; index < text.length; index += 1) {
+      const char = text[index] as string;
 
-  for (let i = 0; i < unique.length; i += BATCH_SIZE) {
-    const chunk = unique.slice(i, i + BATCH_SIZE);
+      if (!bomStripped) {
+        bomStripped = true;
+        if (char === "﻿") continue;
+      }
 
-    const values = chunk.map((m) => ({
-      studyCorpusId: params.corpusId,
-      externalId: `${params.corpusId}:${m.externalId}`.slice(0, 500),
-      sourceSystem: "sentione_csv",
-      sourceFileId: params.importBatchId,
-      textHash: m.textHash,
-      textRaw: m.textRaw,
-      textClean: m.textClean,
-      textSnippet: m.textSnippet,
-      title: m.title,
-      textLength: m.textLength,
-      language: m.language,
-      publishedAt: m.publishedAt,
-      platform: m.platform,
-      url: m.url,
-      country: m.country,
-      engagement: m.engagement,
-      sentimentSource: m.sentimentSource,
-      sentimentScore: m.sentimentScore,
-      qualityScore: m.inclusionStatus === "included" ? 7 : 2,
-      inclusionStatus: m.inclusionStatus,
-      exclusionReason: m.exclusionReason,
-      qualityFlags: m.qualityFlags,
-      rawMetadata: m.rawMetadata
-    }));
+      if (heldQuote) {
+        heldQuote = false;
+        if (char === '"') {
+          cell += '"'; // escaped quote ("")
+          continue;
+        }
+        inQuotes = !inQuotes; // the held quote was a real toggle
+      }
 
-    try {
-      const inserted = await db
-        .insert(mentions)
-        .values(values)
-        .onConflictDoNothing({ target: [mentions.studyCorpusId, mentions.textHash] })
-        .returning({ id: mentions.id, inclusionStatus: mentions.inclusionStatus });
+      if (lastWasCR) {
+        lastWasCR = false;
+        if (char === "\n") continue; // swallow the \n of a \r\n pair
+      }
 
-      // Count by actual DB outcome (conflicts count as duplicates)
-      const conflictCount = chunk.length - inserted.length;
-      stats.duplicate_count += conflictCount;
+      if (char === '"') {
+        heldQuote = true;
+        continue;
+      }
 
-      for (const row of inserted) {
-        if (row.inclusionStatus === "included") {
+      if (!inQuotes && char === delimiter) {
+        row.push(cell);
+        cell = "";
+        continue;
+      }
+
+      if (!inQuotes && (char === "\n" || char === "\r")) {
+        row.push(cell);
+        await emitRow(row);
+        row = [];
+        cell = "";
+        if (char === "\r") lastWasCR = true;
+        continue;
+      }
+
+      cell += char;
+    }
+  }
+
+  const reader = params.stream.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value || value.length === 0) continue;
+    hash.update(value);
+    const text = decoder.decode(value, { stream: true });
+    if (text.length === 0) continue;
+
+    if (!delimiterReady) {
+      headBuffer += text;
+      const newlineIndex = headBuffer.search(/\r|\n/);
+      if (newlineIndex >= 0 || headBuffer.length > 16_384) {
+        delimiter = detectDelimiter(headBuffer);
+        delimiterReady = true;
+        const pending = headBuffer;
+        headBuffer = "";
+        await feed(pending);
+      }
+      continue;
+    }
+
+    await feed(text);
+  }
+
+  // Flush decoder + any buffered head that never hit a newline (single-line file).
+  const tail = decoder.decode();
+  if (!delimiterReady) {
+    headBuffer += tail;
+    delimiter = detectDelimiter(headBuffer || ",");
+    delimiterReady = true;
+    await feed(headBuffer);
+    headBuffer = "";
+  } else if (tail.length > 0) {
+    await feed(tail);
+  }
+
+  // Resolve a deferred trailing quote and emit the final row if present.
+  if (heldQuote) {
+    heldQuote = false;
+    inQuotes = !inQuotes;
+  }
+  if (cell.length > 0 || row.length > 0) {
+    row.push(cell);
+    await emitRow(row);
+  }
+
+  if (batch.length > 0) {
+    dispatch(batch);
+    batch = [];
+  }
+  await Promise.all(inFlight);
+
+  return { stats, fileHash: hash.digest("hex") };
+}
+
+// Shared chunk-insert used by both the buffered and streaming ingest paths.
+function toInsertValue(
+  m: NormalizedMention,
+  params: { corpusId: string; importBatchId: string; entityLabel?: string | null }
+) {
+  return {
+    studyCorpusId: params.corpusId,
+    externalId: `${params.corpusId}:${m.externalId}`.slice(0, 500),
+    sourceSystem: "sentione_csv",
+    sourceFileId: params.importBatchId,
+    textHash: m.textHash,
+    textRaw: m.textRaw,
+    textClean: m.textClean,
+    textSnippet: m.textSnippet,
+    title: m.title,
+    textLength: m.textLength,
+    language: m.language,
+    publishedAt: m.publishedAt,
+    platform: m.platform,
+    // Materialized columns for fast Signal aggregates (see migration 0023).
+    resolvedPlatform: m.platform,
+    contentType: m.contentType,
+    batchEntityLabel: params.entityLabel ?? null,
+    url: m.url,
+    country: m.country,
+    engagement: m.engagement,
+    sentimentSource: m.sentimentSource,
+    sentimentScore: m.sentimentScore,
+    qualityScore: m.inclusionStatus === "included" ? 7 : 2,
+    inclusionStatus: m.inclusionStatus,
+    exclusionReason: m.exclusionReason,
+    qualityFlags: m.qualityFlags,
+    rawMetadata: m.rawMetadata
+  };
+}
+
+async function insertMentionChunk(
+  chunk: NormalizedMention[],
+  params: { corpusId: string; importBatchId: string; entityLabel?: string | null },
+  stats: CsvImportStats
+) {
+  if (chunk.length === 0) return;
+  const values = chunk.map((m) => toInsertValue(m, params));
+
+  try {
+    const inserted = await db
+      .insert(mentions)
+      .values(values)
+      .onConflictDoNothing({ target: [mentions.studyCorpusId, mentions.textHash] })
+      .returning({ id: mentions.id, inclusionStatus: mentions.inclusionStatus });
+
+    stats.duplicate_count += chunk.length - inserted.length;
+    for (const inserted_row of inserted) {
+      if (inserted_row.inclusionStatus === "included") stats.included_count += 1;
+      else stats.excluded_count += 1;
+    }
+  } catch (err) {
+    // A batch can fail on the OTHER unique constraint (source_system,
+    // external_id) when an id already exists in the DB. Don't lose the whole
+    // chunk — retry row by row so only the genuinely conflicting rows are skipped.
+    const msg = err instanceof Error ? err.message.slice(0, 160) : String(err).slice(0, 160);
+    console.warn(`[csv-ingest] batch failed, retrying ${chunk.length} rows individually: ${msg}`);
+    for (const m of chunk) {
+      try {
+        const inserted = await db
+          .insert(mentions)
+          .values([toInsertValue(m, params)])
+          .onConflictDoNothing({ target: [mentions.studyCorpusId, mentions.textHash] })
+          .returning({ id: mentions.id, inclusionStatus: mentions.inclusionStatus });
+        if (inserted.length === 0) {
+          stats.duplicate_count += 1;
+        } else if (inserted[0]?.inclusionStatus === "included") {
           stats.included_count += 1;
         } else {
           stats.excluded_count += 1;
         }
+      } catch {
+        // Conflicts with the source/external unique key or a bad row — skip it.
+        stats.duplicate_count += 1;
       }
-    } catch (err) {
-      failedChunks += 1;
-      const msg = err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200);
-      console.error(`[csv-ingest] chunk ${Math.floor(i / BATCH_SIZE) + 1}/${totalChunks} failed: ${msg}`);
-      // Continue with the rest of the file — partial success beats total loss
     }
   }
-
-  if (failedChunks > 0) {
-    console.warn(`[csv-ingest] ${failedChunks}/${totalChunks} chunks failed; ${stats.included_count + stats.excluded_count} mentions ingested anyway`);
-  }
-
-  return stats;
-}
-
-export function fileHash(buffer: Buffer) {
-  return crypto.createHash("sha256").update(buffer).digest("hex");
 }
 
 function normalizeMention(row: CsvRow, sourceFileName: string): NormalizedMention {
@@ -209,6 +360,7 @@ function normalizeMention(row: CsvRow, sourceFileName: string): NormalizedMentio
     language,
     publishedAt,
     platform,
+    contentType,
     url,
     country,
     engagement: extractEngagement(row),
@@ -229,55 +381,6 @@ function normalizeMention(row: CsvRow, sourceFileName: string): NormalizedMentio
     },
     textHash
   };
-}
-
-function parseDelimited(input: string, delimiter: string) {
-  const records: string[][] = [];
-  let row: string[] = [];
-  let cell = "";
-  let inQuotes = false;
-
-  for (let index = 0; index < input.length; index += 1) {
-    const char = input[index];
-    const next = input[index + 1];
-
-    if (char === '"' && next === '"') {
-      cell += '"';
-      index += 1;
-      continue;
-    }
-
-    if (char === '"') {
-      inQuotes = !inQuotes;
-      continue;
-    }
-
-    if (!inQuotes && char === delimiter) {
-      row.push(cell);
-      cell = "";
-      continue;
-    }
-
-    if (!inQuotes && (char === "\n" || char === "\r")) {
-      if (char === "\r" && next === "\n") {
-        index += 1;
-      }
-      row.push(cell);
-      records.push(row);
-      row = [];
-      cell = "";
-      continue;
-    }
-
-    cell += char;
-  }
-
-  if (cell.length > 0 || row.length > 0) {
-    row.push(cell);
-    records.push(row);
-  }
-
-  return records;
 }
 
 function detectDelimiter(input: string) {

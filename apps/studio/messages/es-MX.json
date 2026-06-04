@@ -257,7 +257,7 @@
   },
   "NewStudy": {
     "steps": {
-      "brand": "Marca",
+      "brand": "Sujeto",
       "objective": "Objetivo",
       "sources": "Fuentes",
       "brief": "Brief",
@@ -268,17 +268,28 @@
       "fallbackTitle": "Nuevo estudio",
       "newBrand": "Marca nueva",
       "noBrand": "Sin marca",
+      "newTheme": "Theme nuevo",
+      "noTheme": "Sin theme",
       "methodology": "Metodología",
       "aria": "Configuración del estudio"
     },
     "validation": {
       "brand": "Selecciona una marca.",
+      "theme": "Selecciona un theme.",
       "methodology": "Selecciona una metodología.",
       "brandName": "Pon el nombre de la marca.",
+      "themeName": "Pon el nombre del theme.",
+      "industryFocus": "Agrega al menos una industria o categoría.",
       "organization": "Pon la organización.",
       "studyName": "Pon un nombre de estudio.",
       "businessQuestion": "Agrega una pregunta de negocio concreta, mínimo 10 caracteres.",
       "completeMarked": "Completa los campos marcados antes de seguir."
+    },
+    "subject": {
+      "eyebrow": "Sujeto de estudio",
+      "title": "Qué quieres estudiar",
+      "brand": "Marca",
+      "theme": "Industria / Theme"
     },
     "brand": {
       "eyebrow": "Brand OS",
@@ -299,6 +310,28 @@
       "competitorsHint": "Sólo nombres de competidores, uno por línea. Rankings, links y research largo van en Notas de mercado.",
       "marketNotes": "Notas de mercado",
       "marketNotesPlaceholder": "Qué vende, promesas, restricciones, fricciones conocidas, campañas recientes..."
+    },
+    "baseline": {
+      "eyebrow": "Corpus reuse",
+      "title": "Usar corpus de industria como baseline",
+      "copy": "Vincula este estudio de marca a un corpus de industria ya construido. No copia menciones; los outputs consultan ambos.",
+      "label": "Baseline de industria",
+      "none": "Sin baseline",
+      "empty": "No hay corpora de industria disponibles",
+      "fallbackCorpus": "Corpus de industria",
+      "selected": "Baseline vinculado: {name} · {count} menciones."
+    },
+    "theme": {
+      "existing": "Theme existente",
+      "create": "Crear theme",
+      "theme": "Theme",
+      "name": "Nombre del theme",
+      "slug": "Slug",
+      "industryFocus": "Industria o categoría",
+      "industryFocusPlaceholder": "Telefonía, retail beauty, banca digital...",
+      "geoFocus": "Países",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Qué cubre el estudio, qué jugadores incluye, qué límites debe respetar..."
     },
     "objective": {
       "eyebrow": "Study Brief",
@@ -348,6 +381,12 @@
       "eyebrow": "Compiled Brief",
       "title": "Lo que Noisia va a usar para arrancar",
       "brand": "Marca",
+      "subject": "Sujeto",
+      "subjectType": "Tipo",
+      "brandSubject": "Marca",
+      "themeSubject": "Industria / theme",
+      "baseline": "Baseline",
+      "baselineLinked": "Corpus de industria vinculado",
       "methodology": "Metodología",
       "question": "Pregunta",
       "decision": "Decisión",
@@ -382,12 +421,14 @@
     },
     "progress": {
       "creatingBrand": "Creando Brand OS...",
+      "creatingTheme": "Creando theme...",
       "creatingStudy": "Creando estudio...",
       "uploadingKnowledge": "Subiendo Knowledge Base...",
       "readyEngine": "Listo para lanzar Engine.",
       "knowledgeReady": "Knowledge Base listo.",
       "analyzingKnowledge": "Analizando Knowledge Base... {progress}%",
       "fallbackBrandError": "No se pudo crear la marca.",
+      "fallbackThemeError": "No se pudo crear el theme.",
       "fallbackStudyError": "No se pudo crear el estudio.",
       "fallbackKnowledgeProcessError": "No se pudo procesar el Knowledge Base.",
       "fallbackKnowledgeReadError": "No se pudo leer el Knowledge Base procesado.",
@@ -395,7 +436,8 @@
       "fieldFallback": "campo",
       "invalidFallback": "inválido",
       "knowledgeFailed": "Falló el análisis del Knowledge Base.",
-      "knowledgeTimeout": "El análisis del Knowledge Base tardó demasiado."
+      "knowledgeTimeout": "El análisis del Knowledge Base tardó demasiado.",
+      "noWorker": "No hay ningún worker procesando la cola. Levanta el servicio de workers (pnpm --filter @noisia/workers dev) y reintenta."
     }
   },
   "Team": {

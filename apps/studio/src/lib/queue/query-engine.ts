@@ -43,3 +43,19 @@ function resolveQueueName(baseName: string) {
   const runtimeEnv = process.env.RAILWAY_ENVIRONMENT || process.env.VERCEL_ENV || process.env.NODE_ENV;
   return runtimeEnv && runtimeEnv !== "development" ? baseName : `${baseName}-local`;
 }
+
+// Mirrors the heartbeat key written by the worker (services/workers). Returns
+// true when a worker has recently checked in. On any Redis error we fail open
+// (return true) so a transient blip never blocks an otherwise working flow.
+export async function isQueryEngineWorkerAlive(): Promise<boolean> {
+  try {
+    if (!globalThis.noisiaQueryEngineRedis) {
+      globalThis.noisiaQueryEngineRedis = getRedisConnection();
+    }
+    const key = `noisia:worker-alive:${resolveQueueName(QUERY_ENGINE_QUEUE_NAME)}`;
+    const value = await globalThis.noisiaQueryEngineRedis.get(key);
+    return value !== null;
+  } catch {
+    return true;
+  }
+}

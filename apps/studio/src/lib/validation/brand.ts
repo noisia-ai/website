@@ -58,7 +58,9 @@ export const createThemeSchema = z.object({
 
 export const createStudySchema = z.object({
   name: z.string().min(3).max(180),
-  brand_id: z.string().uuid(),
+  brand_id: z.string().uuid().optional(),
+  theme_id: z.string().uuid().optional(),
+  base_corpus_id: z.string().uuid().optional(),
   methodology_id: z.string().uuid(),
   business_question: z.string().min(10).max(800),
   decision_to_inform: optionalText(800),
@@ -72,4 +74,28 @@ export const createStudySchema = z.object({
   success_criteria: optionalText(1200),
   geo_focus: z.array(countryCodeSchema).min(1).max(6).default(["MX"]),
   target_window_months: z.coerce.number().int().min(1).max(36).default(12)
+}).refine((data) => Number(Boolean(data.brand_id)) + Number(Boolean(data.theme_id)) === 1, {
+  path: ["brand_id"],
+  message: "Selecciona una marca o un theme, pero no ambos."
+}).refine((data) => !data.base_corpus_id || Boolean(data.brand_id), {
+  path: ["base_corpus_id"],
+  message: "El baseline de industria sólo aplica para estudios de marca."
+});
+
+const corpusEntityKindSchema = z.enum(["primary_brand", "competitor", "category"]);
+
+export const upsertCorpusEntitySchema = z.object({
+  competitor_id: z.string().uuid().optional(),
+  entity_kind: corpusEntityKindSchema.default("competitor"),
+  name: z.string().min(2).max(180),
+  aliases: z.array(shortListItem(240, 1)).default([]),
+  handles: z.array(shortListItem(240, 1)).default([]),
+  query_seeds: z.array(shortListItem(240, 1)).default([]),
+  notes: optionalText(4000),
+  is_category_baseline: z.boolean().default(false),
+  priority: z.coerce.number().int().min(0).max(999).optional(),
+  status: z.enum(["active", "archived"]).default("active")
+}).refine((data) => !data.is_category_baseline || data.entity_kind === "category", {
+  path: ["is_category_baseline"],
+  message: "Category baseline debe ser una entidad de tipo category."
 });

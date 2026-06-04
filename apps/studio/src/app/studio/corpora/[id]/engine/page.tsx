@@ -4,7 +4,7 @@ import { TbAnalysisRunPanel } from "@/components/analysis/TbAnalysisRunPanel";
 import { EngineWizard } from "@/components/engine/EngineWizard";
 import { requireStudioUser } from "@/lib/auth/guards";
 import { getBrandDetailForUser } from "@/lib/data/brands";
-import { getCorpusEngineState, getCorpusForUser, getTbAnalysisForCorpus } from "@/lib/data/corpora";
+import { getCorpusEngineState, getCorpusForUser, getTbAnalysisForCorpus, listCorpusEntitiesForCorpus } from "@/lib/data/corpora";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +20,7 @@ export default async function CorpusEnginePage({ params }: { params: Promise<{ i
 
   const state = await getCorpusEngineState(corpus.id);
   const latestAnalysis = await getTbAnalysisForCorpus(corpus.id);
+  const entities = await listCorpusEntitiesForCorpus(corpus.id);
   const brand = corpus.brandId ? await getBrandDetailForUser(session.appUser, corpus.brandId) : null;
 
   return (
@@ -27,6 +28,7 @@ export default async function CorpusEnginePage({ params }: { params: Promise<{ i
       <EngineWizard
         corpusId={corpus.id}
         corpusName={corpus.name ?? corpus.brandName ?? corpus.themeName ?? "Corpus"}
+        subjectType={corpus.themeId ? "theme" : "brand"}
         methodologyName={corpus.methodologyName ?? null}
         corpus={state.corpus}
         iterations={state.iterations}
@@ -40,11 +42,13 @@ export default async function CorpusEnginePage({ params }: { params: Promise<{ i
         snapshots={state.snapshots}
         cleanups={state.cleanups}
         competitors={brand?.competitors ?? []}
+        entities={entities}
       />
       <TbAnalysisRunPanel
         corpusId={corpus.id}
         corpusApproved={state.isApproved}
         includedCount={state.corpus.included}
+        assessment={state.assessment as never}
         latestState={latestAnalysis}
       />
     </div>

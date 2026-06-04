@@ -5,6 +5,7 @@ import {
   type EvidenceDeepDive,
   type FutureSignal,
   type MarketAnalysis,
+  type MethodologyComparativeBlocks,
   type PublicTbFinding,
   type SignalKnowledgeImpact,
   type StrategicOpportunity
@@ -24,6 +25,9 @@ type BuildSignalPayloadArgs = {
     methodologySlug: string | null;
     businessQuestion: string | null;
     decisionToInform?: string | null;
+    baseCorpusId?: string | null;
+    baseCorpusName?: string | null;
+    baseCorpusThemeName?: string | null;
   };
   manifest?: Partial<Record<SignalModuleKey, boolean>>;
   headline?: string | null;
@@ -69,6 +73,8 @@ export function buildSignalPayload(args: BuildSignalPayloadArgs) {
       methodology_name: args.corpus.methodologyName ?? "Triggers & Barriers",
       methodology_slug: args.corpus.methodologySlug ?? "triggers-barriers",
       business_question: args.corpus.businessQuestion,
+      baseline_corpus_id: args.corpus.baseCorpusId ?? null,
+      baseline_corpus_name: args.corpus.baseCorpusName ?? args.corpus.baseCorpusThemeName ?? null,
       headline: args.headline?.trim() || `Qué mueve y qué frena la decisión sobre ${brandName}`,
       summary:
         args.summary?.trim() ||
@@ -89,6 +95,7 @@ export function buildSignalPayload(args: BuildSignalPayloadArgs) {
       [...friction, ...activation, ...structural].map(serialize)
     ),
     competitive: normalizeCompetitivePayload(analysis.comparativeBrief),
+    methodology_blocks: buildMethodologyComparativeBlocks(analysis.comparativeBrief),
     emerging_patterns: buildEmergingPatternsFromAnalysis(analysis.metaJson),
     knowledge_impact: buildKnowledgeImpact({
       metaJson: analysis.metaJson,
@@ -228,6 +235,7 @@ function buildActionCardsFromAnalysis(
 function normalizeCompetitivePayload(value: unknown) {
   const source = value && typeof value === "object" ? value as Record<string, unknown> : {};
   const entities = Array.isArray(source.entities) ? source.entities : [];
+  const dashboard = buildTbComparativeDashboard(source);
   return {
     enabled: entities.length > 0,
     entities,
@@ -236,8 +244,133 @@ function normalizeCompetitivePayload(value: unknown) {
     recommendations: Array.isArray(source.recommendations) ? source.recommendations : [],
     limitations: Array.isArray(source.limitations)
       ? source.limitations.filter((item): item is string => typeof item === "string")
-      : ["El benchmark competitivo todavía no fue generado para este corte."]
+      : ["El benchmark competitivo todavía no fue generado para este corte."],
+    dashboard
   };
+}
+
+function buildTbComparativeDashboard(source: Record<string, unknown>) {
+  const entities = arrayRecords(source.entities);
+  const presence = arrayRecords(source.finding_entity_presence);
+  if (entities.length === 0) return null;
+
+  const entitySummaries = entities.map((entity) => ({
+    entity_id: stringValue(entity.entity_id),
+    entity_name: stringValue(entity.entity_name),
+    entity_kind: stringValue(entity.entity_kind),
+    mention_count: numberValue(entity.mention_count)
+  })).filter((entity) => entity.entity_id && entity.entity_name);
+
+  const ownershipRankings = ["brand_owned", "competitor_owned", "category_wide", "shared", "insufficient_evidence"].map((ownership) => {
+    const items = presence.filter((item) => stringValue(item.ownership) === ownership);
+    return {
+      ownership,
+      findings_count: items.length,
+      top_findings: items
+        .slice()
+        .sort((a, b) => numberValue(b.total_mentions) - numberValue(a.total_mentions))
+        .slice(0, 5)
+    };
+  }).filter((row) => row.findings_count > 0);
+
+  const entityFindingMatrix = entitySummaries.map((entity) => ({
+    ...entity,
+    findings: presence
+      .flatMap((finding) => {
+        const match = arrayRecords(finding.entities).find((item) => stringValue(item.entity_id) === entity.entity_id);
+        if (!match) return [];
+        return [{
+          finding_id: stringValue(finding.finding_id),
+          finding_name: stringValue(finding.finding_name),
+          mention_count: numberValue(match.mention_count),
+          share_pct: numberValue(match.share_pct),
+          ownership: stringValue(finding.ownership)
+        }];
+      })
+      .sort((a, b) => b.mention_count - a.mention_count)
+      .slice(0, 8)
+  }));
+
+  const brandMentions = sumEntityKind(entitySummaries, "primary_brand");
+  const competitorMentions = sumEntityKind(entitySummaries, "competitor") + sumEntityKind(entitySummaries, "competitor_pool");
+  const categoryMentions = sumEntityKind(entitySummaries, "category");
+  const strongestEntity = entitySummaries.slice().sort((a, b) => b.mention_count - a.mention_count)[0] ?? null;
+  const strongestOwnership = ownershipRankings.slice().sort((a, b) => b.findings_count - a.findings_count)[0]?.ownership ?? null;
+
+  return {
+    kind: "tb_comparative_dashboard" as const,
+    summary: {
+      headline: "Comparativo marca, peers y categoría",
+      benchmark_available: Boolean(source.benchmark_available),
+      strongest_entity: strongestEntity?.entity_name ?? null,
+      strongest_ownership: strongestOwnership,
+      brand_mentions: brandMentions,
+      competitor_mentions: competitorMentions,
+      category_mentions: categoryMentions
+    },
+    ownership_rankings: ownershipRankings,
+    entity_finding_matrix: entityFindingMatrix
+  };
+}
+
+function buildMethodologyComparativeBlocks(comparativeBrief: unknown): MethodologyComparativeBlocks {
+  const source = recordValue(comparativeBrief);
+  const presence = arrayRecords(source.finding_entity_presence);
+  const matrix = buildTbComparativeDashboard(source)?.entity_finding_matrix ?? [];
+
+  return {
+    vpm: {
+      title: "VPM · Matriz de valor por entidad",
+      rows: matrix.map((entity) => ({
+        entity: entity.entity_name,
+        value_axis: "pending_engine",
+        score: null,
+        evidence_count: entity.mention_count
+      }))
+    },
+    jfm: {
+      title: "JFM · Fricciones por fase y entidad",
+      rows: presence.slice(0, 12).map((finding) => ({
+        journey_phase: stringValue(finding.mobility) || "unmapped",
+        entity: stringValue(finding.dominant_entity_name) || "Sin entidad",
+        friction_count: stringValue(finding.polarity) === "barrier" ? numberValue(finding.total_mentions) : 0,
+        top_friction: stringValue(finding.finding_name) || null
+      }))
+    },
+    cultural_codes: {
+      title: "Cultural Codes · Códigos por categoría y marca",
+      rows: presence.slice(0, 12).map((finding) => ({
+        code: stringValue(finding.finding_name) || stringValue(finding.finding_id),
+        category_count: numberValue(finding.category_mentions),
+        brand_count: numberValue(finding.brand_mentions),
+        dominant_entity: stringValue(finding.dominant_entity_name) || null
+      }))
+    },
+    influence_architecture: {
+      title: "Influence Architecture · Nodos/comunidades por entidad",
+      rows: matrix.map((entity) => ({
+        node_or_community: entity.entity_kind,
+        entity: entity.entity_name,
+        influence_score: null,
+        evidence_count: entity.mention_count
+      }))
+    },
+    decision_velocity: {
+      title: "Decision Velocity · Blockers/accelerators por journey",
+      rows: presence.slice(0, 12).map((finding) => ({
+        journey_phase: stringValue(finding.mobility) || "unmapped",
+        blockers: stringValue(finding.polarity) === "barrier" ? numberValue(finding.total_mentions) : 0,
+        accelerators: stringValue(finding.polarity) === "trigger" ? numberValue(finding.total_mentions) : 0,
+        dominant_entity: stringValue(finding.dominant_entity_name) || null
+      }))
+    }
+  };
+}
+
+function sumEntityKind(entities: Array<{ entity_kind: string; mention_count: number }>, kind: string) {
+  return entities
+    .filter((entity) => entity.entity_kind === kind)
+    .reduce((sum, entity) => sum + entity.mention_count, 0);
 }
 
 function buildEmergingPatternsFromAnalysis(metaJson: unknown): EmergingPattern[] {

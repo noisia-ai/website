@@ -81,6 +81,10 @@ async function permanentlyDeleteTheme(themeId: string) {
       WHERE study_corpus_id IN (SELECT id FROM study_corpora WHERE theme_id = ${themeId})
     `);
     await tx.execute(sql`
+      DELETE FROM corpus_entities
+      WHERE study_corpus_id IN (SELECT id FROM study_corpora WHERE theme_id = ${themeId})
+    `);
+    await tx.execute(sql`
       DELETE FROM query_iterations
       WHERE study_corpus_id IN (SELECT id FROM study_corpora WHERE theme_id = ${themeId})
     `);

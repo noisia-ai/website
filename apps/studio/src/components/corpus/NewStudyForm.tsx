@@ -1,6 +1,6 @@
 "use client";
 
-import { type ChangeEvent, type FormEvent, type ReactNode, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, type FormEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
@@ -14,6 +14,26 @@ type BrandOption = {
   industry: string | null;
   organizationName: string | null;
   organizationSlug: string | null;
+};
+
+type ThemeOption = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  industryFocus: string[] | null;
+  geoFocus: string[] | null;
+  organizationName: string | null;
+  organizationSlug: string | null;
+};
+
+type BaselineCorpusOption = {
+  id: string;
+  name: string | null;
+  status: string;
+  themeName: string | null;
+  themeSlug: string | null;
+  includedCount: number;
 };
 
 type MethodologyOption = {
@@ -39,6 +59,8 @@ type KnowledgeSource = {
 type Draft = {
   studyName: string;
   brandId: string;
+  themeId: string;
+  baseCorpusId: string;
   methodologyId: string;
   businessQuestion: string;
   decisionToInform: string;
@@ -53,6 +75,14 @@ type Draft = {
   geoFocus: string;
   targetWindowMonths: string;
   sourceKind: string;
+};
+
+type InlineTheme = {
+  name: string;
+  slug: string;
+  description: string;
+  industryFocus: string;
+  geoFocus: string;
 };
 
 type InlineBrand = {
@@ -72,6 +102,8 @@ type FieldErrors = Partial<Record<string, string>>;
 
 type NewStudyFormProps = {
   brands: BrandOption[];
+  themes: ThemeOption[];
+  baselineCorpora: BaselineCorpusOption[];
   methodologies: MethodologyOption[];
   defaultBrandId?: string;
 };
@@ -86,7 +118,7 @@ const steps = [
 const MAX_KNOWLEDGE_FILES = 20;
 const KNOWLEDGE_ACCEPT = ".xlsx,.xls,.csv,.tsv,.txt,.json,.md,text/plain,text/csv,application/json,text/markdown,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudyFormProps) {
+export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, defaultBrandId }: NewStudyFormProps) {
   const t = useTranslations("NewStudy");
   const router = useRouter();
   const defaultMethodology = methodologies.find((item) => item.slug === "triggers-barriers") ?? methodologies[0];
@@ -95,10 +127,15 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
     [brands, defaultBrandId]
   );
   const [step, setStep] = useState(0);
+  const [subjectType, setSubjectType] = useState<"brand" | "theme">(defaultBrandId || brands.length > 0 ? "brand" : "theme");
   const [brandMode, setBrandMode] = useState<"existing" | "new">(brands.length > 0 ? "existing" : "new");
+  const [themeMode, setThemeMode] = useState<"existing" | "new">(themes.length > 0 ? "existing" : "new");
+  const defaultTheme = themes[0];
   const [draft, setDraft] = useState<Draft>({
     studyName: defaultBrand ? `${defaultBrand.displayName ?? defaultBrand.name} · Triggers & Barriers` : "",
     brandId: defaultBrand?.id ?? "",
+    themeId: defaultTheme?.id ?? "",
+    baseCorpusId: "",
     methodologyId: defaultMethodology?.id ?? "",
     businessQuestion: "",
     decisionToInform: "",
@@ -126,6 +163,13 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
     competitors: "",
     knowledgeNotes: ""
   });
+  const [inlineTheme, setInlineTheme] = useState<InlineTheme>({
+    name: "",
+    slug: "",
+    description: "",
+    industryFocus: "",
+    geoFocus: "MX"
+  });
   const [files, setFiles] = useState<File[]>([]);
   const [fileNotice, setFileNotice] = useState<string | null>(null);
   const [knowledgeSources, setKnowledgeSources] = useState<KnowledgeSource[]>([]);
@@ -135,16 +179,43 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
   const [progressLabel, setProgressLabel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  // Tracks whether the user manually edited the study name. While untouched,
+  // the name auto-derives from the current subject (brand or theme) so switching
+  // subject type doesn't leave a stale default-brand name behind.
+  const [studyNameTouched, setStudyNameTouched] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedBrand = brands.find((brand) => brand.id === draft.brandId) ?? null;
+  const selectedTheme = themes.find((theme) => theme.id === draft.themeId) ?? null;
+  const selectedBaselineCorpus = baselineCorpora.find((corpus) => corpus.id === draft.baseCorpusId) ?? null;
   const selectedMethodology = methodologies.find((methodology) => methodology.id === draft.methodologyId) ?? defaultMethodology;
   const failedSourceCount = knowledgeSources.filter((source) => source.status === "failed").length;
-  const brandLabel = brandMode === "new"
-    ? inlineBrand.displayName || inlineBrand.name || t("rail.newBrand")
-    : selectedBrand
-      ? selectedBrand.displayName ?? selectedBrand.name
-      : t("rail.noBrand");
+  const subjectLabel = subjectType === "brand"
+    ? brandMode === "new"
+      ? inlineBrand.displayName || inlineBrand.name || t("rail.newBrand")
+      : selectedBrand
+        ? selectedBrand.displayName ?? selectedBrand.name
+        : t("rail.noBrand")
+    : themeMode === "new"
+      ? inlineTheme.name || t("rail.newTheme")
+      : selectedTheme?.name ?? t("rail.noTheme");
+
+  // Real subject name (no placeholder fallbacks) used to auto-derive the study name.
+  const resolvedSubjectName = subjectType === "brand"
+    ? brandMode === "new"
+      ? inlineBrand.displayName || inlineBrand.name
+      : selectedBrand?.displayName ?? selectedBrand?.name ?? ""
+    : themeMode === "new"
+      ? inlineTheme.name
+      : selectedTheme?.name ?? "";
+  const methodologyName = selectedMethodology?.name ?? "Triggers & Barriers";
+
+  useEffect(() => {
+    if (studyNameTouched) return;
+    if (!resolvedSubjectName) return;
+    const next = `${resolvedSubjectName} · ${methodologyName}`;
+    setDraft((current) => (current.studyName === next ? current : { ...current, studyName: next }));
+  }, [studyNameTouched, resolvedSubjectName, methodologyName]);
 
   function updateDraft(key: keyof Draft, value: string) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -154,6 +225,17 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
   function updateInlineBrand(key: keyof InlineBrand, value: string) {
     setFieldErrors((current) => ({ ...current, [`brand.${key}`]: undefined }));
     setInlineBrand((current) => {
+      const next = { ...current, [key]: value };
+      if (key === "name" && !current.slug) {
+        next.slug = slugify(value);
+      }
+      return next;
+    });
+  }
+
+  function updateInlineTheme(key: keyof InlineTheme, value: string) {
+    setFieldErrors((current) => ({ ...current, [`theme.${key}`]: undefined }));
+    setInlineTheme((current) => {
       const next = { ...current, [key]: value };
       if (key === "name" && !current.slug) {
         next.slug = slugify(value);
@@ -210,12 +292,22 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
     };
 
     if (maxStep >= 0) {
-      if (brandMode === "existing") {
-        if (!draft.brandId) addError(0, "brandId", t("validation.brand"));
-        if (!draft.methodologyId) addError(0, "methodologyId", t("validation.methodology"));
+      if (subjectType === "brand") {
+        if (brandMode === "existing") {
+          if (!draft.brandId) addError(0, "brandId", t("validation.brand"));
+          if (!draft.methodologyId) addError(0, "methodologyId", t("validation.methodology"));
+        } else {
+          if (inlineBrand.name.trim().length < 2) addError(0, "brand.name", t("validation.brandName"));
+          if (inlineBrand.organizationName.trim().length < 2) addError(0, "brand.organizationName", t("validation.organization"));
+        }
       } else {
-        if (inlineBrand.name.trim().length < 2) addError(0, "brand.name", t("validation.brandName"));
-        if (inlineBrand.organizationName.trim().length < 2) addError(0, "brand.organizationName", t("validation.organization"));
+        if (themeMode === "existing") {
+          if (!draft.themeId) addError(0, "themeId", t("validation.theme"));
+          if (!draft.methodologyId) addError(0, "methodologyId", t("validation.methodology"));
+        } else {
+          if (inlineTheme.name.trim().length < 2) addError(0, "theme.name", t("validation.themeName"));
+          if (inlineTheme.industryFocus.trim().length < 2) addError(0, "theme.industryFocus", t("validation.industryFocus"));
+        }
       }
     }
 
@@ -269,7 +361,8 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
 
     try {
       let brandId = draft.brandId;
-      if (brandMode === "new") {
+      let themeId = draft.themeId;
+      if (subjectType === "brand" && brandMode === "new") {
         setProgressLabel(t("progress.creatingBrand"));
         brandId = await createInlineBrand(inlineBrand, {
           fallback: t("progress.fallbackBrandError"),
@@ -277,9 +370,20 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
           invalidFallback: t("progress.invalidFallback")
         });
       }
+      if (subjectType === "theme" && themeMode === "new") {
+        setProgressLabel(t("progress.creatingTheme"));
+        themeId = await createInlineTheme(inlineTheme, {
+          fallback: t("progress.fallbackThemeError"),
+          fieldFallback: t("progress.fieldFallback"),
+          invalidFallback: t("progress.invalidFallback")
+        });
+      }
 
       setProgressLabel(t("progress.creatingStudy"));
-      const studyPayload = buildStudyPayload(draft, brandId);
+      const studyPayload = buildStudyPayload(
+        draft,
+        subjectType === "brand" ? { brandId, baseCorpusId: draft.baseCorpusId || undefined } : { themeId }
+      );
       const res = await fetch("/api/corpora", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -323,6 +427,7 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
         knowledgeReady: t("progress.knowledgeReady"),
         knowledgeFailed: t("progress.knowledgeFailed"),
         knowledgeTimeout: t("progress.knowledgeTimeout"),
+        noWorker: t("progress.noWorker"),
         analyzingKnowledge: (progress) => t("progress.analyzingKnowledge", { progress })
       });
       if (waitResult === "timeout") {
@@ -354,7 +459,7 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
         <div>
           <p className="vitals-eyebrow">{t("rail.eyebrow")}</p>
           <h2>{draft.studyName || t("rail.fallbackTitle")}</h2>
-          <p>{brandLabel} · {selectedMethodology?.name ?? t("rail.methodology")}</p>
+          <p>{subjectLabel} · {selectedMethodology?.name ?? t("rail.methodology")}</p>
         </div>
         <ol className="study-step-list">
           {steps.map((item, index) => (
@@ -375,7 +480,26 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
 
       <section className="study-wizard-stage">
         {step === 0 && (
-          <WizardPanel eyebrow={t("brand.eyebrow")} title={t("brand.title")}>
+          <WizardPanel eyebrow={t("subject.eyebrow")} title={t("subject.title")}>
+            <div className="study-mode-switch">
+              <button
+                className={subjectType === "brand" ? "study-mode study-mode--active" : "study-mode"}
+                type="button"
+                onClick={() => setSubjectType("brand")}
+              >
+                {t("subject.brand")}
+              </button>
+              <button
+                className={subjectType === "theme" ? "study-mode study-mode--active" : "study-mode"}
+                type="button"
+                onClick={() => setSubjectType("theme")}
+              >
+                {t("subject.theme")}
+              </button>
+            </div>
+
+            {subjectType === "brand" ? (
+              <>
             <div className="study-mode-switch">
               <button
                 className={brandMode === "existing" ? "study-mode study-mode--active" : "study-mode"}
@@ -395,28 +519,36 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
             </div>
 
             {brandMode === "existing" ? (
-              <div className="new-study-grid">
-                <Field label={t("brief.brand")}>
-                  <select className="filter-input new-study-input" value={draft.brandId} onChange={(event) => updateDraft("brandId", event.target.value)} required>
-                    {brands.map((brand) => (
-                      <option key={brand.id} value={brand.id}>
-                        {brand.displayName ?? brand.name}
-                      </option>
-                    ))}
-                  </select>
-                  {fieldErrors.brandId && <small className="new-study-field-error">{fieldErrors.brandId}</small>}
-                </Field>
-                <Field label={t("brand.methodology")}>
-                  <select className="filter-input new-study-input" value={draft.methodologyId} onChange={(event) => updateDraft("methodologyId", event.target.value)} required>
-                    {methodologies.map((methodology) => (
-                      <option key={methodology.id} value={methodology.id}>
-                        {methodology.name} · {methodology.version}
-                      </option>
-                    ))}
-                  </select>
-                  {fieldErrors.methodologyId && <small className="new-study-field-error">{fieldErrors.methodologyId}</small>}
-                </Field>
-              </div>
+              <>
+                <div className="new-study-grid">
+                  <Field label={t("brief.brand")}>
+                    <select className="filter-input new-study-input" value={draft.brandId} onChange={(event) => updateDraft("brandId", event.target.value)} required>
+                      {brands.map((brand) => (
+                        <option key={brand.id} value={brand.id}>
+                          {brand.displayName ?? brand.name}
+                        </option>
+                      ))}
+                    </select>
+                    {fieldErrors.brandId && <small className="new-study-field-error">{fieldErrors.brandId}</small>}
+                  </Field>
+                  <Field label={t("brand.methodology")}>
+                    <select className="filter-input new-study-input" value={draft.methodologyId} onChange={(event) => updateDraft("methodologyId", event.target.value)} required>
+                      {methodologies.map((methodology) => (
+                        <option key={methodology.id} value={methodology.id}>
+                          {methodology.name} · {methodology.version}
+                        </option>
+                      ))}
+                    </select>
+                    {fieldErrors.methodologyId && <small className="new-study-field-error">{fieldErrors.methodologyId}</small>}
+                  </Field>
+                </div>
+                <BaselineCorpusField
+                  baselineCorpora={baselineCorpora}
+                  selectedBaselineCorpus={selectedBaselineCorpus}
+                  value={draft.baseCorpusId}
+                  onChange={(value) => updateDraft("baseCorpusId", value)}
+                />
+              </>
             ) : (
               <>
                 <div className="new-study-grid">
@@ -459,6 +591,92 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
                   />
                 </div>
                 <TextAreaField label={t("brand.marketNotes")} value={inlineBrand.knowledgeNotes} onChange={(value) => updateInlineBrand("knowledgeNotes", value)} placeholder={t("brand.marketNotesPlaceholder")} />
+                <BaselineCorpusField
+                  baselineCorpora={baselineCorpora}
+                  selectedBaselineCorpus={selectedBaselineCorpus}
+                  value={draft.baseCorpusId}
+                  onChange={(value) => updateDraft("baseCorpusId", value)}
+                />
+              </>
+            )}
+              </>
+            ) : (
+              <>
+                <div className="study-mode-switch">
+                  <button
+                    className={themeMode === "existing" ? "study-mode study-mode--active" : "study-mode"}
+                    type="button"
+                    onClick={() => setThemeMode("existing")}
+                    disabled={themes.length === 0}
+                  >
+                    {t("theme.existing")}
+                  </button>
+                  <button
+                    className={themeMode === "new" ? "study-mode study-mode--active" : "study-mode"}
+                    type="button"
+                    onClick={() => setThemeMode("new")}
+                  >
+                    {t("theme.create")}
+                  </button>
+                </div>
+
+                {themeMode === "existing" ? (
+                  <div className="new-study-grid">
+                    <Field label={t("theme.theme")}>
+                      <select className="filter-input new-study-input" value={draft.themeId} onChange={(event) => updateDraft("themeId", event.target.value)} required>
+                        {themes.map((theme) => (
+                          <option key={theme.id} value={theme.id}>
+                            {theme.name}
+                          </option>
+                        ))}
+                      </select>
+                      {fieldErrors.themeId && <small className="new-study-field-error">{fieldErrors.themeId}</small>}
+                    </Field>
+                    <Field label={t("brand.methodology")}>
+                      <select className="filter-input new-study-input" value={draft.methodologyId} onChange={(event) => updateDraft("methodologyId", event.target.value)} required>
+                        {methodologies.map((methodology) => (
+                          <option key={methodology.id} value={methodology.id}>
+                            {methodology.name} · {methodology.version}
+                          </option>
+                        ))}
+                      </select>
+                      {fieldErrors.methodologyId && <small className="new-study-field-error">{fieldErrors.methodologyId}</small>}
+                    </Field>
+                  </div>
+                ) : (
+                  <>
+                    <div className="new-study-grid">
+                      <TextField label={t("theme.name")} value={inlineTheme.name} onChange={(value) => updateInlineTheme("name", value)} error={fieldErrors["theme.name"]} required />
+                      <TextField label={t("theme.slug")} value={inlineTheme.slug} onChange={(value) => updateInlineTheme("slug", value)} />
+                      <TextField
+                        label={t("theme.industryFocus")}
+                        value={inlineTheme.industryFocus}
+                        onChange={(value) => updateInlineTheme("industryFocus", value)}
+                        error={fieldErrors["theme.industryFocus"]}
+                        placeholder={t("theme.industryFocusPlaceholder")}
+                        list="wizard-theme-industry-options"
+                        required
+                      />
+                      <TextField label={t("theme.geoFocus")} value={inlineTheme.geoFocus} onChange={(value) => updateInlineTheme("geoFocus", value)} />
+                    </div>
+                    <datalist id="wizard-theme-industry-options">
+                      {INDUSTRY_OPTIONS.map((industry) => <option key={industry} value={industry} />)}
+                    </datalist>
+                    <TextAreaField label={t("theme.description")} value={inlineTheme.description} onChange={(value) => updateInlineTheme("description", value)} placeholder={t("theme.descriptionPlaceholder")} />
+                    <div className="new-study-grid">
+                      <Field label={t("brand.methodology")}>
+                        <select className="filter-input new-study-input" value={draft.methodologyId} onChange={(event) => updateDraft("methodologyId", event.target.value)} required>
+                          {methodologies.map((methodology) => (
+                            <option key={methodology.id} value={methodology.id}>
+                              {methodology.name} · {methodology.version}
+                            </option>
+                          ))}
+                        </select>
+                        {fieldErrors.methodologyId && <small className="new-study-field-error">{fieldErrors.methodologyId}</small>}
+                      </Field>
+                    </div>
+                  </>
+                )}
               </>
             )}
           </WizardPanel>
@@ -466,7 +684,7 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
 
         {step === 1 && (
           <WizardPanel eyebrow={t("objective.eyebrow")} title={t("objective.title")}>
-            <TextField label={t("objective.studyName")} value={draft.studyName} onChange={(value) => updateDraft("studyName", value)} error={fieldErrors.studyName} required />
+            <TextField label={t("objective.studyName")} value={draft.studyName} onChange={(value) => { setStudyNameTouched(true); updateDraft("studyName", value); }} error={fieldErrors.studyName} required />
             <TextAreaField label={t("objective.businessQuestion")} value={draft.businessQuestion} onChange={(value) => updateDraft("businessQuestion", value)} error={fieldErrors.businessQuestion} required placeholder={t("objective.businessQuestionPlaceholder")} />
             <div className="new-study-grid">
               <TextField label={t("objective.decision")} value={draft.decisionToInform} onChange={(value) => updateDraft("decisionToInform", value)} placeholder={t("objective.decisionPlaceholder")} />
@@ -555,7 +773,7 @@ export function NewStudyForm({ brands, methodologies, defaultBrandId }: NewStudy
 
         {step === 3 && (
           <WizardPanel eyebrow={t("brief.eyebrow")} title={t("brief.title")}>
-            <BriefPreview draft={draft} brandLabel={brandLabel} methodology={selectedMethodology?.name ?? "Triggers & Barriers"} files={files} />
+            <BriefPreview draft={draft} subjectLabel={subjectLabel} methodology={selectedMethodology?.name ?? "Triggers & Barriers"} files={files} subjectType={subjectType} />
           </WizardPanel>
         )}
 
@@ -738,20 +956,66 @@ function TextAreaField({
   );
 }
 
+function BaselineCorpusField({
+  baselineCorpora,
+  selectedBaselineCorpus,
+  value,
+  onChange
+}: {
+  baselineCorpora: BaselineCorpusOption[];
+  selectedBaselineCorpus: BaselineCorpusOption | null;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const t = useTranslations("NewStudy.baseline");
+
+  return (
+    <section className="baseline-corpus-field">
+      <div>
+        <p className="vitals-eyebrow">{t("eyebrow")}</p>
+        <h3>{t("title")}</h3>
+        <p>{t("copy")}</p>
+      </div>
+      <Field label={t("label")}>
+        <select className="filter-input new-study-input" value={value} onChange={(event) => onChange(event.target.value)} disabled={baselineCorpora.length === 0}>
+          <option value="">{baselineCorpora.length === 0 ? t("empty") : t("none")}</option>
+          {baselineCorpora.map((corpus) => (
+            <option key={corpus.id} value={corpus.id}>
+              {(corpus.name || corpus.themeName || t("fallbackCorpus"))} · {formatNumber(corpus.includedCount)} mentions
+            </option>
+          ))}
+        </select>
+        {selectedBaselineCorpus && (
+          <small className="new-study-hint">
+            {t("selected", {
+              name: selectedBaselineCorpus.name || selectedBaselineCorpus.themeName || t("fallbackCorpus"),
+              count: selectedBaselineCorpus.includedCount
+            })}
+          </small>
+        )}
+      </Field>
+    </section>
+  );
+}
+
 function BriefPreview({
   draft,
-  brandLabel,
+  subjectLabel,
   methodology,
-  files
+  files,
+  subjectType
 }: {
   draft: Draft;
-  brandLabel: string;
+  subjectLabel: string;
   methodology: string;
   files: File[];
+  subjectType: "brand" | "theme";
 }) {
   const t = useTranslations("NewStudy.brief");
   const items = [
-    [t("brand"), brandLabel],
+    [t("subject"), subjectLabel],
+    [t("subjectType"), subjectType === "theme" ? t("themeSubject") : t("brandSubject")],
+    [t("baseline"), draft.baseCorpusId ? t("baselineLinked") : ""],
     [t("methodology"), methodology],
     [t("question"), draft.businessQuestion],
     [t("decision"), draft.decisionToInform],
@@ -804,10 +1068,35 @@ async function createInlineBrand(
   return String(json.data.id);
 }
 
-function buildStudyPayload(draft: Draft, brandId: string) {
+async function createInlineTheme(
+  theme: InlineTheme,
+  labels: { fallback: string; fieldFallback: string; invalidFallback: string }
+) {
+  const payload = {
+    slug: theme.slug || slugify(theme.name),
+    name: theme.name,
+    description: theme.description,
+    industry_focus: splitList(theme.industryFocus),
+    geo_focus: splitList(theme.geoFocus || "MX").map((item) => item.toUpperCase()),
+    status: "active",
+    is_public: false
+  };
+  const res = await fetch("/api/themes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(formatApiError(json, labels.fallback, labels.fieldFallback, labels.invalidFallback));
+  return String(json.data.id);
+}
+
+function buildStudyPayload(draft: Draft, subject: { brandId?: string; themeId?: string; baseCorpusId?: string }) {
   return {
     name: draft.studyName,
-    brand_id: brandId,
+    ...(subject.brandId ? { brand_id: subject.brandId } : {}),
+    ...(subject.themeId ? { theme_id: subject.themeId } : {}),
+    ...(subject.baseCorpusId ? { base_corpus_id: subject.baseCorpusId } : {}),
     methodology_id: draft.methodologyId,
     business_question: draft.businessQuestion,
     decision_to_inform: draft.decisionToInform,
@@ -839,9 +1128,13 @@ async function waitForJob(
     knowledgeReady: string;
     knowledgeFailed: string;
     knowledgeTimeout: string;
+    noWorker: string;
     analyzingKnowledge: (progress: number) => string;
   }
 ) {
+  // If the job stays queued (never picked up) and no worker is connected,
+  // fail fast instead of polling for ~4 minutes and dying with "Load failed".
+  let stalledWaitingChecks = 0;
   for (let attempt = 0; attempt < 220; attempt += 1) {
     const res = await fetch(`/api/jobs/${jobId}`);
     const json = await res.json().catch(() => ({}));
@@ -853,6 +1146,17 @@ async function waitForJob(
     }
     if (json.status === "failed") {
       throw new Error(json.failed_reason ?? labels.knowledgeFailed);
+    }
+    const isWaiting = json.status === "waiting" || json.status === "delayed";
+    const noWorker = json.worker_alive === false;
+    if (isWaiting && noWorker) {
+      stalledWaitingChecks += 1;
+      // Allow a few cycles in case a worker is booting; then bail out clearly.
+      if (stalledWaitingChecks >= 4) {
+        throw new Error(labels.noWorker);
+      }
+    } else {
+      stalledWaitingChecks = 0;
     }
     onProgress(labels.analyzingKnowledge(Math.round(progress)));
     await new Promise((resolve) => setTimeout(resolve, 1200));
@@ -939,6 +1243,10 @@ function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("es-MX").format(value);
 }
 
 function fileKey(file: File) {

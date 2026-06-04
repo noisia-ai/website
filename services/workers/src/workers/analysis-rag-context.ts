@@ -43,13 +43,26 @@ export async function ensureQueryStrategyBrief(args: {
   const existing = extractStrategyBrief(args.input.knowledgeSources);
   if (existing) return existing;
 
-  const prompt = buildQueryStrategyBriefPrompt(args.input);
-  const result = await generateText({
-    model: anthropic(args.model),
-    prompt,
-    temperature: 0.12
-  });
-  const brief = parseQueryStrategyBriefJson(result.text);
+  // The brief is best-effort context: a transient LLM error or malformed JSON
+  // must NOT kill the whole compose job. Fall back to a minimal brief derived
+  // from the corpus input so query composition can still proceed.
+  let brief: QueryStrategyBrief;
+  try {
+    const prompt = buildQueryStrategyBriefPrompt(args.input);
+    const result = await generateText({
+      model: anthropic(args.model),
+      prompt,
+      temperature: 0.12
+    });
+    brief = parseQueryStrategyBriefJson(result.text);
+  } catch (error) {
+    console.warn(
+      `[brief] strategy brief generation failed, using fallback: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+    brief = buildFallbackStrategyBrief(args.input, error);
+  }
 
   const [scope] = (
     await pool.query<CorpusScopeRow>(
@@ -151,6 +164,35 @@ function compactKnowledgeContent(title: string, content: unknown, rawText: strin
     summary: rawText?.slice(0, 1200) ?? "",
     raw_text_excerpt: rawText?.slice(0, 1800) ?? "",
     recommended_use: ["analysis_context"]
+  };
+}
+
+function buildFallbackStrategyBrief(input: QueryComposerInput, error: unknown): QueryStrategyBrief {
+  const subjectName = input.subject.name;
+  const industry = input.subject.industry ?? "la categoria";
+  const competitors = input.competitors.slice(0, 8);
+  const businessQuestion = input.corpus.businessQuestion ?? "";
+  return {
+    summary:
+      businessQuestion ||
+      `Brief base para ${subjectName} en ${industry}. Generado por fallback porque el LLM no respondio.`,
+    priority_topics: [subjectName, industry].filter(Boolean),
+    audience_clues: input.corpus.audienceSegment ? [input.corpus.audienceSegment] : [],
+    competitor_hypotheses: competitors.map((name) => `Comparar ${subjectName} contra ${name}.`),
+    query_language: [subjectName, ...competitors].filter(Boolean).slice(0, 24),
+    exclusions_or_noise: [],
+    brand_query_role: `Capturar menciones de ${subjectName}.`,
+    competitor_query_role:
+      competitors.length > 0
+        ? `Capturar menciones de competidores: ${competitors.join(", ")}.`
+        : "Capturar menciones de competidores relevantes.",
+    industry_query_role: `Capturar conversacion de categoria sobre ${industry}.`,
+    must_answer: businessQuestion ? [businessQuestion] : [],
+    limitations: [
+      `Brief generado por fallback (sin LLM). Motivo: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    ]
   };
 }
 

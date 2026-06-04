@@ -60,14 +60,27 @@ type FindingRow = {
   cita_protagonista: { text?: string } | null;
 };
 
+type HumanizerResult = {
+  synthesis: SynthesisResponse;
+  applied: boolean;
+  finishReason: string | null;
+  outputChars: number;
+  errorMessage: string | null;
+};
+
 // TODO mejora-futura: medir costo/duracion real por corrida y bajar estos limites
 // cuando tengamos benchmarks. Step 6 privilegia profundidad estrategica sobre
 // velocidad porque recibe findings ya curados; los limites solo evitan workers
 // colgados indefinidamente.
 const STEP6_SYNTHESIS_TIMEOUT_MS = 20 * 60 * 1000;
 const STEP6_HUMANIZER_TIMEOUT_MS = 20 * 60 * 1000;
-const STEP6_SYNTHESIS_MAX_OUTPUT_TOKENS = 14_000;
-const STEP6_HUMANIZER_MAX_OUTPUT_TOKENS = 10_000;
+const STEP6_SYNTHESIS_MAX_OUTPUT_TOKENS = 20_000;
+// The humanizer rewrites the WHOLE synthesis JSON 1:1 (often slightly longer in
+// natural language), so its budget MUST exceed the synthesis output. At 10k it
+// truncated rich syntheses (finishReason="length") → invalid JSON → the brutal
+// "compact" retry (max 3 items/array, 16 words) gutted the report. Sonnet
+// supports up to 64k output tokens; the 20-min timeout has ample room.
+const STEP6_HUMANIZER_MAX_OUTPUT_TOKENS = 26_000;
 
 /**
  * Step 6 — Synthesis + humanizer.
@@ -123,17 +136,20 @@ export async function tbStep6SynthesisJob(job: Job<StepJobData>) {
 
     const beforeHumanizer = JSON.stringify(synthesis, null, 2);
     const humanizerPrompt = buildHumanizerPrompt({ jsonText: beforeHumanizer, outputLanguage });
-    synthesis = await generateAndParseSynthesis({
+    const humanizer = await generateAndParseHumanizer({
       model,
       prompt: humanizerPrompt,
       parser: parseHumanizerResponse,
-      phase: "humanizer",
       temperature: 0.12,
       maxOutputTokens: STEP6_HUMANIZER_MAX_OUTPUT_TOKENS,
-      timeout: STEP6_HUMANIZER_TIMEOUT_MS
+      timeout: STEP6_HUMANIZER_TIMEOUT_MS,
+      fallbackSynthesis: synthesis
     });
+    synthesis = humanizer.synthesis;
     console.log(
-      `[tb-step6] humanizer before="${beforeHumanizer.slice(0, 180).replace(/\s+/g, " ")}" ` +
+      `[tb-step6] humanizer applied=${humanizer.applied} finish=${humanizer.finishReason ?? "unknown"} ` +
+      `chars=${humanizer.outputChars} error="${humanizer.errorMessage ?? ""}" ` +
+      `before="${beforeHumanizer.slice(0, 180).replace(/\s+/g, " ")}" ` +
       `after="${JSON.stringify(synthesis).slice(0, 180).replace(/\s+/g, " ")}"`
     );
     await job.updateProgress(76);
@@ -153,6 +169,12 @@ export async function tbStep6SynthesisJob(job: Job<StepJobData>) {
       marketAnalysis: synthesis.market_analysis,
       evidenceDeepDives: synthesis.evidence_deep_dives,
       openSignals: corpusOpenSignals,
+      humanizerMeta: {
+        applied: humanizer.applied,
+        finish_reason: humanizer.finishReason,
+        output_chars: humanizer.outputChars,
+        error_message: humanizer.errorMessage
+      },
       confidencePerFinding,
       findings
     });
@@ -171,6 +193,10 @@ export async function tbStep6SynthesisJob(job: Job<StepJobData>) {
         action_studio_cards: synthesis.action_studio.length,
         emerging_patterns: synthesis.emerging_patterns.length,
         open_signals: corpusOpenSignals.length,
+        humanizer_applied: humanizer.applied,
+        humanizer_finish_reason: humanizer.finishReason,
+        humanizer_output_chars: humanizer.outputChars,
+        humanizer_error: humanizer.errorMessage,
         recommendations_inserted: persistResult.recommendationsInserted,
         unmatched_recommendation_ids: persistResult.unmatchedFindingIds,
         humanizer_preview: {
@@ -247,6 +273,48 @@ async function generateAndParseSynthesis(args: {
   ].join("\n");
   const second = await run(retryPrompt);
   return args.parser(second.text);
+}
+
+async function generateAndParseHumanizer(args: {
+  model: string;
+  prompt: string;
+  parser: (raw: string) => SynthesisResponse;
+  temperature: number;
+  maxOutputTokens: number;
+  timeout: number;
+  fallbackSynthesis: SynthesisResponse;
+}): Promise<HumanizerResult> {
+  const result = await generateText({
+    model: anthropic(args.model),
+    prompt: args.prompt,
+    temperature: args.temperature,
+    maxOutputTokens: args.maxOutputTokens,
+    timeout: args.timeout,
+    maxRetries: 1
+  });
+
+  try {
+    return {
+      synthesis: args.parser(result.text),
+      applied: true,
+      finishReason: result.finishReason ?? null,
+      outputChars: result.text.length,
+      errorMessage: null
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(
+      `[tb-step6] humanizer returned invalid JSON (${message}); preserving full synthesis output. ` +
+      `finish=${result.finishReason ?? "unknown"} chars=${result.text.length}`
+    );
+    return {
+      synthesis: args.fallbackSynthesis,
+      applied: false,
+      finishReason: result.finishReason ?? null,
+      outputChars: result.text.length,
+      errorMessage: message
+    };
+  }
 }
 
 async function loadCtx(tbAnalysisId: string): Promise<AnalysisCtxRow> {
@@ -378,6 +446,12 @@ async function persistSynthesis(args: {
   marketAnalysis: SynthesisResponse["market_analysis"];
   evidenceDeepDives: SynthesisResponse["evidence_deep_dives"];
   openSignals: ReturnType<typeof buildOpenSignalsFromCorpusIntelligence>;
+  humanizerMeta: {
+    applied: boolean;
+    finish_reason: string | null;
+    output_chars: number;
+    error_message: string | null;
+  };
   confidencePerFinding: Record<string, string>;
   findings: FindingRow[];
 }): Promise<{ recommendationsInserted: number; unmatchedFindingIds: string[] }> {
@@ -388,32 +462,24 @@ async function persistSynthesis(args: {
 
   try {
     await client.query("BEGIN");
+    // Disable timeout for this transaction — the synthesis UPDATE writes large
+    // jsonb payloads and the pooler's 2-min statement_timeout kills it otherwise.
+    await client.query("SET LOCAL statement_timeout = 0");
     await client.query(
       `UPDATE tb_analyses
        SET activation_playbook = $1::jsonb,
            friction_removal_plan = $2::jsonb,
            confidence_per_finding = $3::jsonb,
-           meta_json = jsonb_set(
-             jsonb_set(
-               jsonb_set(
-                 jsonb_set(
-                   jsonb_set(
-                     jsonb_set(
-                       jsonb_set(
-                         jsonb_set(COALESCE(meta_json, '{}'::jsonb), '{action_studio}', $4::jsonb, true),
-                         '{emerging_patterns}', $5::jsonb, true
-                       ),
-                       '{knowledge_impact}', $7::jsonb, true
-                     ),
-                     '{strategic_opportunities}', $8::jsonb, true
-                   ),
-                   '{future_signals}', $9::jsonb, true
-                 ),
-                 '{market_analysis}', $10::jsonb, true
-               ),
-               '{evidence_deep_dives}', $11::jsonb, true
-             ),
-             '{open_signals}', $6::jsonb, true
+           meta_json = COALESCE(meta_json, '{}'::jsonb) || jsonb_build_object(
+             'action_studio', $4::jsonb,
+             'emerging_patterns', $5::jsonb,
+             'open_signals', $6::jsonb,
+             'knowledge_impact', $7::jsonb,
+             'strategic_opportunities', $8::jsonb,
+             'future_signals', $9::jsonb,
+             'market_analysis', $10::jsonb,
+             'evidence_deep_dives', $11::jsonb,
+             'humanizer', $13::jsonb
            ),
            updated_at = NOW()
        WHERE id = $12`,
@@ -429,7 +495,8 @@ async function persistSynthesis(args: {
         JSON.stringify(args.futureSignals),
         JSON.stringify(args.marketAnalysis),
         JSON.stringify(args.evidenceDeepDives),
-        args.tbAnalysisId
+        args.tbAnalysisId,
+        JSON.stringify(args.humanizerMeta)
       ]
     );
 
