@@ -141,7 +141,7 @@ export async function GET(
         ORDER BY count DESC
         LIMIT 24
       `,
-      [output.studyCorpusId]
+      [scopedCorpusIds]
     )
   ]);
 
