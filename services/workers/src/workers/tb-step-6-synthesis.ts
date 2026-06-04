@@ -206,6 +206,15 @@ export async function tbStep6SynthesisJob(job: Job<StepJobData>) {
       }
     });
 
+    if (process.env.TB_STEP6_ONLY_SKIP_QUALITY_GATES === "true") {
+      await job.updateProgress(100);
+      return {
+        recommendations_inserted: persistResult.recommendationsInserted,
+        next_step_job_id: null,
+        quality_gates_skipped: true
+      };
+    }
+
     const next = await enqueueStep({ tbAnalysisId, step: "quality_gates" });
     await job.updateProgress(100);
 
