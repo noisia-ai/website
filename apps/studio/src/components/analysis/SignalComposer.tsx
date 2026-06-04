@@ -6,8 +6,13 @@ import { useRouter } from "next/navigation";
 
 import { Icon } from "@/components/ui/Icon";
 import {
+  defaultSignalDemoBlurredSections,
   defaultSignalManifest,
+  normalizeSignalDemoMode,
+  normalizeSignalOutputManifest,
+  serializeSignalDemoMode,
   signalModuleMeta,
+  type SignalOutputManifest,
   type SignalModuleKey
 } from "@/lib/signal/manifest";
 
@@ -48,9 +53,44 @@ export function SignalComposer({
   const [status, setStatus] = useState(draft?.status ?? "sin preparar");
 
   const selectedCount = signalModuleMeta.filter((module) => manifest[module.key]).length;
+  const demoMode = useMemo(() => normalizeSignalDemoMode(manifest.demo_mode), [manifest.demo_mode]);
+  const demoBlurredCount = signalModuleMeta.filter(
+    (module) => manifest[module.key] && demoMode.blurredSections.includes(module.key)
+  ).length;
 
   function toggleModule(key: SignalModuleKey) {
     setManifest((current) => ({ ...current, [key]: !current[key] }));
+  }
+
+  function toggleDemoMode() {
+    setManifest((current) => {
+      const currentDemo = normalizeSignalDemoMode(current.demo_mode);
+      return {
+        ...current,
+        demo_mode: serializeSignalDemoMode({
+          enabled: !currentDemo.enabled,
+          blurredSections: currentDemo.blurredSections.length > 0
+            ? currentDemo.blurredSections
+            : defaultSignalDemoBlurredSections
+        })
+      };
+    });
+  }
+
+  function toggleDemoBlur(key: SignalModuleKey) {
+    setManifest((current) => {
+      const currentDemo = normalizeSignalDemoMode(current.demo_mode);
+      const blurredSections = currentDemo.blurredSections.includes(key)
+        ? currentDemo.blurredSections.filter((section) => section !== key)
+        : [...currentDemo.blurredSections, key];
+      return {
+        ...current,
+        demo_mode: serializeSignalDemoMode({
+          ...currentDemo,
+          blurredSections
+        })
+      };
+    });
   }
 
   function submit(action: "save_draft" | "publish") {
@@ -94,6 +134,7 @@ export function SignalComposer({
         <div className="signal-composer-status">
           <span>{status}</span>
           <strong>{selectedCount} módulos</strong>
+          {demoMode.enabled ? <small>{demoBlurredCount} blurred</small> : null}
         </div>
       </div>
 
@@ -112,25 +153,54 @@ export function SignalComposer({
         </label>
       </div>
 
+      <div className={`signal-demo-panel${demoMode.enabled ? " signal-demo-panel--active" : ""}`}>
+        <label className="signal-demo-switch">
+          <input checked={demoMode.enabled} onChange={toggleDemoMode} type="checkbox" />
+          <span className="signal-demo-switch-copy">
+            <strong>Demo mode</strong>
+            <small>
+              Publica una vista de prueba: las secciones marcadas se ven blurred en Signal. El deck de prensa no cambia.
+            </small>
+          </span>
+        </label>
+        {demoMode.enabled ? (
+          <p>
+            Marca “Blur demo” en los módulos premium. Los módulos apagados no se publican.
+          </p>
+        ) : null}
+      </div>
+
       <div className="signal-module-grid">
         {signalModuleMeta.map((module) => {
           const active = manifest[module.key];
+          const demoLocked = demoMode.enabled && demoMode.blurredSections.includes(module.key);
           return (
-            <button
-              className={`signal-module-card${active ? " signal-module-card--active" : ""}`}
+            <article
+              className={`signal-module-card${active ? " signal-module-card--active" : ""}${demoLocked ? " signal-module-card--demo-locked" : ""}`}
               key={module.key}
-              onClick={() => toggleModule(module.key)}
-              type="button"
             >
-              <span className={`signal-module-status signal-module-status--${module.status}`}>
-                {module.status === "ready" ? "Listo" : module.status === "partial" ? "Beta" : "Hold"}
-              </span>
-              <strong>{module.label}</strong>
-              <p>{module.description}</p>
-              <span className="signal-module-check">
-                {active ? <Icon name="check" size={15} /> : <Icon name="x" size={15} />}
-              </span>
-            </button>
+              <button className="signal-module-card-main" onClick={() => toggleModule(module.key)} type="button">
+                <span className={`signal-module-status signal-module-status--${module.status}`}>
+                  {module.status === "ready" ? "Listo" : module.status === "partial" ? "Beta" : "Hold"}
+                </span>
+                <strong>{module.label}</strong>
+                <p>{module.description}</p>
+                <span className="signal-module-check">
+                  {active ? <Icon name="check" size={15} /> : <Icon name="x" size={15} />}
+                </span>
+              </button>
+              {demoMode.enabled ? (
+                <label className="signal-module-demo-toggle">
+                  <input
+                    checked={demoLocked}
+                    disabled={!active}
+                    onChange={() => toggleDemoBlur(module.key)}
+                    type="checkbox"
+                  />
+                  <span>Blur demo</span>
+                </label>
+              ) : null}
+            </article>
           );
         })}
       </div>
@@ -160,16 +230,15 @@ export function SignalComposer({
   );
 }
 
-function normalizeManifest(value: unknown) {
+function normalizeManifest(value: unknown): SignalOutputManifest {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return defaultSignalManifest;
+    return normalizeSignalOutputManifest(defaultSignalManifest);
   }
   const input = value as Partial<Record<SignalModuleKey, boolean>> & Record<string, unknown>;
-  return {
-    ...defaultSignalManifest,
+  return normalizeSignalOutputManifest({
     ...legacyManifestToV2(input),
     ...input
-  };
+  });
 }
 
 function legacyManifestToV2(input: Record<string, unknown>): Partial<Record<SignalModuleKey, boolean>> {

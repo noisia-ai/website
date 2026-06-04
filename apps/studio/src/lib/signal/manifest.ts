@@ -90,3 +90,88 @@ export const signalModuleMeta: Array<{
     status: "partial"
   }
 ];
+
+export type SignalDemoModeConfig = {
+  enabled: boolean;
+  blurredSections: SignalModuleKey[];
+};
+
+export type SignalDemoModeManifest = {
+  enabled: boolean;
+  blurred_sections: SignalModuleKey[];
+};
+
+export type SignalOutputManifest = Record<SignalModuleKey, boolean> & {
+  demo_mode: SignalDemoModeManifest;
+};
+
+export const defaultSignalDemoBlurredSections: SignalModuleKey[] = [
+  "tb_decision_field",
+  "opportunities",
+  "competitive_intelligence",
+  "action_studio",
+  "evidence",
+  "emerging_patterns",
+  "corpus_view",
+  "corpus_chat"
+];
+
+const signalModuleKeySet = new Set<SignalModuleKey>(signalModuleMeta.map((module) => module.key));
+
+export function isSignalModuleKey(value: unknown): value is SignalModuleKey {
+  return typeof value === "string" && signalModuleKeySet.has(value as SignalModuleKey);
+}
+
+export function normalizeSignalModuleFlags(input?: unknown): Record<SignalModuleKey, boolean> {
+  const value = asRecord(input);
+  const flags = { ...defaultSignalManifest };
+  for (const meta of signalModuleMeta) {
+    const flag = value[meta.key];
+    if (typeof flag === "boolean") {
+      flags[meta.key] = flag;
+    }
+  }
+  return flags;
+}
+
+export function normalizeSignalDemoMode(input?: unknown): SignalDemoModeConfig {
+  const value = asRecord(input);
+  const rawBlurredSections = Array.isArray(value.blurred_sections)
+    ? value.blurred_sections
+    : Array.isArray(value.blurredSections)
+      ? value.blurredSections
+      : [];
+
+  return {
+    enabled: value.enabled === true,
+    blurredSections: rawBlurredSections.filter(isSignalModuleKey)
+  };
+}
+
+export function serializeSignalDemoMode(config: SignalDemoModeConfig): SignalDemoModeManifest {
+  return {
+    enabled: config.enabled,
+    blurred_sections: uniqueSignalModuleKeys(config.blurredSections)
+  };
+}
+
+export function normalizeSignalOutputManifest(input?: unknown): SignalOutputManifest {
+  const value = asRecord(input);
+  return {
+    ...normalizeSignalModuleFlags(value),
+    demo_mode: serializeSignalDemoMode(normalizeSignalDemoMode(value.demo_mode))
+  };
+}
+
+export function uniqueSignalModuleKeys(values: SignalModuleKey[]): SignalModuleKey[] {
+  const seen = new Set<SignalModuleKey>();
+  return values.filter((value) => {
+    if (!signalModuleKeySet.has(value) || seen.has(value)) return false;
+    seen.add(value);
+    return true;
+  });
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}

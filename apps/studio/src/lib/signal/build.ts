@@ -10,7 +10,11 @@ import {
   type SignalKnowledgeImpact,
   type StrategicOpportunity
 } from "@/lib/signal/contracts";
-import { defaultSignalManifest, type SignalModuleKey } from "@/lib/signal/manifest";
+import {
+  normalizeSignalModuleFlags,
+  normalizeSignalOutputManifest,
+  type SignalOutputManifest
+} from "@/lib/signal/manifest";
 import { buildTbDecisionFieldNodes } from "@/lib/signal/tb-decision-field";
 
 type AnalysisState = NonNullable<Awaited<ReturnType<typeof getTbAnalysisForCorpus>>>;
@@ -29,20 +33,17 @@ type BuildSignalPayloadArgs = {
     baseCorpusName?: string | null;
     baseCorpusThemeName?: string | null;
   };
-  manifest?: Partial<Record<SignalModuleKey, boolean>>;
+  manifest?: Partial<SignalOutputManifest> | Record<string, unknown>;
   headline?: string | null;
   summary?: string | null;
 };
 
-export function normalizeSignalManifest(input?: Partial<Record<SignalModuleKey, boolean>>) {
-  return {
-    ...defaultSignalManifest,
-    ...(input ?? {})
-  };
+export function normalizeSignalManifest(input?: Partial<SignalOutputManifest> | Record<string, unknown>) {
+  return normalizeSignalOutputManifest(input);
 }
 
 export function buildSignalPayload(args: BuildSignalPayloadArgs) {
-  const manifest = normalizeSignalManifest(args.manifest);
+  const manifest = normalizeSignalModuleFlags(args.manifest);
   const { analysis, recommendations, gates, findingSummary, findings, aggregates } = args.state;
   const brandName = args.corpus.brandName ?? args.corpus.themeName ?? "la marca";
   const friction = recommendations.filter((rec) => rec.kind === "friction_removal");

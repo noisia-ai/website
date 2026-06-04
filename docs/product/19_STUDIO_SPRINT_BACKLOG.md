@@ -56,3 +56,7 @@ Last updated: 2026-06-02
 07. As an admin, I want a redesigned study wizard.
 08. As an admin, I want Workspace settings.
 09. As a client admin, I want a home designed around the reports I can access.
+10. As an admin, I want Demo mode for published reports and dashboards.
+    - When publishing a Signal report, admins can mark included sections as blurred for a prospect preview.
+    - Demo mode affects only the final `/signal/[outputId]` report view, not the deck/presentation.
+    - Future follow-up: handle multiple published versions/outputs per study more explicitly.

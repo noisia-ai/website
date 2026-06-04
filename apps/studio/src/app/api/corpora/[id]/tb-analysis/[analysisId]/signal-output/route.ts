@@ -9,13 +9,12 @@ import { getCorpusForUser, getTbAnalysisForCorpus } from "@/lib/data/corpora";
 import { db } from "@/lib/db";
 import { buildSignalPayload, normalizeSignalManifest } from "@/lib/signal/build";
 import { SIGNAL_PAYLOAD_VERSION } from "@/lib/signal/contracts";
-import { defaultSignalManifest } from "@/lib/signal/manifest";
 
 const bodySchema = z.object({
   title: z.string().min(3).max(140),
   headline: z.string().min(3).max(220).optional().nullable(),
   summary: z.string().min(3).max(700).optional().nullable(),
-  manifest: z.record(z.boolean()).optional(),
+  manifest: z.record(z.unknown()).optional(),
   action: z.enum(["save_draft", "publish"]).default("save_draft")
 });
 
@@ -53,10 +52,7 @@ export async function POST(
     );
   }
 
-  const manifest = normalizeSignalManifest({
-    ...defaultSignalManifest,
-    ...parsed.data.manifest
-  });
+  const manifest = normalizeSignalManifest(parsed.data.manifest);
   const payload = buildSignalPayload({
     state,
     corpus,

@@ -22,7 +22,7 @@ import { requirePortalUser } from "@/lib/auth/guards";
 import { getSignalOutputForUser } from "@/lib/data/signal";
 import { adaptTbSignalPayload } from "@/lib/signal/adapters/tb";
 import type { EmergingPattern, PublicActionCard, PublicTbFinding, TbDecisionFieldNode } from "@/lib/signal/contracts";
-import { signalModuleMeta, type SignalModuleKey } from "@/lib/signal/manifest";
+import { normalizeSignalDemoMode, signalModuleMeta, type SignalModuleKey } from "@/lib/signal/manifest";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +58,9 @@ export default async function SignalOutputPage({
   const topBarriers = arrayValue(overview.top_barriers).map(asRecord);
   const hasV2Manifest = signalModuleMeta.some((module) => Object.prototype.hasOwnProperty.call(manifest, module.key));
   const moduleEnabled = (key: SignalModuleKey) => isSignalModuleEnabled(manifest, key, hasV2Manifest);
+  const demoMode = normalizeSignalDemoMode(manifest.demo_mode);
+  const demoBlurredSections = new Set(demoMode.blurredSections);
+  const demoLocked = (key: SignalModuleKey) => demoMode.enabled && moduleEnabled(key) && demoBlurredSections.has(key);
   const brandLabel = output.brandName ?? output.brandFallbackName ?? "Brand";
   const bestMove = asRecord(actions.best_move);
   const fmtNum = (v: unknown) => new Intl.NumberFormat("es-MX").format(Number(v ?? 0));
@@ -104,6 +107,12 @@ export default async function SignalOutputPage({
                 <SignalLocalizedText en="Published snapshot" es="Snapshot publicado" />
               )}
             </span>
+            {demoMode.enabled ? (
+              <span className="signal-demo-top-pill">
+                <Icon name="info" size={14} />
+                Demo preview
+              </span>
+            ) : null}
             <SignalDeckButton outputId={output.id} />
             <SessionBadge user={session.appUser} compact />
             <button className="signal-icon-btn" type="button" aria-label="Más opciones">
@@ -114,34 +123,36 @@ export default async function SignalOutputPage({
 
         {moduleEnabled("overview") ? (
           <div className="signal-view-panel" data-signal-section="overview" id="overview">
-            <KnowledgeImpactPanel impact={viewModel.knowledgeImpact} report={viewModel.report} />
-            <SignalDashboardCharts
-              brandLabel={brandLabel}
-              corpusTotal={corpusTotal}
-              findingsScatter={findingsScatter}
-              layerDist={layerDist}
-              methodologyName={output.methodologyName ?? "Triggers & Barriers"}
-              metrics={{
-                findingsTotal: Number(metrics.findings_total ?? 0),
-                barriersTotal: Number(metrics.barriers_total ?? 0),
-                triggersTotal: Number(metrics.triggers_total ?? 0),
-                movableTotal: Number(metrics.movable_total ?? 0),
-              }}
-              mobilityDist={mobilityDist}
-              platformDist={platformDist}
-              contentTypeDist={contentTypeDist}
-              polarityDist={polarityDist}
-              findingTimeSeries={findingTimeSeries}
-              polarityTimeSeries={polarityTimeSeries}
-              topBarriers={topBarriers}
-              topVoice={topVoice}
-              volumeTimeline={volumeTimeline}
-              windowLabel={
-                windowMonths > 0
-                  ? `${fmtDateRange(corpusWindow.start, corpusWindow.end, "en-US")} · ${windowMonths} months`
-                  : "Published snapshot"
-              }
-            />
+            <DemoModeSection locked={demoLocked("overview")} label="Overview & confianza">
+              <KnowledgeImpactPanel impact={viewModel.knowledgeImpact} report={viewModel.report} />
+              <SignalDashboardCharts
+                brandLabel={brandLabel}
+                corpusTotal={corpusTotal}
+                findingsScatter={findingsScatter}
+                layerDist={layerDist}
+                methodologyName={output.methodologyName ?? "Triggers & Barriers"}
+                metrics={{
+                  findingsTotal: Number(metrics.findings_total ?? 0),
+                  barriersTotal: Number(metrics.barriers_total ?? 0),
+                  triggersTotal: Number(metrics.triggers_total ?? 0),
+                  movableTotal: Number(metrics.movable_total ?? 0),
+                }}
+                mobilityDist={mobilityDist}
+                platformDist={platformDist}
+                contentTypeDist={contentTypeDist}
+                polarityDist={polarityDist}
+                findingTimeSeries={findingTimeSeries}
+                polarityTimeSeries={polarityTimeSeries}
+                topBarriers={topBarriers}
+                topVoice={topVoice}
+                volumeTimeline={volumeTimeline}
+                windowLabel={
+                  windowMonths > 0
+                    ? `${fmtDateRange(corpusWindow.start, corpusWindow.end, "en-US")} · ${windowMonths} months`
+                    : "Published snapshot"
+                }
+              />
+            </DemoModeSection>
           </div>
         ) : null}
 
@@ -157,7 +168,9 @@ export default async function SignalOutputPage({
                 />
               }
             />
-            <DecisionFieldPanel findings={viewModel.findings} nodes={viewModel.decisionFieldNodes} />
+            <DemoModeSection locked={demoLocked("tb_decision_field")} label="T&B Decision Field">
+              <DecisionFieldPanel findings={viewModel.findings} nodes={viewModel.decisionFieldNodes} />
+            </DemoModeSection>
           </section>
         ) : null}
 
@@ -173,7 +186,9 @@ export default async function SignalOutputPage({
                 />
               }
             />
-            <OpportunitiesPanel opportunities={viewModel.strategicOpportunities} findings={viewModel.findings} />
+            <DemoModeSection locked={demoLocked("opportunities")} label="Opportunities">
+              <OpportunitiesPanel opportunities={viewModel.strategicOpportunities} findings={viewModel.findings} />
+            </DemoModeSection>
           </section>
         ) : null}
 
@@ -194,13 +209,15 @@ export default async function SignalOutputPage({
                 />
               }
             />
-            <CompetitivePanel
-              brandName={viewModel.report.brand_name}
-              competitive={viewModel.competitive}
-              evidenceDeepDives={viewModel.evidenceDeepDives}
-              findings={viewModel.findings}
-              methodologyBlocks={viewModel.methodologyBlocks}
-            />
+            <DemoModeSection locked={demoLocked("competitive_intelligence")} label="Competitive Intelligence">
+              <CompetitivePanel
+                brandName={viewModel.report.brand_name}
+                competitive={viewModel.competitive}
+                evidenceDeepDives={viewModel.evidenceDeepDives}
+                findings={viewModel.findings}
+                methodologyBlocks={viewModel.methodologyBlocks}
+              />
+            </DemoModeSection>
           </section>
         ) : null}
 
@@ -216,7 +233,9 @@ export default async function SignalOutputPage({
                 />
               }
             />
-            <ActionStudioPanel actions={viewModel.actionCards} />
+            <DemoModeSection locked={demoLocked("action_studio")} label="Action Studio">
+              <ActionStudioPanel actions={viewModel.actionCards} />
+            </DemoModeSection>
           </section>
         ) : null}
 
@@ -232,12 +251,14 @@ export default async function SignalOutputPage({
                 />
               }
             />
-            <EmergingPatternsPanel
-              corpusId={output.studyCorpusId}
-              futureSignals={viewModel.futureSignals}
-              marketAnalysis={viewModel.marketAnalysis}
-              patterns={viewModel.emergingPatterns}
-            />
+            <DemoModeSection locked={demoLocked("emerging_patterns")} label="Emerging Patterns">
+              <EmergingPatternsPanel
+                corpusId={output.studyCorpusId}
+                futureSignals={viewModel.futureSignals}
+                marketAnalysis={viewModel.marketAnalysis}
+                patterns={viewModel.emergingPatterns}
+              />
+            </DemoModeSection>
           </section>
         ) : null}
 
@@ -253,7 +274,9 @@ export default async function SignalOutputPage({
                 />
               }
             />
-            <SignalCorpusExplorer mentions={mentionsSample} outputId={output.id} />
+            <DemoModeSection locked={demoLocked("corpus_view")} label="Corpus View">
+              <SignalCorpusExplorer mentions={mentionsSample} outputId={output.id} />
+            </DemoModeSection>
           </section>
         ) : null}
 
@@ -269,7 +292,9 @@ export default async function SignalOutputPage({
                 />
               }
             />
-            <SignalCorpusChat outputId={output.id} />
+            <DemoModeSection locked={demoLocked("corpus_chat")} label="Corpus Chat">
+              <SignalCorpusChat outputId={output.id} />
+            </DemoModeSection>
           </section>
         ) : null}
 
@@ -285,13 +310,15 @@ export default async function SignalOutputPage({
                 />
               }
             />
-            <FindingDetailDrawer
-              actions={viewModel.actionCards}
-              competitive={viewModel.competitive}
-              evidenceDeepDives={viewModel.evidenceDeepDives}
-              findings={viewModel.findings}
-              mentionsSample={mentionsSample}
-            />
+            <DemoModeSection locked={demoLocked("evidence")} label="Evidence">
+              <FindingDetailDrawer
+                actions={viewModel.actionCards}
+                competitive={viewModel.competitive}
+                evidenceDeepDives={viewModel.evidenceDeepDives}
+                findings={viewModel.findings}
+                mentionsSample={mentionsSample}
+              />
+            </DemoModeSection>
           </section>
         ) : null}
 
@@ -458,12 +485,14 @@ export default async function SignalOutputPage({
         {/* META FOOTER */}
         {moduleEnabled("quality_boundaries") ? (
           <footer className="signal-meta" data-signal-section="quality-boundaries" hidden id="quality-boundaries">
-            <QualityBoundariesPanel
-              clientBoundaries={viewModel.clientBoundaries}
-              limitations={limitations}
-              publishedEvidenceCount={mentionsSample.length}
-              totalMentions={corpusTotal}
-            />
+            <DemoModeSection locked={demoLocked("quality_boundaries")} label="Quality / Boundaries">
+              <QualityBoundariesPanel
+                clientBoundaries={viewModel.clientBoundaries}
+                limitations={limitations}
+                publishedEvidenceCount={mentionsSample.length}
+                totalMentions={corpusTotal}
+              />
+            </DemoModeSection>
           </footer>
         ) : null}
 
@@ -485,6 +514,21 @@ function SectionHead({ eyebrow, title, sub }: { eyebrow: ReactNode; title: React
       <h2 className="signal-sec-title">{title}</h2>
       {sub && <p className="signal-sec-sub">{sub}</p>}
     </header>
+  );
+}
+
+function DemoModeSection({ children, label, locked }: { children: ReactNode; label: string; locked: boolean }) {
+  if (!locked) return <>{children}</>;
+
+  return (
+    <div className="signal-demo-lock" data-demo-locked="true">
+      <div className="signal-demo-lock-content">{children}</div>
+      <div className="signal-demo-lock-overlay" role="note">
+        <span>Demo preview</span>
+        <strong>{label}</strong>
+        <small>Sección disponible en el reporte completo.</small>
+      </div>
+    </div>
   );
 }
 
