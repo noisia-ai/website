@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 
-import { brands, invitations, organizations, users } from "@noisia/db";
+import { brands, invitations, organizations, themes, users } from "@noisia/db";
 import { db } from "@/lib/db";
 import { unauthorized, validationError } from "@/lib/api/responses";
 import { authContinuePath } from "@/lib/auth/redirects";
@@ -37,23 +37,8 @@ export async function POST(
   if (!output) {
     return Response.json({ error: "not_found", message: "Reporte no encontrado." }, { status: 404 });
   }
-  if (!output.brandId) {
-    return Response.json({ error: "not_shareable", message: "Este reporte no está asociado a una marca." }, { status: 422 });
-  }
-
-  const [brand] = await db
-    .select({
-      id: brands.id,
-      organizationId: brands.organizationId,
-      organizationName: organizations.displayName,
-      organizationLegalName: organizations.legalName
-    })
-    .from(brands)
-    .innerJoin(organizations, eq(organizations.id, brands.organizationId))
-    .where(eq(brands.id, output.brandId))
-    .limit(1);
-
-  if (!brand) {
+  const shareScope = await resolveSignalShareScope(output);
+  if (!shareScope) {
     return Response.json({ error: "brand_not_found", message: "No encontramos la organización del reporte." }, { status: 422 });
   }
 
@@ -71,7 +56,7 @@ export async function POST(
   const inviteResult = await createOrResolveShareInvite({
     email,
     role,
-    organizationId: brand.organizationId,
+    organizationId: shareScope.organizationId,
     invitedByUserId: session.appUser.id
   });
 
@@ -93,8 +78,8 @@ export async function POST(
         email,
         invitation_status: inviteResult.statusLabel,
         role,
-        organization_id: brand.organizationId,
-        organization_name: brand.organizationName ?? brand.organizationLegalName,
+        organization_id: shareScope.organizationId,
+        organization_name: shareScope.organizationName,
         report_url: reportUrl,
         login_url: loginUrl
       },
@@ -103,6 +88,50 @@ export async function POST(
     },
     { status: inviteResult.created ? 201 : 200 }
   );
+}
+
+async function resolveSignalShareScope(output: NonNullable<Awaited<ReturnType<typeof getSignalOutputForUser>>>) {
+  if (output.brandId) {
+    const [brand] = await db
+      .select({
+        organizationId: brands.organizationId,
+        organizationName: organizations.displayName,
+        organizationLegalName: organizations.legalName
+      })
+      .from(brands)
+      .innerJoin(organizations, eq(organizations.id, brands.organizationId))
+      .where(eq(brands.id, output.brandId))
+      .limit(1);
+
+    return brand
+      ? {
+          organizationId: brand.organizationId,
+          organizationName: brand.organizationName ?? brand.organizationLegalName
+        }
+      : null;
+  }
+
+  if (output.themeId) {
+    const [theme] = await db
+      .select({
+        organizationId: themes.organizationId,
+        organizationName: organizations.displayName,
+        organizationLegalName: organizations.legalName
+      })
+      .from(themes)
+      .innerJoin(organizations, eq(organizations.id, themes.organizationId))
+      .where(eq(themes.id, output.themeId))
+      .limit(1);
+
+    return theme?.organizationId
+      ? {
+          organizationId: theme.organizationId,
+          organizationName: theme.organizationName ?? theme.organizationLegalName
+        }
+      : null;
+  }
+
+  return null;
 }
 
 async function createOrResolveShareInvite(args: {
@@ -233,7 +262,7 @@ async function sendShareEmailBestEffort(args: {
 }) {
   try {
     const vm = adaptTbSignalPayload(args.output.payload);
-    const brandLabel = args.output.brandName ?? args.output.brandFallbackName ?? vm.report.brand_name;
+    const brandLabel = args.output.brandName ?? args.output.brandFallbackName ?? args.output.themeName ?? vm.report.brand_name;
     const methodologyName = args.output.methodologyName ?? vm.report.methodology_name;
     const reportTitle = args.output.headline ?? args.output.title ?? vm.report.headline;
     const executiveRead = truncate(

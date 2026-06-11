@@ -55,7 +55,7 @@ export default async function SignalPage() {
               <h2>{output.headline ?? output.title}</h2>
               <p>{output.summary ?? "Reporte publicado para revisión del equipo cliente."}</p>
               <footer>
-                <strong>{output.brandName ?? output.brandFallbackName ?? "Marca"}</strong>
+                <strong>{output.brandName ?? output.brandFallbackName ?? output.themeName ?? "Industria / Theme"}</strong>
                 <Icon name="arrow-right" size={16} />
               </footer>
             </Link>

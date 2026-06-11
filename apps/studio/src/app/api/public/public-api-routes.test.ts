@@ -10,6 +10,7 @@ console.error = (...args: unknown[]) => {
 };
 
 const routeHandlers = await import("@/lib/reporting/public-route-handlers");
+const publicApi = await import("@/lib/reporting/public-api");
 const openApiRoute = await import("./openapi.yaml/route");
 const readmePersonalizedDocsRoute = await import("../readme/personalized-docs/route");
 
@@ -28,6 +29,7 @@ const output = {
   updatedAt: new Date("2026-06-01T00:00:00.000Z"),
   brandName: "Noisia",
   brandFallbackName: "Noisia",
+  themeName: null,
   methodologyName: "Triggers & Barriers",
   methodologySlug: "triggers-barriers"
 };
@@ -206,11 +208,20 @@ test("public v2 report returns section aliases", async () => {
     getOutput: async () => output,
     buildSection: (_output: unknown, section: string) => ({ section })
   } as never);
+  const engineResponse = await routeHandlers.handlePublicV2ReportGET(request(), params(["sections", "lens-view"]), {
+    authorize: async () => okAuth(),
+    getOutput: async () => output,
+    buildSection: (_output: unknown, section: string) => ({ section })
+  } as never);
   const body = await json(response);
+  const engineBody = await json(engineResponse);
 
   assert.equal(response.status, 200);
   assert.equal((body.meta as Record<string, unknown>).section, "action-cards");
   assert.deepEqual(body.data, { section: "action-cards" });
+  assert.equal(engineResponse.status, 200);
+  assert.equal((engineBody.meta as Record<string, unknown>).section, "methodology-view");
+  assert.deepEqual(engineBody.data, { section: "methodology-view" });
 });
 
 test("public v2 report handles unknown section, not found and build errors", async () => {
@@ -238,6 +249,119 @@ test("public v2 report handles unknown section, not found and build errors", asy
   assert.equal((await json(notFoundResponse)).error, "report_not_found");
   assert.equal(serverResponse.status, 500);
   assert.equal((await json(serverResponse)).error, "server_error");
+});
+
+test("public reporting uses theme name for brandless industry reports", () => {
+  const themeOutput = {
+    ...output,
+    brandName: null,
+    brandFallbackName: null,
+    themeName: "Telefonía Móvil México",
+    payload: {
+      schema_version: 4,
+      report: {
+        headline: "Telefonía móvil en México",
+        methodology_name: "Triggers & Barriers",
+        methodology_slug: "triggers-barriers"
+      },
+      metrics: {},
+      aggregates: { corpus: { window: {} } }
+    }
+  };
+
+  const summary = publicApi.buildReportingDataset(themeOutput as never, "summary")[0] as Record<string, unknown>;
+  const document = publicApi.buildReportingV2Document(themeOutput as never) as Record<string, unknown>;
+  const metadata = document.metadata as Record<string, unknown>;
+  const sections = document.sections as Record<string, Record<string, unknown>>;
+  const overview = sections.overview as Record<string, unknown>;
+  const report = overview.report as Record<string, unknown>;
+
+  assert.equal(summary.brand_name, "Telefonía Móvil México");
+  assert.equal(metadata.brand_name, "Telefonía Móvil México");
+  assert.equal(report.brand_name, "Telefonía Móvil México");
+});
+
+test("public v2 document exposes engine methodology sections", () => {
+  const engineOutput = {
+    ...output,
+    manifest: { engine_methodology: true },
+    methodologySlug: "narrative-ownership",
+    payload: {
+      schema_version: 4,
+      report: {
+        headline: "Narrativas de telefonía",
+        methodology_name: "Narrative Ownership",
+        methodology_slug: "narrative-ownership"
+      },
+      metrics: {},
+      aggregates: { corpus: { window: {} } },
+      engine_block: {
+        kind: "narrative-ownership",
+        title: "Narrative Ownership",
+        methodology_slug: "narrative-ownership",
+        summary: "Narrativas listas",
+        methodology_view: {
+          kind: "narrative-ownership",
+          title: "Narrative ownership board",
+          primary_question: "Quien posee cada narrativa?",
+          readiness: { status: "directional", reason: "QA pendiente", missing: ["diversidad"] },
+          cards: [],
+          rows: [{ finding_id: "narrative-1", label: "cobertura", axis: "positiva", evidence_count: 2, confidence: "media", dimensions: {} }],
+          conclusions: []
+        },
+        charts: [],
+        findings: [],
+        evidence_index: [],
+        limitations: []
+      }
+    }
+  };
+
+  const document = publicApi.buildReportingV2Document(engineOutput as never) as Record<string, unknown>;
+  const sections = document.sections as Record<string, unknown>;
+  const methodologyView = publicApi.buildReportingV2Section(engineOutput as never, "methodology-view") as Record<string, unknown>;
+
+  assert.equal((sections.engine_methodology as Record<string, unknown>).methodology_slug, "narrative-ownership");
+  assert.equal(methodologyView.title, "Narrative ownership board");
+});
+
+test("public v2 section inventory only advertises engine sections when engine block exists", () => {
+  const normalSections = publicApi.getEnabledV2Sections({}, { schema_version: 4, report: {} });
+  const engineSections = publicApi.getEnabledV2Sections(
+    { engine_methodology: true },
+    { schema_version: 4, engine_block: { kind: "narrative-ownership" } }
+  );
+
+  assert.equal(normalSections.includes("engine-methodology"), false);
+  assert.equal(engineSections.includes("engine-methodology"), true);
+  assert.equal(engineSections.includes("methodology-view"), true);
+});
+
+test("public v2 section inventory honors method-specific engine module keys", () => {
+  for (const moduleKey of [
+    "competitive_wave",
+    "narrative_ownership",
+    "value_perception",
+    "brand_positioning",
+    "category_opportunity",
+    "white_space",
+    "journey_friction",
+    "decision_velocity",
+    "cultural_codes",
+    "advocacy_proxy",
+    "audience_segment",
+    "influence_architecture",
+    "trust_risk",
+    "evidence_confidence"
+  ]) {
+    const sections = publicApi.getEnabledV2Sections(
+      { [moduleKey]: true },
+      { schema_version: 4, engine_block: { methodology_slug: "narrative-ownership" } }
+    );
+
+    assert.equal(sections.includes("engine-methodology"), true, moduleKey);
+    assert.equal(sections.includes("methodology-view"), true, moduleKey);
+  }
 });
 
 test("public OpenAPI route serves the YAML specification", async () => {

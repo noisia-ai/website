@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { Icon } from "@/components/ui/Icon";
 import { INDUSTRY_OPTIONS, subindustriesForIndustry } from "@/lib/industry-catalog";
+import { slugify } from "@/lib/slug";
 
 export function BrandOsForm() {
   const t = useTranslations("BrandOs.form");
@@ -21,7 +22,7 @@ export function BrandOsForm() {
 
     const form = new FormData(event.currentTarget);
     const name = String(form.get("name") ?? "").trim();
-    const slug = String(form.get("slug") ?? "").trim() || slugify(name);
+    const slug = slugify(String(form.get("slug") ?? "").trim() || name);
     const rawCompetitors = String(form.get("competitors") ?? "").trim();
     const rawKnowledgeNotes = String(form.get("knowledge_notes") ?? "").trim();
     const payload = {
@@ -249,14 +250,4 @@ function formatApiError(
   return fields
     .map((field) => `${field.path || fieldFallback}: ${field.message || invalidFallback}`)
     .join(" · ");
-}
-
-function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
 }

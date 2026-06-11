@@ -293,6 +293,7 @@ export default async function TbAnalysisReviewPage({
       {analysis.status === "approved_by_im" || analysis.status === "approved_by_kam" ? (
         <SignalComposer
           analysisId={analysis.id}
+          analysisPlan={corpus.analysisPlan}
           brandName={corpus.brandName ?? corpus.themeName ?? "la marca"}
           corpusId={corpus.id}
           draft={signalDraft}

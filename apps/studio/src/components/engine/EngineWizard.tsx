@@ -11,6 +11,7 @@ import {
 import { CopyQueryButton } from "@/components/engine/CopyQueryButton";
 import { Icon } from "@/components/ui/Icon";
 import { StatusPill, SuccessPill } from "@/components/ui/StatusPill";
+import { queryPackHasData, queryPackHasDirectCsv } from "@/lib/engine/query-pack-readiness";
 
 /* ============================================================
    Types — kept minimal; the server passes only what the wizard needs.
@@ -35,6 +36,7 @@ type Iteration = {
 type Batch = {
   id: string;
   queryIterationId: string | null;
+  queryPackId: string | null;
   mentionType: string | null;
   competitorId: string | null;
   corpusEntityId: string | null;
@@ -45,6 +47,22 @@ type Batch = {
   excludedCount: number | null;
   sourceFileName: string | null;
   status: string;
+  createdAt: Date | string;
+};
+
+type QueryPack = {
+  id: string;
+  queryIterationId: string | null;
+  lensSlug: string;
+  signalIntent: string;
+  scope: string;
+  objective: string | null;
+  queryText: string | null;
+  queryComponents: unknown;
+  seeds: unknown;
+  status: string;
+  mentionsReturned: number | null;
+  linkedMentionCount?: number | null;
   createdAt: Date | string;
 };
 
@@ -103,6 +121,8 @@ type WizardProps = {
   corpus: CorpusCounts;
   iterations: Iteration[];
   batches: Batch[];
+  queryPacks: QueryPack[];
+  selectedLensCount: number;
   current: Iteration | null;
   activeStep: Step;
   isApproved: boolean;
@@ -164,6 +184,8 @@ export function EngineWizard(props: WizardProps) {
     corpus,
     iterations,
     batches,
+    queryPacks,
+    selectedLensCount,
     current,
     activeStep: serverActiveStep,
     isApproved,
@@ -193,6 +215,10 @@ export function EngineWizard(props: WizardProps) {
     () => (current ? batches.filter((b) => b.queryIterationId === current.id) : []),
     [batches, current]
   );
+  const currentQueryPacks = useMemo(
+    () => (current ? queryPacks.filter((pack) => pack.queryIterationId === current.id) : []),
+    [queryPacks, current]
+  );
 
   return (
     <div className="wizard-shell">
@@ -206,6 +232,14 @@ export function EngineWizard(props: WizardProps) {
         readyToApprove={readyToApprove || (assessment?.ready_for_study ?? false)}
         isApproved={isApproved}
       />
+
+      {selectedLensCount > 1 ? (
+        <LensFeedSummary
+          batches={batches}
+          queryPacks={queryPacks}
+          selectedLensCount={selectedLensCount}
+        />
+      ) : null}
 
       {/* Corpus-level readiness — independent of per-iteration eval.
           Stays visible after approval too so the IM can see the snapshot. */}
@@ -307,9 +341,12 @@ export function EngineWizard(props: WizardProps) {
               corpusId={corpusId}
               iteration={current}
               existingBatches={currentBatches}
+              queryPacks={currentQueryPacks}
+              selectedLensCount={selectedLensCount}
               competitors={competitors}
               entities={entities}
               subjectType={subjectType}
+              onPacksMaterialized={() => router.refresh()}
               onComplete={() => {
                 router.refresh();
                 setActiveStep("evaluate");
@@ -339,6 +376,62 @@ export function EngineWizard(props: WizardProps) {
       {/* History (collapsed) */}
       {history.length > 0 && <IterationHistory iterations={history} />}
     </div>
+  );
+}
+
+function LensFeedSummary({
+  batches,
+  queryPacks,
+  selectedLensCount
+}: {
+  batches: Batch[];
+  queryPacks: QueryPack[];
+  selectedLensCount: number;
+}) {
+  const groups = groupQueryPacksByLens(queryPacks, batches);
+  const totalPacks = queryPacks.length;
+  const donePacks = queryPacks.filter((pack) => queryPackHasDirectCsv(pack, batches)).length;
+
+  return (
+    <section className="lens-feed-summary">
+      <header>
+        <div>
+          <p className="vitals-eyebrow">Alimentación modular</p>
+          <h2>Mapa de corpus por lente</h2>
+          <p>
+            Cada metodología seleccionada crea sus propios packs de búsqueda y uploads.
+            Las menciones quedan en el corpus vivo con provenance por lente, scope e intención.
+          </p>
+        </div>
+        <dl>
+          <div>
+            <dt>Lentes</dt>
+            <dd>{selectedLensCount}</dd>
+          </div>
+          <div>
+            <dt>Packs</dt>
+            <dd>{donePacks}/{totalPacks || "—"}</dd>
+          </div>
+        </dl>
+      </header>
+
+      {groups.length > 0 ? (
+        <div className="lens-feed-grid">
+          {groups.map((group) => (
+            <article key={group.lensSlug}>
+              <span>{group.lensLabel}</span>
+              <strong>{group.doneCount}/{group.packs.length}</strong>
+              <small>CSVs directos</small>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="lens-feed-empty">
+          Los módulos aparecerán después de generar la primera query. Si el job se queda en espera,
+          revisa que el worker esté activo antes de volver a intentar.
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -487,10 +580,30 @@ function StepCompose({
     }
 
     const jobId = payload.job_id;
+    let waitingWithoutWorkerChecks = 0;
     const poll = setInterval(async () => {
       const jr = await fetch(`/api/jobs/${jobId}`);
-      const j = await jr.json();
-      setProgress(Math.max(progress, j.progress ?? 0));
+      const j = await jr.json().catch(() => ({}));
+      if (!jr.ok) {
+        clearInterval(poll);
+        setError(j.message ?? "No se pudo leer el estado del job.");
+        setRunning(false);
+        return;
+      }
+      const nextProgress = typeof j.progress === "number" ? Math.round(j.progress) : 0;
+      setProgress((current) => Math.max(current, nextProgress));
+      const isWaiting = j.status === "waiting" || j.status === "delayed";
+      if (isWaiting && j.worker_alive === false) {
+        waitingWithoutWorkerChecks += 1;
+        if (waitingWithoutWorkerChecks >= 4) {
+          clearInterval(poll);
+          setError("El worker local no está activo. Levanta pnpm --filter @noisia/workers dev y vuelve a generar.");
+          setRunning(false);
+          return;
+        }
+      } else {
+        waitingWithoutWorkerChecks = 0;
+      }
       if (j.status === "completed") {
         clearInterval(poll);
         setProgress(100);
@@ -506,9 +619,9 @@ function StepCompose({
   return (
     <div className="step-body">
       <p className="step-helper">
-        El motor compone <strong>dos queries booleanas</strong> a partir de los seeds de
-        marca, competidores y el manifest de metodología. Las dos queries miden lo mismo
-        desde ángulos opuestos — la de marca da precisión, la de industria da cobertura.
+        El motor compone <strong>query packs por lente seleccionado</strong>: T&B conserva
+        marca, competencia y categoría; cada lente adicional agrega sus propios scopes e
+        intenciones para que la provenance viaje hasta el análisis y Signal.
       </p>
 
       {!running && !autoStarted && (
@@ -547,19 +660,31 @@ function StepUpload({
   corpusId,
   iteration,
   existingBatches,
+  queryPacks,
+  selectedLensCount,
   competitors,
   entities,
   subjectType,
+  onPacksMaterialized,
   onComplete,
 }: {
   corpusId: string;
   iteration: Iteration;
   existingBatches: Batch[];
+  queryPacks: QueryPack[];
+  selectedLensCount: number;
   competitors: CompetitorOption[];
   entities: CorpusEntity[];
   subjectType: "brand" | "theme";
+  onPacksMaterialized: () => void;
   onComplete: () => void;
 }) {
+  const [materializingPacks, setMaterializingPacks] = useState(false);
+  const [materializeError, setMaterializeError] = useState<string | null>(null);
+  const [autoMaterializeRequested, setAutoMaterializeRequested] = useState(false);
+  const usableQueryPacks = queryPacks.filter((pack) => typeof pack.queryText === "string" && pack.queryText.length > 0);
+  const packMode = usableQueryPacks.length > 0;
+  const expectedPackMode = selectedLensCount > 1;
   const primaryMentionType = subjectType === "theme" ? "industry" : "brand";
   const primaryQueryText = subjectType === "theme"
     ? iteration.industryQueryText ?? iteration.queryText
@@ -584,45 +709,114 @@ function StepUpload({
     (b) => b.mentionType === "industry" && b.status === "completed"
   );
   const legacyUploadsDone = primaryDone && (!wantsCompetitor || competitorDone) && (!wantsIndustry || industryDone);
-  const allDone = entityMode ? doneEntityCount === activeEntities.length : legacyUploadsDone;
+  const packUploadsDone = packMode
+    ? usableQueryPacks.every((pack) => queryPackHasDirectCsv(pack, existingBatches))
+    : false;
+  const allDone = expectedPackMode && !packMode
+    ? false
+    : packMode
+      ? packUploadsDone
+      : entityMode
+        ? doneEntityCount === activeEntities.length
+        : legacyUploadsDone;
+
+  async function materializeQueryPacks() {
+    setMaterializingPacks(true);
+    setMaterializeError(null);
+    try {
+      const res = await fetch(`/api/corpora/${corpusId}/query-packs/materialize`, { method: "POST" });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json?.message ?? "No se pudieron crear los query packs.");
+      onPacksMaterialized();
+    } catch (error) {
+      setMaterializeError(error instanceof Error ? error.message : "No se pudieron crear los query packs.");
+    } finally {
+      setMaterializingPacks(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!expectedPackMode || packMode || materializingPacks || autoMaterializeRequested) return;
+    setAutoMaterializeRequested(true);
+    void materializeQueryPacks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expectedPackMode, packMode, materializingPacks, autoMaterializeRequested]);
 
   return (
     <div className="step-body">
       <p className="step-helper">
-        Copia cada query en SentiOne, exporta los CSVs y súbelos aquí. Cada archivo
-        suma menciones únicas al corpus (los duplicados se filtran automáticamente).
+        {packMode
+          ? "Cada lente seleccionado tiene sus propios packs de búsqueda. Copia cada query, exporta el CSV correspondiente y súbelo en su módulo; la provenance queda ligada al lente, scope e intención."
+          : "Copia cada query en SentiOne, exporta los CSVs y súbelos aquí. Cada archivo suma menciones únicas al corpus (los duplicados se filtran automáticamente)."}
       </p>
 
-      <div className="wizard-queries">
-        <QueryBlock
-          label={subjectType === "theme" ? "Query de categoría / peer set" : "Query de marca"}
-          accent={primaryMentionType}
-          text={primaryQueryText}
+      {!packMode && expectedPackMode ? (
+        <div className="peer-upload-requirement">
+          <Icon name={materializingPacks ? "spinner" : "info"} size={14} />
+          <span>
+            Este estudio tiene {selectedLensCount} lentes seleccionados. Estamos preparando los módulos de query pack desde la query existente; no llama a Claude ni toca menciones.
+          </span>
+          <button className="wizard-cta wizard-cta--ghost" disabled={materializingPacks} onClick={materializeQueryPacks} type="button">
+            <Icon name={materializingPacks ? "spinner" : "sparkle"} size={14} />
+            {materializingPacks ? "Creando packs" : "Reintentar módulos"}
+          </button>
+        </div>
+      ) : null}
+
+      {materializeError ? (
+        <p className="wizard-error">
+          <Icon name="alert" size={14} /> {materializeError}
+        </p>
+      ) : null}
+
+      {packMode ? (
+        <QueryPackModules
+          corpusId={corpusId}
+          existingBatches={existingBatches}
+          iterationId={iteration.id}
+          packs={usableQueryPacks}
         />
-        {iteration.competitorQueryText && (
+      ) : (
+        <div className="wizard-queries">
           <QueryBlock
-            label={subjectType === "theme" ? "Query de peers / competidores" : "Query de competencia"}
-            accent="competitor"
-            text={iteration.competitorQueryText}
+            label={subjectType === "theme" ? "Query de categoría / peer set" : "Query de marca"}
+            accent={primaryMentionType}
+            text={primaryQueryText}
           />
-        )}
-        {subjectType === "brand" && iteration.industryQueryText && (
-          <QueryBlock
-            label="Query de categoría / baseline"
-            accent="industry"
-            text={iteration.industryQueryText}
-          />
-        )}
-      </div>
+          {iteration.competitorQueryText && (
+            <QueryBlock
+              label={subjectType === "theme" ? "Query de peers / competidores" : "Query de competencia"}
+              accent="competitor"
+              text={iteration.competitorQueryText}
+            />
+          )}
+          {subjectType === "brand" && iteration.industryQueryText && (
+            <QueryBlock
+              label="Query de categoría / baseline"
+              accent="industry"
+              text={iteration.industryQueryText}
+            />
+          )}
+        </div>
+      )}
 
-      <PeerSetPanel
-        corpusId={corpusId}
-        entities={entities}
-        existingBatches={existingBatches}
-        iterationId={iteration.id}
-      />
+      {!packMode && (
+        <PeerSetPanel
+          corpusId={corpusId}
+          entities={entities}
+          existingBatches={existingBatches}
+          iterationId={iteration.id}
+        />
+      )}
 
-      {entityMode ? (
+      {packMode ? (
+        <div className="peer-upload-requirement">
+          <Icon name={allDone ? "check" : "info"} size={14} />
+          <span>
+            CSVs directos: {usableQueryPacks.filter((pack) => queryPackHasDirectCsv(pack, existingBatches)).length} / {usableQueryPacks.length}.
+          </span>
+        </div>
+      ) : entityMode ? (
         <div className="peer-upload-requirement">
           <Icon name={allDone ? "check" : "info"} size={14} />
           <span>
@@ -669,6 +863,139 @@ function StepUpload({
       )}
     </div>
   );
+}
+
+function QueryPackModules({
+  corpusId,
+  iterationId,
+  packs,
+  existingBatches
+}: {
+  corpusId: string;
+  iterationId: string;
+  packs: QueryPack[];
+  existingBatches: Batch[];
+}) {
+  const groups = groupQueryPacksByLens(packs, existingBatches);
+
+  return (
+    <div className="query-pack-modules">
+      {groups.map((group) => (
+        <section className="query-pack-module" key={group.lensSlug}>
+          <header className="query-pack-module-head">
+            <div>
+              <p className="vitals-eyebrow">Módulo de corpus</p>
+              <h3>{group.lensLabel}</h3>
+              <p>{group.packs.length} packs para alimentar este lente con provenance separada.</p>
+            </div>
+            <StatusPill tone={group.doneCount === group.packs.length ? "success" : "info"}>
+              {group.doneCount}/{group.packs.length} CSVs
+            </StatusPill>
+          </header>
+          <div className="query-pack-grid">
+            {group.packs.map((pack) => {
+              const mentionType = mentionTypeForScope(pack.scope);
+              const seeds = normalizePackSeeds(pack.seeds);
+              const done = queryPackHasDirectCsv(pack, existingBatches);
+              const hasSharedData = !done && queryPackHasData(pack, existingBatches);
+              return (
+                <article className="query-pack-card" key={pack.id}>
+                  <div className="query-pack-card-copy">
+                    <p className={`upload-slot-tag upload-slot-tag--${mentionType}`}>{scopeLabel(pack.scope)}</p>
+                    <h4>{seeds.signal_label ?? pack.signalIntent}</h4>
+                    <p>{pack.objective ?? "Pack generado desde el plan del estudio."}</p>
+                    {seeds.source_hints.length > 0 && (
+                      <small>También puede nutrirse con: {seeds.source_hints.slice(0, 4).join(", ")}.</small>
+                    )}
+                  </div>
+                  <QueryBlock
+                    label="Query para este pack"
+                    accent={mentionType}
+                    text={pack.queryText ?? ""}
+                  />
+                  <UploadSlot
+                    corpusId={corpusId}
+                    iterationId={iterationId}
+                    mentionType={mentionType}
+                    queryPackId={pack.id}
+                    lensSlug={pack.lensSlug}
+                    signalIntent={pack.signalIntent}
+                    scope={pack.scope}
+                    done={done}
+                    entityLabelDefault={seeds.signal_label ?? `${group.lensLabel} · ${scopeLabel(pack.scope)}`}
+                  />
+                  {hasSharedData ? (
+                    <p className="query-pack-shared-note">
+                      Este pack ya tiene menciones compartidas por provenance, pero falta su CSV directo para cerrar el módulo.
+                    </p>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function groupQueryPacksByLens(packs: QueryPack[], existingBatches: Batch[]) {
+  const map = new Map<string, QueryPack[]>();
+  for (const pack of packs) {
+    const current = map.get(pack.lensSlug) ?? [];
+    current.push(pack);
+    map.set(pack.lensSlug, current);
+  }
+  return Array.from(map.entries()).map(([lensSlug, groupPacks]) => {
+    const firstSeeds = normalizePackSeeds(groupPacks[0]?.seeds);
+    return {
+      lensSlug,
+      lensLabel: firstSeeds.lens_label ?? labelFromSlug(lensSlug),
+      packs: groupPacks.sort((a, b) => scopeOrder(a.scope) - scopeOrder(b.scope)),
+      doneCount: groupPacks.filter((pack) => queryPackHasDirectCsv(pack, existingBatches)).length
+    };
+  });
+}
+
+function normalizePackSeeds(seeds: unknown) {
+  const value = seeds && typeof seeds === "object" && !Array.isArray(seeds) ? seeds as Record<string, unknown> : {};
+  return {
+    lens_label: typeof value.lens_label === "string" ? value.lens_label : null,
+    signal_label: typeof value.signal_label === "string" ? value.signal_label : null,
+    source_hints: Array.isArray(value.source_hints)
+      ? value.source_hints.filter((item): item is string => typeof item === "string")
+      : []
+  };
+}
+
+function mentionTypeForScope(scope: string): "brand" | "competitor" | "industry" {
+  if (scope === "competitors") return "competitor";
+  if (scope === "category" || scope === "baseline") return "industry";
+  return "brand";
+}
+
+function scopeLabel(scope: string) {
+  if (scope === "brand") return "Marca";
+  if (scope === "competitors") return "Competidores";
+  if (scope === "category") return "Categoría";
+  if (scope === "baseline") return "Baseline";
+  return scope;
+}
+
+function scopeOrder(scope: string) {
+  if (scope === "brand") return 1;
+  if (scope === "competitors") return 2;
+  if (scope === "category") return 3;
+  if (scope === "baseline") return 4;
+  return 9;
+}
+
+function labelFromSlug(slug: string) {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.slice(0, 1).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function PeerSetPanel({
@@ -931,6 +1258,11 @@ function UploadSlot({
   mentionType,
   entity,
   competitors = [],
+  queryPackId,
+  lensSlug,
+  signalIntent,
+  scope,
+  entityLabelDefault,
   done,
 }: {
   corpusId: string;
@@ -938,6 +1270,11 @@ function UploadSlot({
   mentionType: "brand" | "competitor" | "industry";
   entity?: CorpusEntity;
   competitors?: CompetitorOption[];
+  queryPackId?: string;
+  lensSlug?: string;
+  signalIntent?: string;
+  scope?: string;
+  entityLabelDefault?: string;
   done: boolean;
 }) {
   const router = useRouter();
@@ -946,7 +1283,7 @@ function UploadSlot({
     done ? "success" : "idle"
   );
   const [entityLabel, setEntityLabel] = useState(
-    entity?.name ?? (mentionType === "competitor" ? "Pool competitivo" : mentionType === "industry" ? "Baseline de categoría" : "Marca")
+    entity?.name ?? entityLabelDefault ?? (mentionType === "competitor" ? "Pool competitivo" : mentionType === "industry" ? "Baseline de categoría" : "Marca")
   );
   const [competitorId, setCompetitorId] = useState<string>(entity?.competitorId ?? "");
   const [stats, setStats] = useState<{ included: number; excluded: number; duplicates: number } | null>(null);
@@ -968,7 +1305,8 @@ function UploadSlot({
     const params = new URLSearchParams();
     params.set("mention_type", mentionType);
     params.set("query_iteration_id", iterationId);
-    params.set("source_label", entity ? `entity_${entity.id}` : `iter_${mentionType}`);
+    if (queryPackId) params.set("query_pack_id", queryPackId);
+    params.set("source_label", queryPackId ? `pack_${queryPackId}` : entity ? `entity_${entity.id}` : `iter_${mentionType}`);
     params.set("file_name", file.name);
     if (entity) {
       params.set("corpus_entity_id", entity.id);
@@ -988,6 +1326,9 @@ function UploadSlot({
             ? "competitor"
             : "competitor_pool")
     );
+    if (lensSlug) params.set("lens_slug", lensSlug);
+    if (signalIntent) params.set("signal_intent", signalIntent);
+    if (scope) params.set("scope", scope);
 
     // Fake progressive feedback while server processes
     const tick = setInterval(() => {

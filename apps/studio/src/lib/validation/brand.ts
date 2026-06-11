@@ -62,6 +62,13 @@ export const createStudySchema = z.object({
   theme_id: z.string().uuid().optional(),
   base_corpus_id: z.string().uuid().optional(),
   methodology_id: z.string().uuid(),
+  analysis_plan: z.object({
+    version: z.literal(1).optional(),
+    primary_methodology_slug: z.string().max(120).optional(),
+    selected_lenses: z.array(z.string().max(120)).max(40).optional(),
+    lens_configs: z.record(z.unknown()).optional(),
+    composer_modules: z.array(z.string().max(120)).max(40).optional()
+  }).optional(),
   business_question: z.string().min(10).max(800),
   decision_to_inform: optionalText(800),
   audience_segment: optionalText(400),

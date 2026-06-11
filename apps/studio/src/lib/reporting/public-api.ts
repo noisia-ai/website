@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 
 import { and, desc, eq, inArray, isNull } from "drizzle-orm";
-import { brands, methodologies, publishedOutputs, studyCorpora } from "@noisia/db";
+import { brands, methodologies, publishedOutputs, studyCorpora, themes } from "@noisia/db";
 
 import { db } from "@/lib/db";
 import { adaptTbSignalPayload } from "@/lib/signal/adapters/tb";
@@ -28,6 +28,8 @@ export type ReportingV2Section =
   | "action-cards"
   | "strategic-opportunities"
   | "competitive-intelligence"
+  | "engine-methodology"
+  | "methodology-view"
   | "emerging-patterns"
   | "future-signals"
   | "market-analysis"
@@ -120,6 +122,42 @@ const V2_SECTION_ALIASES: Record<string, ReportingV2Section> = {
   "competitive-intelligence": "competitive-intelligence",
   "competitive_intelligence": "competitive-intelligence",
   competitive: "competitive-intelligence",
+  "engine-methodology": "engine-methodology",
+  "engine_methodology": "engine-methodology",
+  "competitive-wave": "engine-methodology",
+  "competitive_wave": "engine-methodology",
+  "narrative-ownership": "engine-methodology",
+  "narrative_ownership": "engine-methodology",
+  "value-perception": "engine-methodology",
+  "value_perception": "engine-methodology",
+  "brand-positioning": "engine-methodology",
+  "brand_positioning": "engine-methodology",
+  "category-opportunity": "engine-methodology",
+  "category_opportunity": "engine-methodology",
+  "white-space": "engine-methodology",
+  "white_space": "engine-methodology",
+  "journey-friction": "engine-methodology",
+  "journey_friction": "engine-methodology",
+  "decision-velocity": "engine-methodology",
+  "decision_velocity": "engine-methodology",
+  "cultural-codes": "engine-methodology",
+  "cultural_codes": "engine-methodology",
+  "advocacy-proxy": "engine-methodology",
+  "advocacy_proxy": "engine-methodology",
+  "audience-segment": "engine-methodology",
+  "audience_segment": "engine-methodology",
+  "influence-architecture": "engine-methodology",
+  "influence_architecture": "engine-methodology",
+  "trust-risk": "engine-methodology",
+  "trust_risk": "engine-methodology",
+  "evidence-confidence": "engine-methodology",
+  "evidence_confidence": "engine-methodology",
+  engine: "engine-methodology",
+  lens: "engine-methodology",
+  "methodology-view": "methodology-view",
+  "methodology_view": "methodology-view",
+  "lens-view": "methodology-view",
+  "lens_view": "methodology-view",
   "emerging-patterns": "emerging-patterns",
   "emerging_patterns": "emerging-patterns",
   patterns: "emerging-patterns",
@@ -186,6 +224,7 @@ export async function listReportsForGrant(grant: ApiKeyGrant) {
       publishedAt: publishedOutputs.publishedAt,
       brandName: brands.displayName,
       brandFallbackName: brands.name,
+      themeName: themes.name,
       methodologyName: methodologies.name,
       methodologySlug: publishedOutputs.methodologySlug
     })
@@ -193,6 +232,7 @@ export async function listReportsForGrant(grant: ApiKeyGrant) {
     .innerJoin(studyCorpora, eq(studyCorpora.id, publishedOutputs.studyCorpusId))
     .innerJoin(methodologies, eq(methodologies.id, studyCorpora.methodologyId))
     .leftJoin(brands, eq(brands.id, publishedOutputs.brandId))
+    .leftJoin(themes, eq(themes.id, publishedOutputs.themeId))
     .where(and(...where))
     .orderBy(desc(publishedOutputs.publishedAt), desc(publishedOutputs.updatedAt));
 
@@ -204,7 +244,7 @@ export async function listReportsForGrant(grant: ApiKeyGrant) {
     headline: row.headline,
     summary: row.summary,
     report_version: row.version,
-    brand_name: row.brandName ?? row.brandFallbackName,
+    brand_name: reportSubjectName(row),
     methodology: row.methodologyName,
     methodology_slug: row.methodologySlug,
     published_at: row.publishedAt?.toISOString() ?? null
@@ -233,6 +273,7 @@ export async function listReportsForGrantV2(grant: ApiKeyGrant) {
       updatedAt: publishedOutputs.updatedAt,
       brandName: brands.displayName,
       brandFallbackName: brands.name,
+      themeName: themes.name,
       methodologyName: methodologies.name,
       methodologySlug: publishedOutputs.methodologySlug
     })
@@ -240,6 +281,7 @@ export async function listReportsForGrantV2(grant: ApiKeyGrant) {
     .innerJoin(studyCorpora, eq(studyCorpora.id, publishedOutputs.studyCorpusId))
     .innerJoin(methodologies, eq(methodologies.id, studyCorpora.methodologyId))
     .leftJoin(brands, eq(brands.id, publishedOutputs.brandId))
+    .leftJoin(themes, eq(themes.id, publishedOutputs.themeId))
     .where(and(...where))
     .orderBy(desc(publishedOutputs.publishedAt), desc(publishedOutputs.updatedAt));
 
@@ -257,12 +299,12 @@ export async function listReportsForGrantV2(grant: ApiKeyGrant) {
       summary: stringValue(report.summary) || row.summary,
       report_version: row.version,
       schema_version: numberValue(payload.schema_version) || row.version,
-      brand_name: stringValue(report.brand_name) || row.brandName || row.brandFallbackName,
+      brand_name: reportSubjectName(row, report),
       methodology: stringValue(report.methodology_name) || row.methodologyName,
       methodology_slug: stringValue(report.methodology_slug) || row.methodologySlug,
       published_at: row.publishedAt?.toISOString() ?? null,
       updated_at: row.updatedAt?.toISOString() ?? null,
-      sections: getEnabledV2Sections(row.manifest),
+      sections: getEnabledV2Sections(row.manifest, row.payload),
       links: {
         full: `/api/public/v2/reports/${row.outputId}`,
         sections: `/api/public/v2/reports/${row.outputId}/sections/{section}`
@@ -302,6 +344,7 @@ export async function getPublishedOutputForReporting(outputId: string) {
       updatedAt: publishedOutputs.updatedAt,
       brandName: brands.displayName,
       brandFallbackName: brands.name,
+      themeName: themes.name,
       methodologyName: methodologies.name,
       methodologySlug: publishedOutputs.methodologySlug
     })
@@ -309,6 +352,7 @@ export async function getPublishedOutputForReporting(outputId: string) {
     .innerJoin(studyCorpora, eq(studyCorpora.id, publishedOutputs.studyCorpusId))
     .innerJoin(methodologies, eq(methodologies.id, studyCorpora.methodologyId))
     .leftJoin(brands, eq(brands.id, publishedOutputs.brandId))
+    .leftJoin(themes, eq(themes.id, publishedOutputs.themeId))
     .where(and(eq(publishedOutputs.id, outputId), eq(publishedOutputs.status, "published"), isNull(publishedOutputs.archivedAt)))
     .limit(1);
 
@@ -343,7 +387,7 @@ export function buildReportingDataset(output: NonNullable<PublishedOutputRow>, d
       {
         output_id: output.outputId,
         report_version: output.version,
-        brand_name: stringValue(report.brand_name) || output.brandName || output.brandFallbackName,
+        brand_name: reportSubjectName(output, report),
         methodology: stringValue(report.methodology_name) || output.methodologyName,
         methodology_slug: stringValue(report.methodology_slug) || output.methodologySlug,
         business_question: stringValue(report.business_question),
@@ -613,6 +657,7 @@ export function buildReportingV2Document(output: NonNullable<PublishedOutputRow>
   const aggregates = asRecord(viewModel.aggregates);
   const corpus = asRecord(aggregates.corpus);
   const corpusWindow = asRecord(corpus.window);
+  const subjectName = reportSubjectName(output, asRecord(payload.report)) ?? viewModel.report.brand_name;
   const metadata = {
     api_version: 2,
     output_id: output.outputId,
@@ -623,7 +668,7 @@ export function buildReportingV2Document(output: NonNullable<PublishedOutputRow>
     published_at: output.publishedAt?.toISOString() ?? null,
     generated_at: stringValue(payload.generated_at) || output.generatedAt?.toISOString() || null,
     updated_at: output.updatedAt?.toISOString() ?? null,
-    brand_name: viewModel.report.brand_name || output.brandName || output.brandFallbackName,
+    brand_name: subjectName,
     methodology: viewModel.report.methodology_name || output.methodologyName,
     methodology_slug: viewModel.report.methodology_slug || output.methodologySlug,
     business_question: viewModel.report.business_question,
@@ -636,7 +681,7 @@ export function buildReportingV2Document(output: NonNullable<PublishedOutputRow>
   };
   const sections = {
     overview: {
-      report: viewModel.report,
+      report: { ...viewModel.report, brand_name: subjectName },
       metrics: viewModel.metrics,
       knowledge_impact: viewModel.knowledgeImpact,
       client_boundaries: viewModel.clientBoundaries
@@ -649,6 +694,8 @@ export function buildReportingV2Document(output: NonNullable<PublishedOutputRow>
     action_cards: viewModel.actionCards,
     strategic_opportunities: viewModel.strategicOpportunities,
     competitive_intelligence: viewModel.competitive,
+    engine_methodology: viewModel.engineBlock,
+    methodology_view: viewModel.engineBlock?.methodology_view ?? null,
     emerging_patterns: viewModel.emergingPatterns,
     future_signals: viewModel.futureSignals,
     market_analysis: viewModel.marketAnalysis,
@@ -686,6 +733,10 @@ export function buildReportingV2Section(output: NonNullable<PublishedOutputRow>,
       return document.sections.strategic_opportunities;
     case "competitive-intelligence":
       return document.sections.competitive_intelligence;
+    case "engine-methodology":
+      return document.sections.engine_methodology;
+    case "methodology-view":
+      return document.sections.methodology_view;
     case "emerging-patterns":
       return document.sections.emerging_patterns;
     case "future-signals":
@@ -784,6 +835,13 @@ function canAccessOutput(outputs: string[], outputId: string) {
   return outputs.includes("*") || outputs.includes(outputId);
 }
 
+function reportSubjectName(
+  row: { brandName?: string | null; brandFallbackName?: string | null; themeName?: string | null },
+  report: Record<string, unknown> = {}
+) {
+  return stringValue(report.brand_name) || row.brandName || row.brandFallbackName || row.themeName || null;
+}
+
 function safeEqual(a: string, b: string) {
   const aBuffer = Buffer.from(a);
   const bBuffer = Buffer.from(b);
@@ -831,15 +889,36 @@ function numberValue(value: unknown) {
   return 0;
 }
 
-function getEnabledV2Sections(manifest: unknown) {
+export function getEnabledV2Sections(manifest: unknown, payload: unknown = null) {
   const flags = asRecord(manifest);
-  const sectionMap: Array<[ReportingV2Section, string[]]> = [
+  const engineBlock = asRecord(asRecord(payload).engine_block);
+  const hasEngineBlock = Boolean(stringValue(engineBlock.methodology_slug) || stringValue(engineBlock.kind));
+  const engineModuleKeys = [
+    "engine_methodology",
+    "competitive_wave",
+    "narrative_ownership",
+    "value_perception",
+    "brand_positioning",
+    "category_opportunity",
+    "white_space",
+    "journey_friction",
+    "decision_velocity",
+    "cultural_codes",
+    "advocacy_proxy",
+    "audience_segment",
+    "influence_architecture",
+    "trust_risk",
+    "evidence_confidence"
+  ];
+  const sectionMap: Array<[ReportingV2Section, string[], { requiresEngine?: boolean }?]> = [
     ["overview", ["overview"]],
     ["findings", ["overview", "tb_decision_field", "evidence"]],
     ["decision-field", ["tb_decision_field"]],
     ["action-cards", ["action_studio"]],
     ["strategic-opportunities", ["opportunities"]],
     ["competitive-intelligence", ["competitive_intelligence"]],
+    ["engine-methodology", engineModuleKeys, { requiresEngine: true }],
+    ["methodology-view", engineModuleKeys, { requiresEngine: true }],
     ["emerging-patterns", ["emerging_patterns"]],
     ["future-signals", ["emerging_patterns"]],
     ["market-analysis", ["emerging_patterns"]],
@@ -851,10 +930,12 @@ function getEnabledV2Sections(manifest: unknown) {
   ];
 
   if (Object.keys(flags).length === 0) {
-    return sectionMap.map(([section]) => section);
+    return sectionMap
+      .filter(([, , options]) => !options?.requiresEngine || hasEngineBlock)
+      .map(([section]) => section);
   }
 
   return sectionMap
-    .filter(([, keys]) => keys.some((key) => flags[key] !== false))
+    .filter(([, keys, options]) => (!options?.requiresEngine || hasEngineBlock) && keys.some((key) => flags[key] !== false))
     .map(([section]) => section);
 }

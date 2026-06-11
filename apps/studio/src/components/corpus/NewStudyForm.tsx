@@ -6,6 +6,13 @@ import { useTranslations } from "next-intl";
 
 import { Icon } from "@/components/ui/Icon";
 import { INDUSTRY_OPTIONS, subindustriesForIndustry } from "@/lib/industry-catalog";
+import {
+  STUDY_LENS_OPTIONS,
+  buildStudyAnalysisPlan,
+  defaultStudyLensSlugs,
+  labelForLens
+} from "@/lib/multimethod/analysis-plan";
+import { slugify } from "@/lib/slug";
 
 type BrandOption = {
   id: string;
@@ -62,6 +69,7 @@ type Draft = {
   themeId: string;
   baseCorpusId: string;
   methodologyId: string;
+  selectedLensSlugs: string[];
   businessQuestion: string;
   decisionToInform: string;
   audienceSegment: string;
@@ -99,6 +107,9 @@ type InlineBrand = {
 };
 
 type FieldErrors = Partial<Record<string, string>>;
+type DraftStringKey = {
+  [K in keyof Draft]: Draft[K] extends string ? K : never
+}[keyof Draft];
 
 type NewStudyFormProps = {
   brands: BrandOption[];
@@ -111,10 +122,12 @@ type NewStudyFormProps = {
 const steps = [
   { key: "brand", label: "Marca" },
   { key: "objective", label: "Objetivo" },
+  { key: "lenses", label: "Lentes" },
   { key: "sources", label: "Fuentes" },
   { key: "brief", label: "Brief" },
   { key: "launch", label: "Launch" }
 ];
+const LAST_STEP_INDEX = steps.length - 1;
 const MAX_KNOWLEDGE_FILES = 20;
 const KNOWLEDGE_ACCEPT = ".xlsx,.xls,.csv,.tsv,.txt,.json,.md,text/plain,text/csv,application/json,text/markdown,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -137,6 +150,7 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
     themeId: defaultTheme?.id ?? "",
     baseCorpusId: "",
     methodologyId: defaultMethodology?.id ?? "",
+    selectedLensSlugs: defaultStudyLensSlugs(defaultMethodology?.slug),
     businessQuestion: "",
     decisionToInform: "",
     audienceSegment: "",
@@ -189,6 +203,7 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
   const selectedTheme = themes.find((theme) => theme.id === draft.themeId) ?? null;
   const selectedBaselineCorpus = baselineCorpora.find((corpus) => corpus.id === draft.baseCorpusId) ?? null;
   const selectedMethodology = methodologies.find((methodology) => methodology.id === draft.methodologyId) ?? defaultMethodology;
+  const selectedLensLabels = draft.selectedLensSlugs.map(labelForLens);
   const failedSourceCount = knowledgeSources.filter((source) => source.status === "failed").length;
   const subjectLabel = subjectType === "brand"
     ? brandMode === "new"
@@ -217,15 +232,43 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
     setDraft((current) => (current.studyName === next ? current : { ...current, studyName: next }));
   }, [studyNameTouched, resolvedSubjectName, methodologyName]);
 
-  function updateDraft(key: keyof Draft, value: string) {
+  function updateDraft(key: DraftStringKey, value: string) {
     setDraft((current) => ({ ...current, [key]: value }));
     setFieldErrors((current) => ({ ...current, [key]: undefined }));
+  }
+
+  function updateMethodology(methodologyId: string) {
+    const methodology = methodologies.find((item) => item.id === methodologyId);
+    setDraft((current) => ({
+      ...current,
+      methodologyId,
+      selectedLensSlugs: current.selectedLensSlugs.length > 0
+        ? current.selectedLensSlugs
+        : defaultStudyLensSlugs(methodology?.slug)
+    }));
+    setFieldErrors((current) => ({ ...current, methodologyId: undefined }));
+  }
+
+  function toggleLens(slug: string) {
+    const option = STUDY_LENS_OPTIONS.find((item) => item.slug === slug);
+    if (option?.locked) return;
+    setDraft((current) => {
+      const selected = new Set(current.selectedLensSlugs);
+      if (selected.has(slug)) {
+        selected.delete(slug);
+      } else {
+        selected.add(slug);
+      }
+      selected.add("triggers-barriers");
+      return { ...current, selectedLensSlugs: Array.from(selected) };
+    });
+    setFieldErrors((current) => ({ ...current, selectedLensSlugs: undefined }));
   }
 
   function updateInlineBrand(key: keyof InlineBrand, value: string) {
     setFieldErrors((current) => ({ ...current, [`brand.${key}`]: undefined }));
     setInlineBrand((current) => {
-      const next = { ...current, [key]: value };
+      const next = { ...current, [key]: key === "slug" ? slugify(value) : value };
       if (key === "name" && !current.slug) {
         next.slug = slugify(value);
       }
@@ -236,9 +279,9 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
   function updateInlineTheme(key: keyof InlineTheme, value: string) {
     setFieldErrors((current) => ({ ...current, [`theme.${key}`]: undefined }));
     setInlineTheme((current) => {
-      const next = { ...current, [key]: value };
+      const next = { ...current, [key]: key === "slug" ? slugify(value, 100) : value };
       if (key === "name" && !current.slug) {
-        next.slug = slugify(value);
+        next.slug = slugify(value, 100);
       }
       return next;
     });
@@ -318,6 +361,12 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
       }
     }
 
+    if (maxStep >= 2) {
+      if (!draft.selectedLensSlugs.includes("triggers-barriers")) {
+        addError(2, "selectedLensSlugs", t("validation.methodology"));
+      }
+    }
+
     const ok = Object.keys(errors).length === 0;
     return {
       ok,
@@ -347,7 +396,7 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    const validation = validateThroughStep(3);
+    const validation = validateThroughStep(4);
     setFieldErrors(validation.errors);
     if (!validation.ok) {
       setStep(validation.firstInvalidStep);
@@ -382,7 +431,8 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
       setProgressLabel(t("progress.creatingStudy"));
       const studyPayload = buildStudyPayload(
         draft,
-        subjectType === "brand" ? { brandId, baseCorpusId: draft.baseCorpusId || undefined } : { themeId }
+        subjectType === "brand" ? { brandId, baseCorpusId: draft.baseCorpusId || undefined } : { themeId },
+        selectedMethodology?.slug
       );
       const res = await fetch("/api/corpora", {
         method: "POST",
@@ -400,7 +450,7 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
         await uploadKnowledgeFiles(corpusId);
       }
 
-      setStep(4);
+      setStep(LAST_STEP_INDEX);
       setProgressLabel(t("progress.readyEngine"));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("progress.fallbackStudyError"));
@@ -459,7 +509,7 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
         <div>
           <p className="vitals-eyebrow">{t("rail.eyebrow")}</p>
           <h2>{draft.studyName || t("rail.fallbackTitle")}</h2>
-          <p>{subjectLabel} · {selectedMethodology?.name ?? t("rail.methodology")}</p>
+          <p>{subjectLabel} · {selectedMethodology?.name ?? t("rail.methodology")} · {draft.selectedLensSlugs.length} lentes en plan</p>
         </div>
         <ol className="study-step-list">
           {steps.map((item, index) => (
@@ -532,7 +582,7 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
                     {fieldErrors.brandId && <small className="new-study-field-error">{fieldErrors.brandId}</small>}
                   </Field>
                   <Field label={t("brand.methodology")}>
-                    <select className="filter-input new-study-input" value={draft.methodologyId} onChange={(event) => updateDraft("methodologyId", event.target.value)} required>
+                    <select className="filter-input new-study-input" value={draft.methodologyId} onChange={(event) => updateMethodology(event.target.value)} required>
                       {methodologies.map((methodology) => (
                         <option key={methodology.id} value={methodology.id}>
                           {methodology.name} · {methodology.version}
@@ -633,7 +683,7 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
                       {fieldErrors.themeId && <small className="new-study-field-error">{fieldErrors.themeId}</small>}
                     </Field>
                     <Field label={t("brand.methodology")}>
-                      <select className="filter-input new-study-input" value={draft.methodologyId} onChange={(event) => updateDraft("methodologyId", event.target.value)} required>
+                      <select className="filter-input new-study-input" value={draft.methodologyId} onChange={(event) => updateMethodology(event.target.value)} required>
                         {methodologies.map((methodology) => (
                           <option key={methodology.id} value={methodology.id}>
                             {methodology.name} · {methodology.version}
@@ -665,7 +715,7 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
                     <TextAreaField label={t("theme.description")} value={inlineTheme.description} onChange={(value) => updateInlineTheme("description", value)} placeholder={t("theme.descriptionPlaceholder")} />
                     <div className="new-study-grid">
                       <Field label={t("brand.methodology")}>
-                        <select className="filter-input new-study-input" value={draft.methodologyId} onChange={(event) => updateDraft("methodologyId", event.target.value)} required>
+                        <select className="filter-input new-study-input" value={draft.methodologyId} onChange={(event) => updateMethodology(event.target.value)} required>
                           {methodologies.map((methodology) => (
                             <option key={methodology.id} value={methodology.id}>
                               {methodology.name} · {methodology.version}
@@ -715,6 +765,17 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
         )}
 
         {step === 2 && (
+          <WizardPanel eyebrow="Analysis plan" title="Lentes del reporte">
+            <LensPlanPanel
+              selectedLensSlugs={draft.selectedLensSlugs}
+              selectedMethodology={selectedMethodology}
+              onToggle={toggleLens}
+            />
+            {fieldErrors.selectedLensSlugs && <small className="new-study-field-error">{fieldErrors.selectedLensSlugs}</small>}
+          </WizardPanel>
+        )}
+
+        {step === 3 && (
           <WizardPanel eyebrow={t("sources.eyebrow")} title={t("sources.title")}>
             <div className="new-study-grid">
               <Field label={t("sources.type")}>
@@ -771,13 +832,13 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
           </WizardPanel>
         )}
 
-        {step === 3 && (
+        {step === 4 && (
           <WizardPanel eyebrow={t("brief.eyebrow")} title={t("brief.title")}>
-            <BriefPreview draft={draft} subjectLabel={subjectLabel} methodology={selectedMethodology?.name ?? "Triggers & Barriers"} files={files} subjectType={subjectType} />
+            <BriefPreview draft={draft} subjectLabel={subjectLabel} methodology={selectedMethodology?.name ?? "Triggers & Barriers"} files={files} subjectType={subjectType} lensLabels={selectedLensLabels} />
           </WizardPanel>
         )}
 
-        {step === 4 && (
+        {step === 5 && (
           <WizardPanel eyebrow={t("launch.eyebrow")} title={engineUrl ? t("launch.readyTitle") : t("launch.createTitle")}>
             {isSubmitting && (
               <div className="study-processing-card">
@@ -846,8 +907,8 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
               <Icon name="arrow-right" size={13} className="icon--flip" /> {t("actions.back")}
             </button>
           )}
-          {step < 4 ? (
-            <button className="wizard-cta" type="button" onClick={() => goToStep(Math.min(4, step + 1))} disabled={isSubmitting}>
+          {step < LAST_STEP_INDEX ? (
+            <button className="wizard-cta" type="button" onClick={() => goToStep(Math.min(LAST_STEP_INDEX, step + 1))} disabled={isSubmitting}>
               {t("actions.next")} <Icon name="arrow-right" size={13} />
             </button>
           ) : !engineUrl ? (
@@ -998,18 +1059,89 @@ function BaselineCorpusField({
   );
 }
 
+function LensPlanPanel({
+  selectedLensSlugs,
+  selectedMethodology,
+  onToggle
+}: {
+  selectedLensSlugs: string[];
+  selectedMethodology: MethodologyOption | undefined;
+  onToggle: (slug: string) => void;
+}) {
+  const selectedSet = new Set(selectedLensSlugs);
+  const analysisPlan = buildStudyAnalysisPlan(selectedLensSlugs, selectedMethodology?.slug);
+  const composerModules = analysisPlan.composer_modules;
+
+  return (
+    <section className="study-lens-plan">
+      <div className="study-lens-plan-intro">
+        <div>
+          <p className="vitals-eyebrow">Multi-lens corpus</p>
+          <h3>Un corpus, varias lecturas</h3>
+          <p>
+            Cada lente seleccionado crea sus propios módulos de query y carga de CSV. T&B corre primero como lectura base;
+            después los lentes elegidos analizan el corpus con su provenance, sin mezclar sus objetivos.
+          </p>
+        </div>
+        <div className="study-lens-summary">
+          <span>{selectedLensSlugs.length}</span>
+          <small>lentes en plan</small>
+        </div>
+      </div>
+
+      <div className="study-lens-grid">
+        {STUDY_LENS_OPTIONS.map((lens) => {
+          const isSelected = selectedSet.has(lens.slug);
+          const pack = (analysisPlan.lens_configs[lens.slug]?.query_pack ?? {}) as Record<string, unknown>;
+          const minMentions = Number(pack.min_mentions_per_entity ?? 0);
+          const requiresCompetitors = pack.requires_competitors === true;
+          return (
+            <button
+              aria-pressed={isSelected}
+              className={`study-lens-card${isSelected ? " study-lens-card--selected" : ""}`}
+              disabled={lens.locked}
+              key={lens.slug}
+              onClick={() => onToggle(lens.slug)}
+              type="button"
+            >
+              <span className="study-lens-card-status">{lens.status}</span>
+              <strong>{lens.label}</strong>
+              <p>{lens.description}</p>
+              <small>{lens.locked ? "Corre con T&B" : isSelected ? "Se ejecuta después" : "Agregar al plan"}</small>
+              <em>
+                {requiresCompetitors ? "Requiere peer set" : "Puede correr sin peer set"}
+                {minMentions > 0 ? ` · ${minMentions}+ menciones/entidad` : ""}
+              </em>
+              <Icon name={isSelected ? "check" : "sparkle"} size={15} />
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="study-lens-modules">
+        <span>Composer esperado</span>
+        <div>
+          {composerModules.map((module) => <small key={module}>{labelForLens(module)}</small>)}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function BriefPreview({
   draft,
   subjectLabel,
   methodology,
   files,
-  subjectType
+  subjectType,
+  lensLabels
 }: {
   draft: Draft;
   subjectLabel: string;
   methodology: string;
   files: File[];
   subjectType: "brand" | "theme";
+  lensLabels: string[];
 }) {
   const t = useTranslations("NewStudy.brief");
   const items = [
@@ -1017,6 +1149,7 @@ function BriefPreview({
     [t("subjectType"), subjectType === "theme" ? t("themeSubject") : t("brandSubject")],
     [t("baseline"), draft.baseCorpusId ? t("baselineLinked") : ""],
     [t("methodology"), methodology],
+    [t("lenses"), lensLabels.join(", ")],
     [t("question"), draft.businessQuestion],
     [t("decision"), draft.decisionToInform],
     [t("audience"), draft.audienceSegment],
@@ -1047,7 +1180,7 @@ async function createInlineBrand(
 ) {
   const payload = {
     organization_name: brand.organizationName,
-    slug: brand.slug || slugify(brand.name),
+    slug: slugify(brand.slug || brand.name),
     name: brand.name,
     display_name: brand.displayName || brand.name,
     industry: brand.industry,
@@ -1073,7 +1206,7 @@ async function createInlineTheme(
   labels: { fallback: string; fieldFallback: string; invalidFallback: string }
 ) {
   const payload = {
-    slug: theme.slug || slugify(theme.name),
+    slug: slugify(theme.slug || theme.name, 100),
     name: theme.name,
     description: theme.description,
     industry_focus: splitList(theme.industryFocus),
@@ -1091,13 +1224,18 @@ async function createInlineTheme(
   return String(json.data.id);
 }
 
-function buildStudyPayload(draft: Draft, subject: { brandId?: string; themeId?: string; baseCorpusId?: string }) {
+function buildStudyPayload(
+  draft: Draft,
+  subject: { brandId?: string; themeId?: string; baseCorpusId?: string },
+  primaryMethodologySlug?: string
+) {
   return {
     name: draft.studyName,
     ...(subject.brandId ? { brand_id: subject.brandId } : {}),
     ...(subject.themeId ? { theme_id: subject.themeId } : {}),
     ...(subject.baseCorpusId ? { base_corpus_id: subject.baseCorpusId } : {}),
     methodology_id: draft.methodologyId,
+    analysis_plan: buildStudyAnalysisPlan(draft.selectedLensSlugs, primaryMethodologySlug),
     business_question: draft.businessQuestion,
     decision_to_inform: draft.decisionToInform,
     audience_segment: draft.audienceSegment,
@@ -1227,16 +1365,6 @@ function formatApiError(
   return fields
     .map((field) => `${field.path || fieldFallback}: ${field.message || invalidFallback}`)
     .join(" · ");
-}
-
-function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
 }
 
 function formatBytes(bytes: number) {

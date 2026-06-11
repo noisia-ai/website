@@ -6,7 +6,14 @@ import { forbidden, unauthorized, validationError } from "@/lib/api/responses";
 import { canManageCorpus } from "@/lib/auth/roles";
 import { getAuthenticatedAppUser } from "@/lib/auth/session";
 import { getCorpusForUser, getTbAnalysisForCorpus } from "@/lib/data/corpora";
-import { db } from "@/lib/db";
+import { db, pool } from "@/lib/db";
+import {
+  explicitCompositeEngineLensesFromPlan,
+  validateCompositeEnginePublishReadiness,
+  type CompositeEngineLensAnalysis
+} from "@/lib/engine/composite-publish-guards";
+import { attachLiveIntelligenceLinksToPayload } from "@/lib/live-intelligence/published-output";
+import { persistTbSignalObservations } from "@/lib/live-intelligence/tb-observations";
 import { buildSignalPayload, normalizeSignalManifest } from "@/lib/signal/build";
 import { SIGNAL_PAYLOAD_VERSION } from "@/lib/signal/contracts";
 
@@ -61,6 +68,27 @@ export async function POST(
     summary: parsed.data.summary
   });
   const isPublish = parsed.data.action === "publish";
+  if (isPublish) {
+    const selectedEngineLenses = explicitCompositeEngineLensesFromPlan(corpus.analysisPlan);
+    const compositeReadiness = validateCompositeEnginePublishReadiness({
+      analysisPlan: corpus.analysisPlan,
+      manifest,
+      latestAnalyses: selectedEngineLenses.length > 0
+        ? await loadLatestCompositeEngineAnalyses(corpus.id, selectedEngineLenses)
+        : []
+    });
+    if (!compositeReadiness.ok) {
+      return Response.json(
+        {
+          error: compositeReadiness.error,
+          message: compositeReadiness.message,
+          required_lenses: compositeReadiness.required_lenses,
+          failed_lenses: compositeReadiness.failed_lenses
+        },
+        { status: 409 }
+      );
+    }
+  }
 
   // TODO mejora-futura: versionar cada publish como snapshot inmutable.
   // MVP mantiene un output narrativo por analisis y actualiza el payload.
@@ -107,7 +135,35 @@ export async function POST(
       title: publishedOutputs.title
     });
 
-  return Response.json({ ok: true, output });
+  let liveIntelligence: Awaited<ReturnType<typeof persistTbSignalObservations>> | null = null;
+  if (isPublish && output?.id) {
+    try {
+      liveIntelligence = await persistTbSignalObservations({
+        tbAnalysisId: state.analysis.id,
+        publishedOutputId: output.id
+      });
+      if (liveIntelligence.status === "ok" && liveIntelligence.mappings.length > 0) {
+        await db
+          .update(publishedOutputs)
+          .set({
+            payload: attachLiveIntelligenceLinksToPayload(payload, liveIntelligence),
+            updatedAt: new Date()
+          })
+          .where(eq(publishedOutputs.id, output.id));
+      }
+    } catch (error) {
+      liveIntelligence = {
+        status: "skipped",
+        reason: error instanceof Error ? error.message : "unknown_live_intelligence_error",
+        signals: 0,
+        observations: 0,
+        evidence: 0,
+        mappings: []
+      };
+    }
+  }
+
+  return Response.json({ ok: true, output, liveIntelligence });
 }
 
 export async function GET(
@@ -139,4 +195,48 @@ export async function GET(
     .limit(1);
 
   return Response.json({ output: output ?? null });
+}
+
+async function loadLatestCompositeEngineAnalyses(
+  corpusId: string,
+  methodologySlugs: string[]
+): Promise<CompositeEngineLensAnalysis[]> {
+  if (methodologySlugs.length === 0) return [];
+  const result = await pool.query<{
+    methodology_slug: string;
+    engine_analysis_id: string;
+    status: string | null;
+    current_step: string | null;
+    meta_json: unknown;
+    used_fixture_coding: boolean;
+  }>(
+    `
+      SELECT DISTINCT ON (ea.methodology_slug)
+        ea.methodology_slug,
+        ea.id::text AS engine_analysis_id,
+        ea.status,
+        ea.current_step,
+        ea.meta_json,
+        EXISTS (
+          SELECT 1
+          FROM engine_cost_events ece
+          WHERE ece.engine_analysis_id = ea.id
+            AND ece.provider = 'fixture'
+        ) AS used_fixture_coding
+      FROM engine_analyses ea
+      WHERE ea.study_corpus_id = $1
+        AND ea.methodology_slug = ANY($2::text[])
+      ORDER BY ea.methodology_slug, ea.created_at DESC
+    `,
+    [corpusId, methodologySlugs]
+  );
+
+  return result.rows.map((row) => ({
+    methodologySlug: row.methodology_slug,
+    engineAnalysisId: row.engine_analysis_id,
+    status: row.status,
+    currentStep: row.current_step,
+    metaJson: row.meta_json,
+    usedFixtureCoding: row.used_fixture_coding
+  }));
 }

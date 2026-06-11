@@ -6,7 +6,7 @@ import { Readable } from "node:stream";
 
 import { and, eq } from "drizzle-orm";
 
-import { corpusEntities, importBatches } from "@noisia/db";
+import { corpusEntities, importBatches, queryPacks } from "@noisia/db";
 import { forbidden, unauthorized } from "@/lib/api/responses";
 
 export const runtime = "nodejs";
@@ -51,6 +51,7 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
   const fileName = typeof fileNameRaw === "string" && fileNameRaw.trim().length > 0 ? fileNameRaw.trim().slice(0, 300) : sourceLabel;
   const mentionTypeRaw = query.get("mention_type");
   const iterationIdRaw = query.get("query_iteration_id");
+  const queryPackIdRaw = query.get("query_pack_id");
   const competitorIdRaw = query.get("competitor_id");
   const corpusEntityIdRaw = query.get("corpus_entity_id");
   const entityLabelRaw = query.get("entity_label");
@@ -59,13 +60,44 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     mentionTypeRaw === "brand" || mentionTypeRaw === "competitor" || mentionTypeRaw === "industry"
       ? (mentionTypeRaw as "brand" | "competitor" | "industry")
       : null;
-  const queryIterationId = typeof iterationIdRaw === "string" && iterationIdRaw.length > 0 ? iterationIdRaw : null;
+  const queryIterationId = isUuid(iterationIdRaw) ? iterationIdRaw : null;
+  const queryPackId = isUuid(queryPackIdRaw) ? queryPackIdRaw : null;
+  const [linkedQueryPack] = queryPackId
+    ? await db
+        .select({
+          id: queryPacks.id,
+          queryIterationId: queryPacks.queryIterationId,
+          lensSlug: queryPacks.lensSlug,
+          signalIntent: queryPacks.signalIntent,
+          scope: queryPacks.scope
+        })
+        .from(queryPacks)
+        .where(and(eq(queryPacks.id, queryPackId), eq(queryPacks.studyCorpusId, corpus.id)))
+        .limit(1)
+    : [];
+  if (queryPackId && (!linkedQueryPack || linkedQueryPack.id !== queryPackId)) {
+    return Response.json(
+      { error: "validation_error", message: "Query pack not found for this corpus." },
+      { status: 422 }
+    );
+  }
+  if (
+    linkedQueryPack?.queryIterationId &&
+    queryIterationId &&
+    linkedQueryPack.queryIterationId !== queryIterationId
+  ) {
+    return Response.json(
+      { error: "validation_error", message: "Query pack does not belong to the selected iteration." },
+      { status: 422 }
+    );
+  }
+  const resolvedQueryIterationId = queryIterationId ?? linkedQueryPack?.queryIterationId ?? null;
   const competitorId =
-    typeof competitorIdRaw === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(competitorIdRaw)
+    isUuid(competitorIdRaw)
       ? competitorIdRaw
       : null;
   const corpusEntityId =
-    typeof corpusEntityIdRaw === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(corpusEntityIdRaw)
+    isUuid(corpusEntityIdRaw)
       ? corpusEntityIdRaw
       : null;
   const [linkedEntity] = corpusEntityId
@@ -109,7 +141,8 @@ export async function POST(_request: Request, context: { params: Promise<{ id: s
     .insert(importBatches)
     .values({
       studyCorpusId: corpus.id,
-      queryIterationId,
+      queryIterationId: resolvedQueryIterationId,
+      queryPackId: linkedQueryPack?.id ?? null,
       mentionType,
       competitorId: resolvedCompetitorId,
       corpusEntityId: linkedEntity?.id,
@@ -235,6 +268,10 @@ async function persistRawUpload(stream: ReadableStream<Uint8Array>, storagePath:
 
 function safeFileName(fileName: string) {
   return fileName.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, 160) || "mentions.csv";
+}
+
+function isUuid(value: string | null): value is string {
+  return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 function defaultEntityLabel(mentionType: "brand" | "competitor" | "industry" | null) {

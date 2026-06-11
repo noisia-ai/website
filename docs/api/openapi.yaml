@@ -303,6 +303,8 @@ components:
         - action-cards
         - strategic-opportunities
         - competitive-intelligence
+        - engine-methodology
+        - methodology-view
         - emerging-patterns
         - future-signals
         - market-analysis
@@ -327,6 +329,7 @@ components:
           type: integer
         brand_name:
           type: [string, "null"]
+          description: Backward-compatible report subject label. For industry/theme reports this is the theme name.
         methodology:
           type: [string, "null"]
         methodology_slug:
@@ -398,6 +401,7 @@ components:
           type: integer
         brand_name:
           type: [string, "null"]
+          description: Backward-compatible report subject label. For industry/theme reports this is the theme name.
         methodology:
           type: [string, "null"]
         methodology_slug:
@@ -550,6 +554,7 @@ components:
       properties:
         brand_name:
           type: string
+          description: Backward-compatible report subject label. For industry/theme reports this is the theme name.
         methodology_name:
           type: string
         methodology_slug:

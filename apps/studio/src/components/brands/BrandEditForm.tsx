@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { Icon } from "@/components/ui/Icon";
 import { INDUSTRY_OPTIONS, subindustriesForIndustry } from "@/lib/industry-catalog";
+import { slugify } from "@/lib/slug";
 
 type EditableBrand = {
   id: string;
@@ -54,7 +55,7 @@ export function BrandEditForm({
 
     const legalName = newOrgLegalName.trim();
     const displayName = newOrgDisplayName.trim();
-    const slug = (newOrgSlug.trim() || slugify(legalName)).slice(0, 80);
+    const slug = slugify(newOrgSlug.trim() || legalName);
 
     try {
       const res = await fetch("/api/organizations", {
@@ -99,7 +100,7 @@ export function BrandEditForm({
     const form = new FormData(event.currentTarget);
     const payload = {
       organization_id: selectedOrgId,
-      slug: String(form.get("slug") ?? "").trim(),
+      slug: slugify(String(form.get("slug") ?? "").trim()),
       name: String(form.get("name") ?? "").trim(),
       display_name: String(form.get("display_name") ?? "").trim(),
       industry: String(form.get("industry") ?? "").trim(),
@@ -203,7 +204,7 @@ export function BrandEditForm({
                   className="filter-input new-study-input"
                   pattern="[a-z0-9]+(-[a-z0-9]+)*"
                   value={newOrgSlug}
-                  onChange={(event) => setNewOrgSlug(event.target.value)}
+                  onChange={(event) => setNewOrgSlug(slugify(event.target.value))}
                 />
               </label>
             </div>
@@ -311,16 +312,6 @@ export function BrandEditForm({
       </footer>
     </form>
   );
-}
-
-function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
 }
 
 function splitList(value: string) {

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
-import { useSignalUiLanguage, type SignalUiLanguage } from "@/components/signal/SignalReportShell";
+import { useSignalDateRange, useSignalUiLanguage, type SignalUiLanguage } from "@/components/signal/SignalReportShell";
 import { Icon } from "@/components/ui/Icon";
 import { SourceToken } from "@/components/ui/SourceIcon";
 
@@ -17,6 +17,20 @@ type CorpusMention = {
   platform: string;
   publishedAt: string;
   isProtagonist: boolean;
+  lensSlug: string;
+  signalIntent: string;
+  queryScope: string;
+  entityId: string;
+  canonicalSignalId: string;
+  canonicalSignalTitle: string;
+};
+
+type CorpusFacets = {
+  platforms: Array<{ platform: string; count: number }>;
+  findings: Array<{ finding_id: string; finding_name: string; count: number }>;
+  lenses: Array<{ lens_slug: string; signal_intent: string; count: number }>;
+  entities: Array<{ entity_id: string; entity_label: string; count: number }>;
+  signals: Array<{ id: string; title: string; count: number }>;
 };
 
 const corpusCopy = {
@@ -35,6 +49,14 @@ const corpusCopy = {
     allChannels: "All channels",
     finding: "Finding",
     allFindings: "All findings",
+    lens: "Lens",
+    allLenses: "All lenses",
+    intent: "Intent",
+    allIntents: "All intents",
+    entity: "Entity",
+    allEntities: "All entities",
+    signal: "Signal",
+    allSignals: "All signals",
     evidence: "Evidence",
     allEvidence: "All evidence",
     protagonistOnly: "Protagonist only",
@@ -51,6 +73,9 @@ const corpusCopy = {
     noChannels: "No channels in the current filter.",
     completeCorpus: "This view queries the full authorized corpus.",
     publishedEvidence: "This view shows published evidence.",
+    localDateOverride: "Local date override",
+    clearDateOverride: "Use global range",
+    usingGlobalDate: "Using global range",
     protagonist: "protagonist",
     support: "support",
     emptyTitle: "No verbatims match those filters.",
@@ -75,6 +100,14 @@ const corpusCopy = {
     allChannels: "Todos los canales",
     finding: "Finding",
     allFindings: "Todos los findings",
+    lens: "Lente",
+    allLenses: "Todos los lentes",
+    intent: "Intención",
+    allIntents: "Todas las intenciones",
+    entity: "Entidad",
+    allEntities: "Todas las entidades",
+    signal: "Señal",
+    allSignals: "Todas las señales",
     evidence: "Evidencia",
     allEvidence: "Toda la evidencia",
     protagonistOnly: "Sólo protagonista",
@@ -91,6 +124,9 @@ const corpusCopy = {
     noChannels: "Sin canales en el filtro actual.",
     completeCorpus: "Esta vista consulta el corpus completo autorizado.",
     publishedEvidence: "Esta vista muestra evidencia publicada.",
+    localDateOverride: "Filtro local de fecha",
+    clearDateOverride: "Usar rango global",
+    usingGlobalDate: "Usando rango global",
     protagonist: "protagonista",
     support: "soporte",
     emptyTitle: "No hay verbatims con esos filtros.",
@@ -102,29 +138,37 @@ const corpusCopy = {
   },
 } satisfies Record<SignalUiLanguage, Record<string, string>>;
 
-const PAGE_SIZE = 240;
+const PAGE_SIZE = 120;
 
 export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention[]; outputId?: string }) {
   const { uiLanguage } = useSignalUiLanguage();
+  const { dateFrom: globalDateFrom, dateTo: globalDateTo } = useSignalDateRange();
   const copy = corpusCopy[uiLanguage];
   const [query, setQuery] = useState("");
   const [platform, setPlatform] = useState("");
   const [finding, setFinding] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [lens, setLens] = useState("");
+  const [signalIntent, setSignalIntent] = useState("");
+  const [entity, setEntity] = useState("");
+  const [signal, setSignal] = useState("");
+  const [localDateFrom, setLocalDateFrom] = useState("");
+  const [localDateTo, setLocalDateTo] = useState("");
   const [evidenceRole, setEvidenceRole] = useState("");
   const [sort, setSort] = useState<"relevance" | "newest" | "oldest">("relevance");
   const [page, setPage] = useState(1);
   const [serverRows, setServerRows] = useState<CorpusMention[] | null>(null);
   const [serverTotal, setServerTotal] = useState<number | null>(null);
+  const [serverFacets, setServerFacets] = useState<CorpusFacets | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const fallbackRows = useMemo(() => mentions.map(normalizeMention).filter((mention) => mention.text), [mentions]);
   const rows = serverRows ?? fallbackRows;
+  const dateFrom = localDateFrom || globalDateFrom;
+  const dateTo = localDateTo || globalDateTo;
 
   useEffect(() => {
     setPage(1);
-  }, [dateFrom, dateTo, evidenceRole, finding, platform, query, sort]);
+  }, [dateFrom, dateTo, entity, evidenceRole, finding, lens, platform, query, signal, signalIntent, sort]);
 
   useEffect(() => {
     if (!outputId) return;
@@ -133,6 +177,10 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
       q: query,
       platform,
       finding,
+      lens,
+      signalIntent,
+      entity,
+      signal,
       dateFrom,
       dateTo,
       sort,
@@ -140,31 +188,51 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
       limit: String(PAGE_SIZE)
     });
     setIsLoading(true);
-    fetch(`/api/signal/${outputId}/corpus?${params.toString()}`, { signal: controller.signal })
+    fetch(`/api/signal/${outputId}/corpus?${params.toString()}`, { cache: "no-store", signal: controller.signal })
       .then((res) => res.ok ? res.json() : Promise.reject(new Error(`Corpus request failed: ${res.status}`)))
       .then((payload) => {
         setServerRows(Array.isArray(payload.rows) ? payload.rows.map(normalizeMention).filter((mention: CorpusMention) => mention.text) : []);
         setServerTotal(Number(payload.total ?? 0));
+        setServerFacets(normalizeFacets(payload.facets));
       })
       .catch((err) => {
         if (err instanceof Error && err.name === "AbortError") return;
         setServerRows(null);
         setServerTotal(null);
+        setServerFacets(null);
       })
       .finally(() => setIsLoading(false));
     return () => controller.abort();
-  }, [dateFrom, dateTo, finding, outputId, page, platform, query, sort]);
+  }, [dateFrom, dateTo, entity, finding, lens, outputId, page, platform, query, signal, signalIntent, sort]);
 
   const platforms = useMemo(
-    () => Array.from(new Set(rows.map((mention) => mention.platform).filter(Boolean))).sort(),
-    [rows]
+    () => serverFacets?.platforms.map((item) => item.platform).filter(Boolean) ?? Array.from(new Set(rows.map((mention) => mention.platform).filter(Boolean))).sort(),
+    [rows, serverFacets]
   );
   const findings = useMemo(
-    () => Array.from(new Map(rows.filter((mention) => mention.findingId).map((mention) => [mention.findingId, mention.findingName || mention.findingId])).entries()),
-    [rows]
+    () => serverFacets?.findings.map((item) => [item.finding_id, item.finding_name || item.finding_id] as [string, string]) ??
+      Array.from(new Map(rows.filter((mention) => mention.findingId).map((mention) => [mention.findingId, mention.findingName || mention.findingId])).entries()),
+    [rows, serverFacets]
   );
-  const dateBounds = useMemo(() => getDateBounds(rows), [rows]);
-
+  const lenses = useMemo(
+    () => Array.from(new Set((serverFacets?.lenses ?? rows.map((mention) => ({ lens_slug: mention.lensSlug }))).map((item) => item.lens_slug).filter((item) => item && item !== "unmapped"))).sort(),
+    [rows, serverFacets]
+  );
+  const intents = useMemo(
+    () => Array.from(new Set((serverFacets?.lenses ?? rows.map((mention) => ({ lens_slug: mention.lensSlug, signal_intent: mention.signalIntent })))
+      .filter((item) => !lens || item.lens_slug === lens)
+      .map((item) => item.signal_intent)
+      .filter((item) => item && item !== "unmapped"))).sort(),
+    [lens, rows, serverFacets]
+  );
+  const entities = useMemo(
+    () => serverFacets?.entities.filter((item) => item.entity_id && item.entity_id !== "unknown") ?? [],
+    [serverFacets]
+  );
+  const signals = useMemo(
+    () => serverFacets?.signals.filter((item) => item.id && item.title) ?? [],
+    [serverFacets]
+  );
   const scored = useMemo(() => {
     if (serverRows) {
       return rows
@@ -181,6 +249,10 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
         if (query.trim() && score <= 0) return false;
         if (platform && mention.platform !== platform) return false;
         if (finding && mention.findingId !== finding) return false;
+        if (lens && mention.lensSlug !== lens) return false;
+        if (signalIntent && mention.signalIntent !== signalIntent) return false;
+        if (entity && mention.entityId !== entity) return false;
+        if (signal && mention.canonicalSignalId !== signal) return false;
         if (evidenceRole === "protagonist" && !mention.isProtagonist) return false;
         if (evidenceRole === "support" && mention.isProtagonist) return false;
         if (dateFrom && mention.publishedAt && mention.publishedAt.slice(0, 10) < dateFrom) return false;
@@ -192,11 +264,13 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
         if (sort === "oldest") return dateValue(a.mention.publishedAt) - dateValue(b.mention.publishedAt);
         return b.score - a.score || Number(b.mention.isProtagonist) - Number(a.mention.isProtagonist) || dateValue(b.mention.publishedAt) - dateValue(a.mention.publishedAt);
       });
-  }, [dateFrom, dateTo, evidenceRole, finding, platform, query, rows, serverRows, sort]);
+  }, [dateFrom, dateTo, entity, evidenceRole, finding, lens, platform, query, rows, serverRows, signal, signalIntent, sort]);
 
   const filtered = scored.map((item) => item.mention);
-  const activeFilters = [query, platform, finding, dateFrom, dateTo, evidenceRole].filter(Boolean).length;
-  const topChannels = summarizePlatforms(filtered);
+  const activeFilters = [query, platform, finding, lens, signalIntent, entity, signal, localDateFrom, localDateTo, evidenceRole].filter(Boolean).length;
+  const topChannels = serverFacets
+    ? serverFacets.platforms.slice(0, 6).map((item) => ({ platform: item.platform, count: item.count }))
+    : summarizePlatforms(filtered);
   const totalRows = serverTotal ?? rows.length;
   const pageCount = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
 
@@ -204,10 +278,29 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
     setQuery("");
     setPlatform("");
     setFinding("");
-    setDateFrom("");
-    setDateTo("");
+    setLens("");
+    setSignalIntent("");
+    setEntity("");
+    setSignal("");
+    setLocalDateFrom("");
+    setLocalDateTo("");
     setEvidenceRole("");
     setSort("relevance");
+  }
+
+  function setLocalFrom(value: string) {
+    setLocalDateFrom(value);
+    if (value && localDateTo && localDateTo < value) setLocalDateTo(value);
+  }
+
+  function setLocalTo(value: string) {
+    setLocalDateTo(value);
+    if (value && localDateFrom && localDateFrom > value) setLocalDateFrom(value);
+  }
+
+  function clearLocalDates() {
+    setLocalDateFrom("");
+    setLocalDateTo("");
   }
 
   return (
@@ -266,6 +359,22 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
           <option value="">{copy.allFindings}</option>
           {findings.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
         </SelectBox>
+        <SelectBox label={copy.lens} value={lens} onChange={setLens}>
+          <option value="">{copy.allLenses}</option>
+          {lenses.map((item) => <option key={item} value={item}>{prettifyKey(item)}</option>)}
+        </SelectBox>
+        <SelectBox label={copy.intent} value={signalIntent} onChange={setSignalIntent}>
+          <option value="">{copy.allIntents}</option>
+          {intents.map((item) => <option key={item} value={item}>{prettifyKey(item)}</option>)}
+        </SelectBox>
+        <SelectBox label={copy.entity} value={entity} onChange={setEntity}>
+          <option value="">{copy.allEntities}</option>
+          {entities.map((item) => <option key={item.entity_id} value={item.entity_id}>{item.entity_label || item.entity_id}</option>)}
+        </SelectBox>
+        <SelectBox label={copy.signal} value={signal} onChange={setSignal}>
+          <option value="">{copy.allSignals}</option>
+          {signals.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+        </SelectBox>
         <SelectBox label={copy.evidence} value={evidenceRole} onChange={setEvidenceRole}>
           <option value="">{copy.allEvidence}</option>
           <option value="protagonist">{copy.protagonistOnly}</option>
@@ -278,12 +387,36 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
         </SelectBox>
         <label className="signal-corpus-date">
           <span>{copy.from}</span>
-          <input min={dateBounds.min} max={dateBounds.max} onChange={(event) => setDateFrom(event.target.value)} type="date" value={dateFrom} />
+          <input
+            onChange={(event) => setLocalFrom(event.target.value)}
+            onInput={(event) => setLocalFrom(event.currentTarget.value)}
+            placeholder={globalDateFrom}
+            title={copy.localDateOverride}
+            type="date"
+            value={localDateFrom}
+          />
         </label>
         <label className="signal-corpus-date">
           <span>{copy.to}</span>
-          <input min={dateBounds.min} max={dateBounds.max} onChange={(event) => setDateTo(event.target.value)} type="date" value={dateTo} />
+          <input
+            onChange={(event) => setLocalTo(event.target.value)}
+            onInput={(event) => setLocalTo(event.currentTarget.value)}
+            placeholder={globalDateTo}
+            title={copy.localDateOverride}
+            type="date"
+            value={localDateTo}
+          />
         </label>
+        <div className="signal-corpus-date-status">
+          <span>
+            {localDateFrom || localDateTo
+              ? `${localDateFrom || globalDateFrom || "all"} -> ${localDateTo || globalDateTo || "all"}`
+              : `${copy.usingGlobalDate}: ${globalDateFrom || "all"} -> ${globalDateTo || "all"}`}
+          </span>
+          <button disabled={!localDateFrom && !localDateTo} onClick={clearLocalDates} type="button">
+            {copy.clearDateOverride}
+          </button>
+        </div>
       </div>
 
       <div className="signal-corpus-inspector">
@@ -310,6 +443,7 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
               {mention.findingName ? (
                 <footer>
                   <a href={`#${findingAnchor(mention.findingId)}`}>{mention.findingId} · {mention.findingName}</a>
+                  {mention.canonicalSignalTitle ? <span>{mention.canonicalSignalTitle}</span> : null}
                 </footer>
               ) : null}
             </article>
@@ -373,7 +507,43 @@ function normalizeMention(mention: Mention): CorpusMention {
     text: stringValue(mention.text),
     platform: stringValue(mention.platform),
     publishedAt: stringValue(mention.published_at),
-    isProtagonist: Boolean(mention.is_protagonist)
+    isProtagonist: Boolean(mention.is_protagonist),
+    lensSlug: stringValue(mention.lens_slug),
+    signalIntent: stringValue(mention.signal_intent),
+    queryScope: stringValue(mention.query_scope),
+    entityId: stringValue(mention.source_entity_id),
+    canonicalSignalId: stringValue(mention.canonical_signal_id),
+    canonicalSignalTitle: stringValue(mention.canonical_signal_title)
+  };
+}
+
+function normalizeFacets(input: unknown): CorpusFacets {
+  const value = input && typeof input === "object" && !Array.isArray(input) ? input as Record<string, unknown> : {};
+  return {
+    platforms: arrayValue(value.platforms).map((item) => ({
+      platform: stringValue(item.platform),
+      count: numberValue(item.count)
+    })),
+    findings: arrayValue(value.findings).map((item) => ({
+      finding_id: stringValue(item.finding_id),
+      finding_name: stringValue(item.finding_name),
+      count: numberValue(item.count)
+    })),
+    lenses: arrayValue(value.lenses).map((item) => ({
+      lens_slug: stringValue(item.lens_slug),
+      signal_intent: stringValue(item.signal_intent),
+      count: numberValue(item.count)
+    })),
+    entities: arrayValue(value.entities).map((item) => ({
+      entity_id: stringValue(item.entity_id),
+      entity_label: stringValue(item.entity_label),
+      count: numberValue(item.count)
+    })),
+    signals: arrayValue(value.signals).map((item) => ({
+      id: stringValue(item.id),
+      title: stringValue(item.title),
+      count: numberValue(item.count)
+    }))
   };
 }
 
@@ -444,11 +614,6 @@ function summarizePlatforms(rows: CorpusMention[]) {
     .slice(0, 6);
 }
 
-function getDateBounds(rows: CorpusMention[]) {
-  const dates = rows.map((row) => row.publishedAt.slice(0, 10)).filter(Boolean).sort();
-  return { min: dates[0] ?? "", max: dates[dates.length - 1] ?? "" };
-}
-
 function dateValue(value: string) {
   return value ? new Date(value).getTime() || 0 : 0;
 }
@@ -482,6 +647,23 @@ function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+function prettifyKey(value: string) {
+  return value
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function arrayValue(value: unknown): Array<Record<string, unknown>> {
+  return Array.isArray(value)
+    ? value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !Array.isArray(item))
+    : [];
+}
+
 function stringValue(value: unknown) {
   return typeof value === "string" ? value : value === null || value === undefined ? "" : String(value);
+}
+
+function numberValue(value: unknown) {
+  const number = typeof value === "number" ? value : Number(value ?? 0);
+  return Number.isFinite(number) ? number : 0;
 }

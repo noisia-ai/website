@@ -259,6 +259,7 @@
     "steps": {
       "brand": "Subject",
       "objective": "Objective",
+      "lenses": "Lenses",
       "sources": "Sources",
       "brief": "Brief",
       "launch": "Launch"
@@ -388,6 +389,7 @@
       "baseline": "Baseline",
       "baselineLinked": "Linked industry corpus",
       "methodology": "Methodology",
+      "lenses": "Lenses",
       "question": "Question",
       "decision": "Decision",
       "audience": "Audience",

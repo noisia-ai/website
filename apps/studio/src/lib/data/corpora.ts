@@ -10,6 +10,7 @@ import {
   mentions,
   methodologies,
   queryIterations,
+  queryPacks,
   organizations,
   studyCorpora,
   tbAnalyses,
@@ -21,6 +22,8 @@ import {
   userBrandAccess
 } from "@noisia/db";
 import { db, pool } from "@/lib/db";
+import { queryPackHasDirectCsv } from "@/lib/engine/query-pack-readiness";
+import { normalizeStudyAnalysisPlan } from "@/lib/multimethod/analysis-plan";
 
 type AppUser = {
   id: string;
@@ -59,6 +62,7 @@ export async function getCorpusForUser(appUser: AppUser, corpusId: string) {
       decisionToInform: studyCorpora.decisionToInform,
       targetWindowMonths: studyCorpora.targetWindowMonths,
       methodologyId: studyCorpora.methodologyId,
+      analysisPlan: studyCorpora.analysisPlan,
       methodologySlug: methodologies.slug,
       methodologyName: methodologies.name,
       brandSlug: brands.slug,
@@ -210,6 +214,7 @@ export async function listImportBatchesForCorpus(corpusId: string) {
       id: importBatches.id,
       sourceSystem: importBatches.sourceSystem,
       sourceFileName: importBatches.sourceFileName,
+      queryPackId: importBatches.queryPackId,
       mentionType: importBatches.mentionType,
       competitorId: importBatches.competitorId,
       corpusEntityId: importBatches.corpusEntityId,
@@ -1351,6 +1356,7 @@ export async function getCorpusEngineState(corpusId: string) {
   const [assessmentRow] = await db
     .select({
       themeId: studyCorpora.themeId,
+      analysisPlan: studyCorpora.analysisPlan,
       latestAssessment: studyCorpora.latestAssessment,
       latestAssessedAt: studyCorpora.latestAssessedAt
     })
@@ -1362,6 +1368,7 @@ export async function getCorpusEngineState(corpusId: string) {
     .select({
       id: importBatches.id,
       queryIterationId: importBatches.queryIterationId,
+      queryPackId: importBatches.queryPackId,
       mentionType: importBatches.mentionType,
       competitorId: importBatches.competitorId,
       corpusEntityId: importBatches.corpusEntityId,
@@ -1377,6 +1384,32 @@ export async function getCorpusEngineState(corpusId: string) {
     .from(importBatches)
     .where(eq(importBatches.studyCorpusId, corpusId))
     .orderBy(desc(importBatches.createdAt));
+
+  const packs = await db
+    .select({
+      id: queryPacks.id,
+      queryIterationId: queryPacks.queryIterationId,
+      lensSlug: queryPacks.lensSlug,
+      signalIntent: queryPacks.signalIntent,
+      scope: queryPacks.scope,
+      objective: queryPacks.objective,
+      queryText: queryPacks.queryText,
+      queryComponents: queryPacks.queryComponents,
+      seeds: queryPacks.seeds,
+      status: queryPacks.status,
+      mentionsReturned: queryPacks.mentionsReturned,
+      linkedMentionCount: sql<number>`(
+        SELECT COUNT(DISTINCT mqs.mention_id)::int
+        FROM mention_query_sources mqs
+        JOIN mentions mn ON mn.id = mqs.mention_id
+        WHERE mqs.query_pack_id = ${sql.raw('"query_packs"."id"')}
+          AND mn.inclusion_status = 'included'
+      )`,
+      createdAt: queryPacks.createdAt
+    })
+    .from(queryPacks)
+    .where(eq(queryPacks.studyCorpusId, corpusId))
+    .orderBy(desc(queryPacks.createdAt));
 
   const activeEntities = await db
     .select({ id: corpusEntities.id })
@@ -1396,6 +1429,8 @@ export async function getCorpusEngineState(corpusId: string) {
     const currentBatches = batches.filter(
       (b) => b.queryIterationId === current.id && b.status === "completed"
     );
+    const currentPacks = packs.filter((pack) => pack.queryIterationId === current.id);
+    const expectedPackMode = normalizeStudyAnalysisPlan(assessmentRow?.analysisPlan).selected_lenses.length > 1;
     const primaryMentionType = assessmentRow?.themeId ? "industry" : "brand";
     const hasBrand = currentBatches.some((b) => b.mentionType === "brand");
     const hasCompetitor = currentBatches.some((b) => b.mentionType === "competitor");
@@ -1411,7 +1446,15 @@ export async function getCorpusEngineState(corpusId: string) {
     const entityUploadsReady = activeEntities.length > 0
       && activeEntities.every((entity) => uploadedEntityIds.has(entity.id));
     const legacyCsvsReady = hasPrimary && (!wantsCompetitor || hasCompetitor) && (!wantsIndustry || hasIndustry);
-    const csvsReady = activeEntities.length > 0 ? entityUploadsReady : legacyCsvsReady;
+    const packUploadsReady = currentPacks.length > 0
+      && currentPacks.every((pack) => queryPackHasDirectCsv(pack, currentBatches));
+    const csvsReady = expectedPackMode && currentPacks.length === 0
+      ? false
+      : currentPacks.length > 0
+        ? packUploadsReady
+      : activeEntities.length > 0
+        ? entityUploadsReady
+        : legacyCsvsReady;
 
     if (decision === "approved") {
       activeStep = "approved";
@@ -1478,6 +1521,7 @@ export async function getCorpusEngineState(corpusId: string) {
     },
     iterations,
     batches,
+    queryPacks: packs,
     current,
     activeStep,
     isApproved,

@@ -94,14 +94,30 @@ export default async function SignalDeckPage({
   const output = await getSignalOutputForUser(session.appUser, outputId);
   if (!output) notFound();
 
-  const vm = adaptTbSignalPayload(output.payload);
+  const rawVm = adaptTbSignalPayload(output.payload);
+  const live = asRecord((output.payload as Record<string, unknown>)?.live_intelligence);
+  const liveIntelligence = live.status
+    ? {
+        status: String(live.status),
+        signals: Number(live.signals ?? 0),
+        observations: Number(live.observations ?? 0),
+        evidence: Number(live.evidence ?? 0)
+      }
+    : null;
   const aggregates = asRecord((output.payload as Record<string, unknown>)?.aggregates);
   const corpusAgg = asRecord(aggregates.corpus);
   const corpusWindow = asRecord(corpusAgg.window);
   const corpusTotal = Number(corpusAgg.total_mentions ?? 0);
   const windowMonths = Number(corpusWindow.months ?? 0);
 
-  const brandLabel = output.brandName ?? output.brandFallbackName ?? vm.report.brand_name;
+  const brandLabel = output.brandName ?? output.brandFallbackName ?? output.themeName ?? rawVm.report.brand_name;
+  const vm = {
+    ...rawVm,
+    report: {
+      ...rawVm.report,
+      brand_name: brandLabel
+    }
+  };
   const methodologyName = output.methodologyName ?? vm.report.methodology_name;
 
   const dateFmt = new Intl.DateTimeFormat(lang === "en" ? "en-US" : "es-MX", {
@@ -118,7 +134,7 @@ export default async function SignalDeckPage({
         <DeckSlides
           vm={vm}
           lang={lang}
-          meta={{ brandLabel, methodologyName, windowLabel, corpusTotal, dateLabel }}
+          meta={{ brandLabel, methodologyName, windowLabel, corpusTotal, dateLabel, liveIntelligence }}
         />
       </DeckRuntime>
     </div>

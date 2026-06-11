@@ -8,6 +8,7 @@ import { listBrandsForUser } from "@/lib/data/brands";
 import { listReusableIndustryCorporaForUser } from "@/lib/data/corpora";
 import { listThemesForUser } from "@/lib/data/themes";
 import { db } from "@/lib/db";
+import { normalizeStudyAnalysisPlan } from "@/lib/multimethod/analysis-plan";
 import { createStudySchema } from "@/lib/validation/brand";
 
 export async function POST(request: Request) {
@@ -66,6 +67,7 @@ export async function POST(request: Request) {
     );
   }
 
+  const analysisPlan = normalizeStudyAnalysisPlan(parsed.data.analysis_plan, methodology.slug);
   const cleanName = parsed.data.name.trim();
   const studyBrief = {
     study_name: cleanName,
@@ -75,6 +77,7 @@ export async function POST(request: Request) {
     base_corpus_name: baseCorpus?.name ?? null,
     base_corpus_theme: baseCorpus?.themeName ?? null,
     methodology_slug: methodology.slug,
+    analysis_plan: analysisPlan,
     business_question: parsed.data.business_question.trim(),
     decision_to_inform: emptyToNull(parsed.data.decision_to_inform),
     audience_segment: emptyToNull(parsed.data.audience_segment),
@@ -104,6 +107,7 @@ export async function POST(request: Request) {
       geoFocus: parsed.data.geo_focus,
       targetWindowMonths: parsed.data.target_window_months,
       contextForm: studyBrief,
+      analysisPlan,
       status: "draft",
       currentPipelineVersion: "mvp-f1",
       insightsManagerUserId: session.appUser.id
