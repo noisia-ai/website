@@ -1,5 +1,16 @@
 export * from "./tb";
 export * from "./semantic-rag";
+export * from "./engine";
+export * from "./engine-coding";
+export * from "./engine-retrieval";
+export * from "./engine-scoring";
+export * from "./engine-aggregation";
+export * from "./engine-signal-block";
+export * from "./engine-lens-budget";
+export * from "./lens-query-packs";
+export * from "./lens-coverage";
+export * from "./methodologies/registry";
+export * from "./methodologies/narrative-ownership";
 
 export const QUERY_ENGINE_QUEUE_NAME = "noisia-query-engine";
 export const QUERY_ENGINE_PIPELINE_VERSION = "query-engine-f2-1-mvp";
