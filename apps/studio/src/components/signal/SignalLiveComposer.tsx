@@ -214,6 +214,7 @@ const copy = {
     selectedCharts: "selected charts",
     selectedSignals: "selected signals",
     selectedEvidence: "evidence examples",
+    confidenceFallback: "directional",
     selectAll: "Select all",
     clearSelection: "Clear selection",
     included: "Included",
@@ -269,9 +270,10 @@ const copy = {
     editorTitle: "Selección editorial",
     editorBody: "Elige qué lentes y señales entran al draft compuesto. Los filtros cambian los candidatos; este editor guarda el corte editorial real.",
     selectedModules: "módulos elegidos",
-    selectedCharts: "charts elegidos",
+    selectedCharts: "gráficas elegidas",
     selectedSignals: "señales elegidas",
     selectedEvidence: "evidencias",
+    confidenceFallback: "direccional",
     selectAll: "Seleccionar todo",
     clearSelection: "Limpiar selección",
     included: "Incluido",
@@ -290,7 +292,7 @@ const copy = {
       ready: "listo",
       queued: "en cola",
       running: "corriendo",
-      needs_review: "requiere review",
+      needs_review: "requiere revisión",
       approved: "aprobado",
       failed: "falló",
       blocked: "bloqueado",
@@ -320,7 +322,7 @@ const signalPulseComposerCopy = {
   es: {
     eyebrow: "Pulse Composer",
     title: "Corte editorial mensual",
-    body: "Aprueba qué señales, moves y evidencia quedan dentro de la lectura táctica de marketing.",
+    body: "Aprueba qué señales, acciones y evidencia quedan dentro de la lectura táctica de marketing.",
     modules: "módulos Pulse",
     modulesHelp: "Signal Pulse agrupa señales vivas en un módulo táctico. Úsalo para conservar o quitar las señales que entran al corte mensual.",
     allMethods: "Todas las señales Pulse",
@@ -331,7 +333,7 @@ const signalPulseComposerCopy = {
     narrativeBetaHelp: "Abre el runtime interno de Signal Pulse para este corpus.",
     editorTitle: "Selección Pulse",
     editorBody: "Elige las señales y evidencia que deben permanecer en el corte mensual publicado. Es aprobación editorial, no una corrida nueva.",
-    saveDraft: "Guardar draft Pulse"
+    saveDraft: "Guardar borrador Pulse"
   }
 } satisfies Record<SignalUiLanguage, Partial<typeof copy.en>>;
 
@@ -775,7 +777,7 @@ function ComposerSignalList({
               {selectedSignalSet.has(signal.canonical_signal_id) ? t.include : t.omit}
             </button>
           </header>
-          <p>{prettifyKey(signal.signal_type)} · {signal.frequency} {t.mentions} · {signal.confidence ?? "directional"}</p>
+          <p>{prettifyKey(signal.signal_type)} · {signal.frequency} {t.mentions} · {formatComposerConfidence(signal.confidence, t)}</p>
           <div>
             <small>delta {formatDelta(signal.delta_vs_previous)}</small>
             <small>{Math.max(signal.evidence_count, signal.supporting_evidence_count)} {t.evidence}</small>
@@ -905,6 +907,10 @@ function lensReadinessBadge(status: ComposerLensStatus | undefined) {
   if (readiness.status === "blocked") return "!";
   if (readiness.status === "directional") return "~";
   return null;
+}
+
+function formatComposerConfidence(value: string | null, t: typeof copy.en) {
+  return value ? prettifyKey(value) : t.confidenceFallback;
 }
 
 function normalizeCandidates(value: unknown): ComposerPayload["candidates"] {
