@@ -11326,6 +11326,84 @@ body:has(.signal-report)::before { display: none; }
   white-space: nowrap;
 }
 
+.signal-pulse-runtime-panel {
+  border-color: rgba(1, 83, 95, 0.18);
+  background: linear-gradient(180deg, rgba(0, 126, 137, 0.05), #fff 42%);
+}
+
+.signal-pulse-run-card {
+  align-items: stretch;
+  border: 1px solid rgba(1, 83, 95, 0.16);
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,0.88);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr) auto;
+  padding: 16px;
+}
+
+.signal-pulse-run-card > div:first-child {
+  display: grid;
+  align-content: center;
+  gap: 6px;
+}
+
+.signal-pulse-run-card span,
+.signal-pulse-run-card dt {
+  color: var(--signal-dark);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.signal-pulse-run-card strong {
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 1.05;
+}
+
+.signal-pulse-run-card p {
+  color: var(--neutral-10);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.signal-pulse-run-card dl {
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(35, 35, 39, 0.08);
+  border-radius: var(--radius-md);
+}
+
+.signal-pulse-run-card dl div {
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  min-height: 92px;
+  padding: 12px;
+}
+
+.signal-pulse-run-card dl div + div {
+  border-left: 1px solid rgba(35, 35, 39, 0.08);
+}
+
+.signal-pulse-run-card dd {
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.signal-pulse-run-card .wizard-cta {
+  align-self: center;
+  white-space: nowrap;
+}
+
 .engine-selected-lenses {
   background: rgba(7, 118, 127, 0.05);
   border: 1px solid rgba(7, 118, 127, 0.16);
@@ -11591,12 +11669,22 @@ body:has(.signal-report)::before { display: none; }
   .engine-beta-panel > header,
   .engine-selected-lenses__head,
   .engine-beta-controls,
-  .engine-beta-status {
+  .engine-beta-status,
+  .signal-pulse-run-card {
     grid-template-columns: 1fr;
   }
 
   .engine-beta-panel header > span {
     justify-self: start;
+  }
+
+  .signal-pulse-run-card dl {
+    grid-template-columns: 1fr;
+  }
+
+  .signal-pulse-run-card dl div + div {
+    border-left: 0;
+    border-top: 1px solid rgba(35, 35, 39, 0.08);
   }
 }
 

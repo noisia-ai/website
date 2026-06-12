@@ -117,9 +117,9 @@ export function EngineMethodologyBetaPanel({
   const [error, setError] = useState<string | null>(null);
   const latest = state?.latest ?? null;
   const schemaUnavailable = state?.unavailable === true;
-  const runtimeDisabled = state?.runtimeEnabled === false || selectedLensState?.runtimeEnabled === false;
+  const runtimeDisabled = state?.runtimeEnabled === false || (!isSignalPulseCorpus && selectedLensState?.runtimeEnabled === false);
   const selectedMethodology = methodologyOptions.find((option) => option.slug === methodologySlug);
-  const methodologyNotRunnable = selectedMethodology ? !selectedMethodology.runnable : false;
+  const methodologyNotRunnable = isSignalPulseCorpus ? false : selectedMethodology ? !selectedMethodology.runnable : false;
   const selectedLensStatuses = selectedLensState?.statuses ?? [];
   const pendingSelectedLenses = selectedLensStatuses.filter((lens) => lens.status === "ready" || lens.status === "not_started" || lens.status === "failed");
   const runningSelectedLenses = selectedLensStatuses.filter((lens) => lens.status === "queued" || lens.status === "running");
@@ -129,8 +129,8 @@ export function EngineMethodologyBetaPanel({
   const reviewable = latest?.status === "needs_review" || latest?.status === "approved";
   const defaultTitle = useMemo(() => {
     const label = methodologyOptions.find((option) => option.slug === latest?.methodologySlug)?.label ?? latest?.methodologySlug ?? "Engine Lens";
-    return `${corpusName} · ${label.replace(/^#\\d+\\s*/, "")}`;
-  }, [corpusName, latest?.methodologySlug, methodologyOptions]);
+    return isSignalPulseCorpus ? `${corpusName} - Signal Pulse` : `${corpusName} · ${label.replace(/^#\\d+\\s*/, "")}`;
+  }, [corpusName, isSignalPulseCorpus, latest?.methodologySlug, methodologyOptions]);
   const [title, setTitle] = useState(defaultTitle);
   const [headline, setHeadline] = useState("");
   const [summary, setSummary] = useState("");
@@ -163,19 +163,21 @@ export function EngineMethodologyBetaPanel({
   async function loadState(showSpinner = true) {
     if (showSpinner) setIsLoading(true);
     try {
-      const [response, selectedResponse] = await Promise.all([
-        fetch(`/api/corpora/${corpusId}/engine-analysis`),
-        fetch(`/api/corpora/${corpusId}/engine-analysis/selected`)
-      ]);
+      const response = await fetch(`/api/corpora/${corpusId}/engine-analysis`);
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.message ?? "No se pudo cargar engine beta.");
-      if (payload.unavailable) setError(payload.message ?? "Engine beta schema pendiente.");
+      if (!response.ok) throw new Error(payload.message ?? (isSignalPulseCorpus ? "No se pudo cargar Signal Pulse." : "No se pudo cargar engine beta."));
+      if (payload.unavailable) setError(payload.message ?? (isSignalPulseCorpus ? "Schema de Signal Pulse pendiente." : "Engine beta schema pendiente."));
       setState(payload as EngineState);
-      const selectedPayload = await selectedResponse.json();
-      if (!selectedResponse.ok) throw new Error(selectedPayload.message ?? "No se pudo cargar lentes seleccionados.");
-      setSelectedLensState(selectedPayload as SelectedLensState);
+      if (isSignalPulseCorpus) {
+        setSelectedLensState(null);
+      } else {
+        const selectedResponse = await fetch(`/api/corpora/${corpusId}/engine-analysis/selected`);
+        const selectedPayload = await selectedResponse.json();
+        if (!selectedResponse.ok) throw new Error(selectedPayload.message ?? "No se pudo cargar lentes seleccionados.");
+        setSelectedLensState(selectedPayload as SelectedLensState);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo cargar engine beta.");
+      setError(err instanceof Error ? err.message : isSignalPulseCorpus ? "No se pudo cargar Signal Pulse." : "No se pudo cargar engine beta.");
     } finally {
       if (showSpinner) setIsLoading(false);
     }
@@ -190,15 +192,15 @@ export function EngineMethodologyBetaPanel({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           methodology_slug: methodologySlug,
-          params: { launch_surface: "studio_beta_panel" }
+          params: { launch_surface: isSignalPulseCorpus ? "studio_signal_pulse_panel" : "studio_beta_panel" }
         })
       });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.message ?? "No se pudo iniciar engine beta.");
+      if (!response.ok) throw new Error(payload.message ?? (isSignalPulseCorpus ? "No se pudo iniciar Signal Pulse." : "No se pudo iniciar engine beta."));
       await loadState(false);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo iniciar engine beta.");
+      setError(err instanceof Error ? err.message : isSignalPulseCorpus ? "No se pudo iniciar Signal Pulse." : "No se pudo iniciar engine beta.");
     } finally {
       setIsStarting(false);
     }
@@ -246,7 +248,7 @@ export function EngineMethodologyBetaPanel({
         })
       });
       const payload = await response.json();
-      if (!response.ok) throw new Error(payload.message ?? "No se pudo guardar el output engine.");
+      if (!response.ok) throw new Error(payload.message ?? (latest.methodologySlug === "signal-pulse" ? "No se pudo guardar Signal Pulse." : "No se pudo guardar el output engine."));
       await loadState(false);
       if (latest.methodologySlug === "signal-pulse" && payload.output?.id) {
         router.push(`/pulse/${payload.output.id}`);
@@ -254,7 +256,7 @@ export function EngineMethodologyBetaPanel({
       }
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo guardar el output engine.");
+      setError(err instanceof Error ? err.message : "No se pudo guardar el reporte.");
     } finally {
       setIsSaving(false);
     }
@@ -263,20 +265,24 @@ export function EngineMethodologyBetaPanel({
   const progressLabel = schemaUnavailable
     ? "schema pendiente"
     : runtimeDisabled
-      ? "runtime off"
+      ? "runtime apagado"
       : latest
-        ? `${latest.status} · ${latest.currentStep}`
+        ? `${statusLabel(latest.status as SelectedLensStatus["status"])} · ${stepLabel(latest.currentStep)}`
         : "sin corrida";
+  const signalPulseReadiness = asRecord(asRecord(latest?.metaJson).signal_pulse).readiness;
+  const signalPulseBudgetCap = Number(asRecord(signalPulseReadiness).budget_cap_usd ?? 0);
+  const signalPulseCost = state?.costSummary?.estimatedCostUsd ?? 0;
+  const signalPulseCostOk = !signalPulseBudgetCap || signalPulseCost <= signalPulseBudgetCap;
 
   return (
-    <section className="engine-beta-panel">
+    <section className={isSignalPulseCorpus ? "engine-beta-panel signal-pulse-runtime-panel" : "engine-beta-panel"}>
       <header>
         <div>
-          <p className="eyebrow">Engine beta</p>
-          <h2>{isSignalPulseCorpus ? "Signal Pulse runtime" : "Panel técnico de metodologías"}</h2>
+          <p className="eyebrow">{isSignalPulseCorpus ? "Signal Pulse" : "Engine beta"}</p>
+          <h2>{isSignalPulseCorpus ? "Reporte táctico mensual" : "Panel técnico de metodologías"}</h2>
           <p>
             {isSignalPulseCorpus
-              ? "Corre el pipeline cluster-first, confirma costo contra budget cap y publica el reporte táctico mensual."
+              ? "Detecta señales por clusters, calcula periodos y métricas en SQL, revisa costo contra el tope y publica un Pulse listo para lectura."
               : "T&B corre primero en el flujo normal. Al terminar, los lentes seleccionados en el wizard se lanzan sobre el corpus aprobado; este panel queda para monitorear, revisar y reintentar sin repetir SentiOne."}
           </p>
         </div>
@@ -329,59 +335,89 @@ export function EngineMethodologyBetaPanel({
       </div>
       )}
 
-      <div className="engine-beta-controls">
-        <label>
-          <span>Methodology</span>
-          <select value={methodologySlug} onChange={(event) => setMethodologySlug(event.target.value)}>
-            {methodologyOptions.map((option) => (
-              <option disabled={!option.runnable} key={option.slug} value={option.slug}>
-                {option.label} · {option.runtimeKind === "output_only" ? "output only" : option.status}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button className="wizard-cta" disabled={isLoading || isStarting || schemaUnavailable || runtimeDisabled || methodologyNotRunnable} onClick={startAnalysis} type="button">
-          {isStarting ? <Icon name="spinner" size={16} /> : <Icon name="play" size={16} />}
-          {runtimeDisabled ? "Runtime off" : methodologyNotRunnable ? "Not runnable" : isSignalPulseCorpus ? "Correr Signal Pulse" : "Run beta lens"}
-        </button>
-      </div>
-
-      <div className="engine-beta-methodology-grid">
-        {methodologyOptions.map((option) => (
-          <button
-            aria-pressed={option.slug === methodologySlug}
-            className="engine-beta-methodology-chip"
-            disabled={!option.runnable}
-            key={option.slug}
-            onClick={() => setMethodologySlug(option.slug)}
-            type="button"
-          >
-            <span>{option.priority}</span>
-            <strong>{option.shortLabel}</strong>
-            <small>{option.runtimeKind === "output_only" ? "output only" : option.status}</small>
+      {isSignalPulseCorpus ? (
+        <div className="signal-pulse-run-card">
+          <div>
+            <span>Corrida mensual</span>
+            <strong>{latest ? statusLabel(latest.status as SelectedLensStatus["status"]) : "Lista para correr"}</strong>
+            <p>{latest ? stepLabel(latest.currentStep) : "Usa conversación aprobada y performance estructurada de 12 meses."}</p>
+          </div>
+          <dl>
+            <div>
+              <dt>Costo estimado</dt>
+              <dd>USD {signalPulseCost.toFixed(4)}</dd>
+            </div>
+            <div>
+              <dt>Tope</dt>
+              <dd>{signalPulseBudgetCap > 0 ? `USD ${signalPulseBudgetCap.toFixed(2)}` : "Pendiente"}</dd>
+            </div>
+            <div>
+              <dt>Guardrail</dt>
+              <dd>{signalPulseCostOk ? "Dentro del tope" : "Revisar antes de publicar"}</dd>
+            </div>
+          </dl>
+          <button className="wizard-cta" disabled={isLoading || isStarting || schemaUnavailable || runtimeDisabled} onClick={startAnalysis} type="button">
+            {isStarting ? <Icon name="spinner" size={16} /> : <Icon name="play" size={16} />}
+            {runtimeDisabled ? "Runtime apagado" : latest && latest.status !== "failed" ? "Correr nuevo corte" : "Correr Signal Pulse"}
           </button>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <>
+          <div className="engine-beta-controls">
+            <label>
+              <span>Methodology</span>
+              <select value={methodologySlug} onChange={(event) => setMethodologySlug(event.target.value)}>
+                {methodologyOptions.map((option) => (
+                  <option disabled={!option.runnable} key={option.slug} value={option.slug}>
+                    {option.label} · {option.runtimeKind === "output_only" ? "output only" : option.status}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button className="wizard-cta" disabled={isLoading || isStarting || schemaUnavailable || runtimeDisabled || methodologyNotRunnable} onClick={startAnalysis} type="button">
+              {isStarting ? <Icon name="spinner" size={16} /> : <Icon name="play" size={16} />}
+              {runtimeDisabled ? "Runtime off" : methodologyNotRunnable ? "Not runnable" : "Run beta lens"}
+            </button>
+          </div>
+
+          <div className="engine-beta-methodology-grid">
+            {methodologyOptions.map((option) => (
+              <button
+                aria-pressed={option.slug === methodologySlug}
+                className="engine-beta-methodology-chip"
+                disabled={!option.runnable}
+                key={option.slug}
+                onClick={() => setMethodologySlug(option.slug)}
+                type="button"
+              >
+                <span>{option.priority}</span>
+                <strong>{option.shortLabel}</strong>
+                <small>{option.runtimeKind === "output_only" ? "output only" : option.status}</small>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       {latest ? (
         <div className="engine-beta-status">
           <article>
-            <span>Latest</span>
+            <span>{isSignalPulseCorpus ? "Último corte" : "Latest"}</span>
             <strong>{methodologyOptions.find((option) => option.slug === latest.methodologySlug)?.label ?? latest.methodologySlug}</strong>
-            <p>{latest.status} · {latest.currentStep}</p>
+            <p>{statusLabel(latest.status as SelectedLensStatus["status"])} · {stepLabel(latest.currentStep)}</p>
           </article>
           <article>
-            <span>Cost ledger</span>
+            <span>{isSignalPulseCorpus ? "Costo visible" : "Cost ledger"}</span>
             <strong>${(state?.costSummary?.estimatedCostUsd ?? 0).toFixed(4)}</strong>
             <p>
-              {state?.costSummary?.events ?? 0} events · {state?.costSummary?.totalTokens ?? 0} tokens
+              {state?.costSummary?.events ?? 0} eventos · {state?.costSummary?.totalTokens ?? 0} tokens
               {state?.costSummary?.providers?.length ? ` · ${state.costSummary.providers.join(", ")}` : ""}
             </p>
           </article>
           <ol>
             {state?.steps.map((step) => (
               <li key={step.id}>
-                <span>{step.step}</span>
+                <span>{stepLabel(step.step)}</span>
                 <strong>{step.status}</strong>
               </li>
             ))}
@@ -392,16 +428,16 @@ export function EngineMethodologyBetaPanel({
       {reviewable && latest ? (
         <div className="engine-beta-publish">
           <label>
-            <span>Internal title</span>
+            <span>{latest.methodologySlug === "signal-pulse" ? "Nombre del reporte" : "Internal title"}</span>
             <input value={title} onChange={(event) => setTitle(event.target.value)} />
           </label>
           <label>
-            <span>Headline</span>
-            <input value={headline} onChange={(event) => setHeadline(event.target.value)} placeholder="Headline client-safe" />
+            <span>{latest.methodologySlug === "signal-pulse" ? "Lectura principal" : "Headline"}</span>
+            <input value={headline} onChange={(event) => setHeadline(event.target.value)} placeholder={latest.methodologySlug === "signal-pulse" ? "Qué cambió este mes y qué decisión habilita" : "Headline client-safe"} />
           </label>
           <label>
-            <span>Summary</span>
-            <textarea value={summary} onChange={(event) => setSummary(event.target.value)} placeholder="Qué contiene este output beta..." />
+            <span>{latest.methodologySlug === "signal-pulse" ? "Resumen para lectura" : "Summary"}</span>
+            <textarea value={summary} onChange={(event) => setSummary(event.target.value)} placeholder={latest.methodologySlug === "signal-pulse" ? "Una explicación breve para el equipo de marketing: señales, evidencia y movimiento recomendado." : "Qué contiene este output beta..."} />
           </label>
           <div>
             <button className="wizard-cta wizard-cta--ghost" disabled={isSaving} onClick={() => saveOutput("save_draft")} type="button">
@@ -409,7 +445,7 @@ export function EngineMethodologyBetaPanel({
             </button>
             <button className="wizard-cta" disabled={isSaving} onClick={() => saveOutput("publish")} type="button">
               {isSaving ? <Icon name="spinner" size={16} /> : <Icon name="play" size={16} />}
-              {latest.methodologySlug === "signal-pulse" ? "Publicar Pulse" : "Publicar beta Signal"}
+              {latest.methodologySlug === "signal-pulse" ? "Publicar Signal Pulse" : "Publicar beta Signal"}
             </button>
           </div>
         </div>
@@ -448,4 +484,24 @@ function coverageSummary(lens: SelectedLensStatus) {
   if (validation.status === "ready") return "coverage listo";
   if (validation.status === "directional") return "coverage direccional";
   return null;
+}
+
+function stepLabel(step: string | null | undefined) {
+  const labels: Record<string, string> = {
+    sp_readiness: "Preparar fuentes y costo",
+    sp_periods: "Construir periodos mensuales",
+    sp_cluster: "Detectar señales por cluster",
+    sp_name_signals: "Nombrar señales",
+    sp_metrics: "Calcular métricas y moves",
+    preflight: "Preflight",
+    retrieval: "Retrieval",
+    coding: "Coding",
+    synthesis: "Synthesis"
+  };
+  if (!step) return "Sin paso activo";
+  return labels[step] ?? step.replace(/_/g, " ");
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
