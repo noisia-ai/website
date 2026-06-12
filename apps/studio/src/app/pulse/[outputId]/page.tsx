@@ -45,7 +45,8 @@ export default async function PulseOutputPage({
   const activePeriod = periods.at(-1);
   const defaultDateFrom = stringValue(periods[0]?.period_start);
   const defaultDateTo = stringValue(activePeriod?.period_end);
-  const groups = buildPulseGroups();
+  const isInternalUser = session.appUser.userType === "noisia_internal";
+  const groups = buildPulseGroups({ isInternalUser });
 
   return (
     <SignalReportShell
@@ -148,23 +149,27 @@ export default async function PulseOutputPage({
         <CompetitiveCategoryPanel signals={signals} evidence={evidence} />
       </section>
 
-      <section className="signal-section pulse-section" data-signal-section="composer" hidden id="composer">
-        <PulseSectionHead
-          eyebrow="Composer"
-          title="Aprobar el corte editorial"
-          sub="Selecciona qué señales y evidencia quedan como corte vivo del reporte mensual."
-        />
-        <SignalLiveComposer outputId={output.id} variant="signal_pulse" />
-      </section>
+      {isInternalUser ? (
+        <>
+          <section className="signal-section pulse-section" data-signal-section="composer" hidden id="composer">
+            <PulseSectionHead
+              eyebrow="Composer"
+              title="Aprobar el corte editorial"
+              sub="Selecciona qué señales y evidencia quedan como corte vivo del reporte mensual."
+            />
+            <SignalLiveComposer outputId={output.id} variant="signal_pulse" />
+          </section>
 
-      <section className="signal-section pulse-section" data-signal-section="corpus" hidden id="corpus">
-        <PulseSectionHead
-          eyebrow="Vista de corpus"
-          title="Explorar conversación y evidencia"
-          sub="Busca por señal, canal, entidad o fecha dentro del corpus autorizado."
-        />
-        <SignalCorpusExplorer mentions={evidence.map(evidenceToMention)} outputId={output.id} />
-      </section>
+          <section className="signal-section pulse-section" data-signal-section="corpus" hidden id="corpus">
+            <PulseSectionHead
+              eyebrow="Vista de corpus"
+              title="Explorar conversación y evidencia"
+              sub="Busca por señal, canal, entidad o fecha dentro del corpus autorizado."
+            />
+            <SignalCorpusExplorer mentions={evidence.map(evidenceToMention)} outputId={output.id} />
+          </section>
+        </>
+      ) : null}
 
       <section className="signal-section pulse-section" data-signal-section="evidence" hidden id="evidence">
         <PulseSectionHead
@@ -181,23 +186,27 @@ export default async function PulseOutputPage({
         </div>
       </section>
 
-      <section className="signal-section pulse-section" data-signal-section="sources" hidden id="sources">
-        <PulseSectionHead
-          eyebrow="Fuentes"
-          title="Cobertura y huecos visibles"
-          sub="El corte muestra cuándo falta performance estructurada o algún mes no es comparable."
-        />
-        <SourceCoverage periods={periods} sources={sources} />
-      </section>
+      {isInternalUser ? (
+        <>
+          <section className="signal-section pulse-section" data-signal-section="sources" hidden id="sources">
+            <PulseSectionHead
+              eyebrow="Fuentes"
+              title="Cobertura y huecos visibles"
+              sub="El corte muestra cuándo falta performance estructurada o algún mes no es comparable."
+            />
+            <SourceCoverage periods={periods} sources={sources} />
+          </section>
 
-      <section className="signal-section pulse-section" data-signal-section="quality" hidden id="quality">
-        <PulseSectionHead
-          eyebrow="Calidad"
-          title="Controles antes de publicar"
-          sub="El reporte separa datos listos, límites visibles y checks pendientes antes de llegar a cliente."
-        />
-        <QualityGateTable gates={qualityGates} limitations={limitations} cost={cost} />
-      </section>
+          <section className="signal-section pulse-section" data-signal-section="quality" hidden id="quality">
+            <PulseSectionHead
+              eyebrow="Calidad"
+              title="Controles antes de publicar"
+              sub="El reporte separa datos listos, límites visibles y checks pendientes antes de llegar a cliente."
+            />
+            <QualityGateTable gates={qualityGates} limitations={limitations} cost={cost} />
+          </section>
+        </>
+      ) : null}
     </SignalReportShell>
   );
 }
@@ -737,7 +746,7 @@ function PulseEmptyState({ title, body }: { title: string; body: string }) {
   );
 }
 
-function buildPulseGroups(): SignalShellGroup[] {
+function buildPulseGroups({ isInternalUser }: { isInternalUser: boolean }): SignalShellGroup[] {
   return [
     {
       label: "Signal Pulse",
@@ -753,11 +762,13 @@ function buildPulseGroups(): SignalShellGroup[] {
     {
       label: "Soporte",
       sections: [
-        { key: "composer", label: "Composer", icon: "layers" },
-        { key: "corpus", label: "Corpus", icon: "message" },
         { key: "evidence", label: "Evidencia", icon: "message" },
-        { key: "sources", label: "Fuentes", icon: "platform" },
-        { key: "quality", label: "Calidad", icon: "info" }
+        ...(isInternalUser ? [
+          { key: "composer", label: "Composer", icon: "layers" },
+          { key: "corpus", label: "Corpus", icon: "message" },
+          { key: "sources", label: "Fuentes", icon: "platform" },
+          { key: "quality", label: "Calidad", icon: "info" }
+        ] satisfies SignalShellGroup["sections"] : [])
       ]
     }
   ];
