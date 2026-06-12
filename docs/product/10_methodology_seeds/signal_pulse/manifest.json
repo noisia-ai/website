@@ -1,9 +1,9 @@
 {
   "package": "noisia_signal_pulse_prod_spec_pack",
-  "version": "2.5-codex-final-review",
+  "version": "2.5-prod-validation-checklist",
   "generated_at": "2026-06-12",
   "purpose": "Production-ready product/design/context specifications for Signal Pulse",
-  "file_count": 51,
+  "file_count": 52,
   "files": [
     "00_README.md",
     "01_EXECUTIVE_CONTEXT_DECISIONS.md",
@@ -55,7 +55,8 @@
     "46_INSIGHTS_MANAGER_JOURNEY.md",
     "47_CODEX_HANDOFF.md",
     "48_GAP_ANALYSIS_CODEX.md",
-    "49_FINAL_REVIEW_CODEX.md"
+    "49_FINAL_REVIEW_CODEX.md",
+    "50_VALIDATION_BEFORE_PROD.md"
   ],
   "screens": [
     "Overview",
