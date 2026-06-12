@@ -212,6 +212,12 @@ export async function GET(
     return Response.json({ error: "not_found", message: "Corpus not found." }, { status: 404 });
   }
 
+  const analysis = await loadEngineAnalysis(corpus.id, analysisId);
+  if (!analysis) {
+    return Response.json({ error: "not_found", message: "Engine analysis not found." }, { status: 404 });
+  }
+  const outputType = analysis.methodology_slug === "signal-pulse" ? "signal_pulse_dashboard" : "narrative_dashboard";
+
   const [output] = await db
     .select({
       id: publishedOutputs.id,
@@ -223,7 +229,7 @@ export async function GET(
       publishedAt: publishedOutputs.publishedAt
     })
     .from(publishedOutputs)
-    .where(and(eq(publishedOutputs.engineAnalysisId, analysisId), eq(publishedOutputs.outputType, "narrative_dashboard")))
+    .where(and(eq(publishedOutputs.engineAnalysisId, analysisId), eq(publishedOutputs.outputType, outputType)))
     .limit(1);
 
   return Response.json({ output: output ?? null });

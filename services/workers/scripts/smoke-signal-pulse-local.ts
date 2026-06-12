@@ -16,6 +16,13 @@ process.env.NOISIA_ENGINE_INLINE_SMOKE = "true";
 
 type Row = Record<string, unknown>;
 type StepName = "sp_readiness" | "sp_periods" | "sp_cluster" | "sp_name_signals" | "sp_metrics";
+type SmokeIds = {
+  analysisId: string;
+  brandId: string;
+  corpusId: string;
+  dataSourceId: string;
+  userId: string;
+};
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "../../..");
@@ -307,6 +314,8 @@ async function seedSignalPulseCorpus(client: pg.Client) {
        RETURNING id::text`,
       [corpus.id, organization.id, brand.id]
     );
+    const coverageStart = "2025-01-12";
+    const coverageEnd = "2025-12-12";
     for (let month = 0; month < 12; month += 1) {
       const date = new Date(Date.UTC(2025, month, 12)).toISOString().slice(0, 10);
       await q(
@@ -339,6 +348,15 @@ async function seedSignalPulseCorpus(client: pg.Client) {
         ]
       );
     }
+    await q(
+      client,
+      `INSERT INTO source_sync_runs (
+         data_source_id, status, records_total, records_valid, records_duplicate,
+         records_failed, coverage_start, coverage_end, finished_at
+       )
+       VALUES ($1, 'completed', 12, 12, 0, 0, $2::date, $3::date, NOW())`,
+      [dataSource.id, coverageStart, coverageEnd]
+    );
 
     const analysis = await one<{ id: string }>(
       client,
@@ -354,7 +372,7 @@ async function seedSignalPulseCorpus(client: pg.Client) {
     );
 
     await client.query("COMMIT");
-    return { analysisId: analysis.id, corpusId: corpus.id };
+    return { analysisId: analysis.id, brandId: brand.id, corpusId: corpus.id, dataSourceId: dataSource.id, userId: user.id };
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;
@@ -406,7 +424,233 @@ async function runSignalPulsePipeline(client: pg.Client, engineAnalysisId: strin
   await signalPulseMetricsJob(mockJob(engineAnalysisId, await nextStep(client, engineAnalysisId, "sp_metrics")));
 }
 
-async function verifySignalPulseSmoke(client: pg.Client, ids: { analysisId: string; corpusId: string }) {
+async function publishSignalPulseSmokeOutput(client: pg.Client, ids: SmokeIds) {
+  const payload = await buildSmokePublishedPayload(client, ids);
+  const output = await one<{ id: string }>(
+    client,
+    `
+      INSERT INTO published_outputs (
+        engine_analysis_id, study_corpus_id, brand_id, methodology_slug,
+        kind, output_type, status, title, headline, summary, manifest, payload,
+        visibility_config, version, created_by_user_id, published_by_user_id, published_at
+      )
+      VALUES (
+        $1, $2, $3, 'signal-pulse',
+        'signal_pulse', 'signal_pulse_dashboard', 'published',
+        'Aurora Snack - Signal Pulse Smoke',
+        'Signal Pulse smoke listo para lectura local.',
+        'Reporte tactico mensual generado desde smoke local con fuentes, evidencia, moves y quality gates.',
+        $4::jsonb, $5::jsonb, '{"client_default":true,"internal_quality":true}'::jsonb,
+        1, $6, $6, NOW()
+      )
+      ON CONFLICT (engine_analysis_id, output_type)
+        WHERE engine_analysis_id IS NOT NULL
+      DO UPDATE SET
+        status = EXCLUDED.status,
+        title = EXCLUDED.title,
+        headline = EXCLUDED.headline,
+        summary = EXCLUDED.summary,
+        manifest = EXCLUDED.manifest,
+        payload = EXCLUDED.payload,
+        published_by_user_id = EXCLUDED.published_by_user_id,
+        published_at = NOW(),
+        archived_at = NULL,
+        updated_at = NOW()
+      RETURNING id::text
+    `,
+    [
+      ids.analysisId,
+      ids.corpusId,
+      ids.brandId,
+      JSON.stringify({
+        kind: "signal_pulse",
+        version: 1,
+        modules: ["overview", "signals", "marketing_moves", "evidence", "sources", "quality_settings"],
+        smoke: true
+      }),
+      JSON.stringify(payload),
+      ids.userId
+    ]
+  );
+  await q(
+    client,
+    `UPDATE signal_observations
+     SET published_output_id = $1
+     WHERE engine_analysis_id = $2
+       AND published_output_id IS NULL`,
+    [output.id, ids.analysisId]
+  );
+  return output.id;
+}
+
+async function buildSmokePublishedPayload(client: pg.Client, ids: SmokeIds) {
+  const [analysis, corpus, periods, signals, moves, charts, evidence, sources, cost] = await Promise.all([
+    q(client, `SELECT id::text, meta_json FROM engine_analyses WHERE id = $1`, [ids.analysisId]),
+    q(client, `SELECT id::text, name, business_question FROM study_corpora WHERE id = $1`, [ids.corpusId]),
+    q(
+      client,
+      `SELECT id::text, label, period_start::text, period_end::text, coverage, comparable, confidence, known_gaps
+       FROM report_periods
+       WHERE study_corpus_id = $1 AND granularity = 'month'
+       ORDER BY period_start`,
+      [ids.corpusId]
+    ),
+    q(
+      client,
+      `
+        WITH latest AS (
+          SELECT DISTINCT ON (spm.canonical_signal_id) spm.*
+          FROM signal_period_metrics spm
+          JOIN report_periods rp ON rp.id = spm.period_id
+          WHERE spm.study_corpus_id = $1
+          ORDER BY spm.canonical_signal_id, rp.period_start DESC
+        )
+        SELECT
+          cs.id::text AS id,
+          cs.canonical_title AS title,
+          cs.description,
+          cs.signal_type,
+          cs.dimensions,
+          latest.volume,
+          latest.impact_v1::text AS impact_v1,
+          latest.sentiment_score::text AS sentiment_score,
+          latest.polarity_bucket,
+          latest.dominant_emotion,
+          latest.source_mix,
+          latest.evidence_count,
+          latest.confidence,
+          latest.delta_prev::text AS delta_prev,
+          latest.lifecycle_state
+        FROM canonical_signals cs
+        JOIN latest ON latest.canonical_signal_id = cs.id
+        WHERE cs.study_corpus_id = $1
+          AND cs.methodology_slug = 'signal-pulse'
+          AND cs.status <> 'archived'
+        ORDER BY COALESCE(latest.impact_v1, 0) DESC, latest.volume DESC
+        LIMIT 80
+      `,
+      [ids.corpusId]
+    ),
+    q(
+      client,
+      `SELECT id::text, move_type, action_text, signal_refs::text[], evidence_refs, owner_suggestion,
+              timing, measurement_suggestion, no_go_notes, confidence, status, position
+       FROM marketing_moves
+       WHERE study_corpus_id = $1 AND engine_analysis_id = $2
+       ORDER BY position NULLS LAST, created_at`,
+      [ids.corpusId, ids.analysisId]
+    ),
+    q(
+      client,
+      `SELECT chart_key, payload, algo_version, computed_at::text
+       FROM chart_aggregates
+       WHERE study_corpus_id = $1
+       ORDER BY chart_key`,
+      [ids.corpusId]
+    ),
+    q(
+      client,
+      `
+        SELECT
+          so.canonical_signal_id::text AS signal_id,
+          soe.id::text AS evidence_id,
+          soe.mention_id::text,
+          soe.quote,
+          soe.evidence_role,
+          soe.is_protagonist,
+          m.resolved_platform AS platform,
+          m.published_at::text,
+          m.url
+        FROM signal_observations so
+        JOIN signal_observation_evidence soe ON soe.signal_observation_id = so.id
+        LEFT JOIN mentions m ON m.id = soe.mention_id
+        WHERE so.study_corpus_id = $1
+          AND so.engine_analysis_id = $2
+        ORDER BY so.rank NULLS LAST, soe.is_protagonist DESC, soe.position ASC
+        LIMIT 240
+      `,
+      [ids.corpusId, ids.analysisId]
+    ),
+    q(
+      client,
+      `
+        SELECT
+          ds.id::text,
+          ds.source_type,
+          ds.provider,
+          ds.connection_method,
+          ds.name,
+          ds.status,
+          ds.visibility,
+          ds.mapping_version,
+          ds.role,
+          latest_sync.status AS sync_status,
+          latest_sync.records_total,
+          latest_sync.records_valid,
+          latest_sync.records_duplicate,
+          latest_sync.records_failed,
+          latest_sync.coverage_start::text,
+          latest_sync.coverage_end::text,
+          latest_sync.finished_at::text
+        FROM data_sources ds
+        LEFT JOIN LATERAL (
+          SELECT ssr.*
+          FROM source_sync_runs ssr
+          WHERE ssr.data_source_id = ds.id
+          ORDER BY ssr.created_at DESC
+          LIMIT 1
+        ) latest_sync ON true
+        WHERE ds.study_corpus_id = $1
+        ORDER BY ds.source_type, ds.created_at
+      `,
+      [ids.corpusId]
+    ),
+    q(
+      client,
+      `SELECT COALESCE(SUM(estimated_cost_usd), 0)::text AS estimated_cost_usd
+       FROM engine_cost_events
+       WHERE engine_analysis_id = $1`,
+      [ids.analysisId]
+    )
+  ]);
+  const topSignal = signals.rows[0] ?? {};
+  const topMove = moves.rows[0] ?? {};
+  const meta = (analysis.rows[0]?.meta_json ?? {}) as Record<string, unknown>;
+  const signalPulseMeta = (meta.signal_pulse ?? {}) as Record<string, unknown>;
+  const readiness = (signalPulseMeta.readiness ?? {}) as Record<string, unknown>;
+  return {
+    kind: "signal_pulse",
+    version: 1,
+    report: {
+      corpus_id: ids.corpusId,
+      brand_id: ids.brandId,
+      title: corpus.rows[0]?.name ?? "Signal Pulse Smoke",
+      business_question: corpus.rows[0]?.business_question ?? "",
+      generated_from_engine_analysis_id: ids.analysisId
+    },
+    executive_read: {
+      headline: topSignal.title ? `${String(topSignal.title)} concentra la prioridad del corte.` : "Todavia no hay senales suficientes.",
+      body: topSignal.volume ? `Tiene ${Number(topSignal.volume)} menciones en el periodo mas reciente y confianza ${String(topSignal.confidence ?? "baja")}.` : "Amplia cobertura antes de mover marketing.",
+      action: String(topMove.action_text ?? "Revisar senales con mayor impacto antes de mover presupuesto.")
+    },
+    periods: periods.rows,
+    signals: signals.rows,
+    marketing_moves: moves.rows,
+    chart_refs: Object.fromEntries(charts.rows.map((row) => [String(row.chart_key), row.payload])),
+    evidence: evidence.rows,
+    sources: sources.rows,
+    quality_gates: Array.isArray(meta.quality_gates) ? meta.quality_gates : [],
+    cost: {
+      estimated_cost_usd: Number(cost.rows[0]?.estimated_cost_usd ?? 0),
+      budget_cap_usd: Number(readiness.budget_cap_usd ?? 0)
+    },
+    limitations: Array.isArray(meta.quality_gates)
+      ? (meta.quality_gates as Array<Record<string, unknown>>).filter((gate) => gate.passed !== true).map((gate) => String(gate.detail ?? gate.id)).slice(0, 8)
+      : []
+  };
+}
+
+async function verifySignalPulseSmoke(client: pg.Client, ids: SmokeIds & { outputId: string }) {
   const result = await one<{
     analysis_status: string;
     signals: number;
@@ -416,6 +660,15 @@ async function verifySignalPulseSmoke(client: pg.Client, ids: { analysisId: stri
     charts: number;
     evidence: number;
     performance_records: number;
+    data_sources: number;
+    sync_runs: number;
+    published_outputs: number;
+    output_observations: number;
+    payload_sources: number;
+    payload_signals: number;
+    payload_moves: number;
+    payload_charts: number;
+    payload_evidence: number;
     failed_gates: number;
   }>(
     client,
@@ -434,6 +687,25 @@ async function verifySignalPulseSmoke(client: pg.Client, ids: { analysisId: stri
           WHERE so.study_corpus_id = $2 AND so.engine_analysis_id = $1
         ) AS evidence,
         (SELECT COUNT(*)::int FROM performance_records WHERE study_corpus_id = $2) AS performance_records,
+        (SELECT COUNT(*)::int FROM data_sources WHERE study_corpus_id = $2) AS data_sources,
+        (
+          SELECT COUNT(*)::int
+          FROM source_sync_runs ssr
+          JOIN data_sources ds ON ds.id = ssr.data_source_id
+          WHERE ds.study_corpus_id = $2 AND ssr.status = 'completed'
+        ) AS sync_runs,
+        (SELECT COUNT(*)::int FROM published_outputs WHERE id = $3 AND kind = 'signal_pulse' AND output_type = 'signal_pulse_dashboard' AND status = 'published') AS published_outputs,
+        (SELECT COUNT(*)::int FROM signal_observations WHERE engine_analysis_id = $1 AND published_output_id = $3) AS output_observations,
+        (SELECT jsonb_array_length(COALESCE(payload->'sources', '[]'::jsonb))::int FROM published_outputs WHERE id = $3) AS payload_sources,
+        (SELECT jsonb_array_length(COALESCE(payload->'signals', '[]'::jsonb))::int FROM published_outputs WHERE id = $3) AS payload_signals,
+        (SELECT jsonb_array_length(COALESCE(payload->'marketing_moves', '[]'::jsonb))::int FROM published_outputs WHERE id = $3) AS payload_moves,
+        (
+          SELECT COUNT(*)::int
+          FROM published_outputs po,
+               LATERAL jsonb_object_keys(COALESCE(po.payload->'chart_refs', '{}'::jsonb)) AS chart_key
+          WHERE po.id = $3
+        ) AS payload_charts,
+        (SELECT jsonb_array_length(COALESCE(payload->'evidence', '[]'::jsonb))::int FROM published_outputs WHERE id = $3) AS payload_evidence,
         (
           SELECT COUNT(*)::int
           FROM engine_analyses ea,
@@ -441,7 +713,7 @@ async function verifySignalPulseSmoke(client: pg.Client, ids: { analysisId: stri
           WHERE ea.id = $1 AND gate.passed = false
         ) AS failed_gates
     `,
-    [ids.analysisId, ids.corpusId]
+    [ids.analysisId, ids.corpusId, ids.outputId]
   );
 
   const failures = [
@@ -453,6 +725,15 @@ async function verifySignalPulseSmoke(client: pg.Client, ids: { analysisId: stri
     result.charts < 4 ? `charts=${result.charts}` : null,
     result.evidence <= 0 ? `evidence=${result.evidence}` : null,
     result.performance_records < 12 ? `performance_records=${result.performance_records}` : null,
+    result.data_sources <= 0 ? `data_sources=${result.data_sources}` : null,
+    result.sync_runs <= 0 ? `sync_runs=${result.sync_runs}` : null,
+    result.published_outputs !== 1 ? `published_outputs=${result.published_outputs}` : null,
+    result.output_observations <= 0 ? `output_observations=${result.output_observations}` : null,
+    result.payload_sources <= 0 ? `payload_sources=${result.payload_sources}` : null,
+    result.payload_signals < 3 ? `payload_signals=${result.payload_signals}` : null,
+    result.payload_moves <= 0 ? `payload_moves=${result.payload_moves}` : null,
+    result.payload_charts < 4 ? `payload_charts=${result.payload_charts}` : null,
+    result.payload_evidence <= 0 ? `payload_evidence=${result.payload_evidence}` : null,
     result.failed_gates > 0 ? `failed_gates=${result.failed_gates}` : null
   ].filter(Boolean);
 
@@ -469,8 +750,9 @@ async function main() {
   try {
     const ids = await seedSignalPulseCorpus(client);
     await runSignalPulsePipeline(client, ids.analysisId);
-    const verification = await verifySignalPulseSmoke(client, ids);
-    console.log(JSON.stringify({ ok: true, ...ids, verification }, null, 2));
+    const outputId = await publishSignalPulseSmokeOutput(client, ids);
+    const verification = await verifySignalPulseSmoke(client, { ...ids, outputId });
+    console.log(JSON.stringify({ ok: true, ...ids, outputId, pulsePath: `/pulse/${outputId}`, verification }, null, 2));
   } finally {
     await client.end();
     const { pool } = await import("../src/db/client.js");
