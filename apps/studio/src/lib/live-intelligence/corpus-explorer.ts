@@ -6,6 +6,7 @@ export type CorpusExplorerFilters = {
   signalIntent: string;
   entity: string;
   signal: string;
+  evidenceRole: string;
   dateFrom: string;
   dateTo: string;
   sort: "relevance" | "newest" | "oldest";
@@ -74,6 +75,10 @@ export function buildCorpusExplorerSql(args: {
   if (args.filters.signal) {
     values.push(args.filters.signal);
     clauses.push(`cs.id::text = $${values.length}`);
+  }
+  if (args.filters.evidenceRole) {
+    values.push(args.filters.evidenceRole);
+    clauses.push(`soe.evidence_role = $${values.length}`);
   }
   if (args.filters.dateFrom) {
     values.push(args.filters.dateFrom);

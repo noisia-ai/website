@@ -12,6 +12,7 @@ function filters(overrides: Partial<CorpusExplorerFilters> = {}): CorpusExplorer
     signalIntent: "",
     entity: "",
     signal: "",
+    evidenceRole: "",
     dateFrom: "",
     dateTo: "",
     sort: "relevance",
@@ -46,6 +47,7 @@ test("corpus explorer SQL keeps user filters parameterized", () => {
       signalIntent: "decision_signal",
       entity: "brand:telco",
       signal: "signal-1",
+      evidenceRole: "counter",
       dateFrom: "2026-05-01",
       dateTo: "2026-05-31"
     })
@@ -60,7 +62,20 @@ test("corpus explorer SQL keeps user filters parameterized", () => {
   assert.match(sql.whereSql, /mqs\.signal_intent = \$6/);
   assert.match(sql.whereSql, /mqs\.entity_id = \$7/);
   assert.match(sql.whereSql, /cs\.id::text = \$8/);
-  assert.match(sql.whereSql, /m\.published_at >= \$9::date/);
-  assert.match(sql.whereSql, /m\.published_at < \(\$10::date \+ interval '1 day'\)/);
+  assert.match(sql.whereSql, /soe\.evidence_role = \$9/);
+  assert.match(sql.whereSql, /m\.published_at >= \$10::date/);
+  assert.match(sql.whereSql, /m\.published_at < \(\$11::date \+ interval '1 day'\)/);
   assert.match(sql.orderBy, /WHEN max\(f\.finding_id\) ILIKE \$2 THEN 0/);
+});
+
+test("Signal Pulse corpus SQL can be locked to the signal-pulse query pack", () => {
+  const sql = buildCorpusExplorerSql({
+    scopedCorpusIds: ["corpus-1"],
+    filters: filters({ lens: "signal-pulse", signal: "sp-signal-1", evidenceRole: "support" })
+  });
+
+  assert.match(sql.whereSql, /mqs\.lens_slug = \$2/);
+  assert.match(sql.whereSql, /cs\.id::text = \$3/);
+  assert.match(sql.whereSql, /soe\.evidence_role = \$4/);
+  assert.deepEqual(sql.values.slice(0, 5), [["corpus-1"], "signal-pulse", "sp-signal-1", "support", 120]);
 });

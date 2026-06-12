@@ -23,6 +23,7 @@ type CorpusMention = {
   entityId: string;
   canonicalSignalId: string;
   canonicalSignalTitle: string;
+  evidenceRole: string;
 };
 
 type CorpusFacets = {
@@ -61,6 +62,7 @@ const corpusCopy = {
     allEvidence: "All evidence",
     protagonistOnly: "Protagonist only",
     supportOnly: "Support only",
+    counterOnly: "Counter only",
     filteredTotal: "filtered mentions",
     activeFilters: "active filters",
     order: "Order",
@@ -78,6 +80,7 @@ const corpusCopy = {
     usingGlobalDate: "Using global range",
     protagonist: "protagonist",
     support: "support",
+    counter: "counter",
     emptyTitle: "No verbatims match those filters.",
     emptyBody: "Remove channel, date or finding filters to widen the published sample.",
     page: "Page",
@@ -112,6 +115,7 @@ const corpusCopy = {
     allEvidence: "Toda la evidencia",
     protagonistOnly: "Sólo protagonista",
     supportOnly: "Sólo soporte",
+    counterOnly: "Sólo contrapunto",
     filteredTotal: "menciones filtradas",
     activeFilters: "filtros activos",
     order: "Orden",
@@ -129,6 +133,7 @@ const corpusCopy = {
     usingGlobalDate: "Usando rango global",
     protagonist: "protagonista",
     support: "soporte",
+    counter: "contrapunto",
     emptyTitle: "No hay verbatims con esos filtros.",
     emptyBody: "Prueba quitar canal, fecha o finding para ampliar la muestra publicada.",
     page: "Página",
@@ -140,10 +145,56 @@ const corpusCopy = {
 
 const PAGE_SIZE = 120;
 
-export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention[]; outputId?: string }) {
+const pulseCorpusCopy = {
+  en: {
+    title: "Signal evidence explorer",
+    searchAndFilters: "search signals, channels and evidence",
+    findings: "Signals",
+    finding: "Signal read",
+    allFindings: "All reads",
+    lens: "Query pack",
+    allLenses: "Signal Pulse",
+    intent: "Scope",
+    allIntents: "All scopes",
+    placeholder: 'Ex. "crunch ritual", tiktok, signal:snack',
+    filtersAria: "Signal Pulse corpus filters",
+    emptyBody: "Remove channel, date, signal or evidence filters to widen the authorized corpus.",
+    completeCorpus: "This view queries the authorized Signal Pulse corpus.",
+    publishedEvidence: "This view shows published Signal Pulse evidence."
+  },
+  es: {
+    title: "Explorador de evidencia",
+    searchAndFilters: "búsqueda por señales, canales y evidencia",
+    findings: "Señales",
+    finding: "Lectura",
+    allFindings: "Todas las lecturas",
+    lens: "Query pack",
+    allLenses: "Signal Pulse",
+    intent: "Scope",
+    allIntents: "Todos los scopes",
+    placeholder: 'Ej. "ritual crujiente", tiktok, señal:antojo',
+    filtersAria: "Filtros del corpus de Signal Pulse",
+    emptyBody: "Quita canal, fecha, señal o rol de evidencia para abrir el corpus autorizado.",
+    completeCorpus: "Esta vista consulta el corpus autorizado de Signal Pulse.",
+    publishedEvidence: "Esta vista muestra evidencia publicada de Signal Pulse."
+  }
+} satisfies Record<SignalUiLanguage, Partial<Record<keyof typeof corpusCopy.es, string>>>;
+
+export function SignalCorpusExplorer({
+  apiBasePath = "/api/signal",
+  mentions,
+  outputId,
+  variant = "signal"
+}: {
+  apiBasePath?: "/api/signal" | "/api/pulse";
+  mentions: Mention[];
+  outputId?: string;
+  variant?: "signal" | "signal_pulse";
+}) {
   const { uiLanguage } = useSignalUiLanguage();
   const { dateFrom: globalDateFrom, dateTo: globalDateTo } = useSignalDateRange();
-  const copy = corpusCopy[uiLanguage];
+  const copy = { ...corpusCopy[uiLanguage], ...(variant === "signal_pulse" ? pulseCorpusCopy[uiLanguage] : {}) };
+  const isSignalPulse = variant === "signal_pulse";
   const [query, setQuery] = useState("");
   const [platform, setPlatform] = useState("");
   const [finding, setFinding] = useState("");
@@ -181,6 +232,7 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
       signalIntent,
       entity,
       signal,
+      evidenceRole,
       dateFrom,
       dateTo,
       sort,
@@ -188,7 +240,7 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
       limit: String(PAGE_SIZE)
     });
     setIsLoading(true);
-    fetch(`/api/signal/${outputId}/corpus?${params.toString()}`, { cache: "no-store", signal: controller.signal })
+    fetch(`${apiBasePath}/${outputId}/corpus?${params.toString()}`, { cache: "no-store", signal: controller.signal })
       .then((res) => res.ok ? res.json() : Promise.reject(new Error(`Corpus request failed: ${res.status}`)))
       .then((payload) => {
         setServerRows(Array.isArray(payload.rows) ? payload.rows.map(normalizeMention).filter((mention: CorpusMention) => mention.text) : []);
@@ -203,7 +255,7 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
       })
       .finally(() => setIsLoading(false));
     return () => controller.abort();
-  }, [dateFrom, dateTo, entity, finding, lens, outputId, page, platform, query, signal, signalIntent, sort]);
+  }, [apiBasePath, dateFrom, dateTo, entity, evidenceRole, finding, lens, outputId, page, platform, query, signal, signalIntent, sort]);
 
   const platforms = useMemo(
     () => serverFacets?.platforms.map((item) => item.platform).filter(Boolean) ?? Array.from(new Set(rows.map((mention) => mention.platform).filter(Boolean))).sort(),
@@ -239,7 +291,9 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
         .map((mention) => ({ mention, score: scoreMention(mention, query) }))
         .filter(({ mention }) => {
           if (evidenceRole === "protagonist" && !mention.isProtagonist) return false;
+          if (evidenceRole === "support" && mention.evidenceRole === "counter") return false;
           if (evidenceRole === "support" && mention.isProtagonist) return false;
+          if (evidenceRole === "counter" && mention.evidenceRole !== "counter") return false;
           return true;
         });
     }
@@ -254,7 +308,9 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
         if (entity && mention.entityId !== entity) return false;
         if (signal && mention.canonicalSignalId !== signal) return false;
         if (evidenceRole === "protagonist" && !mention.isProtagonist) return false;
+        if (evidenceRole === "support" && mention.evidenceRole === "counter") return false;
         if (evidenceRole === "support" && mention.isProtagonist) return false;
+        if (evidenceRole === "counter" && mention.evidenceRole !== "counter") return false;
         if (dateFrom && mention.publishedAt && mention.publishedAt.slice(0, 10) < dateFrom) return false;
         if (dateTo && mention.publishedAt && mention.publishedAt.slice(0, 10) > dateTo) return false;
         return true;
@@ -355,18 +411,24 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
           <option value="">{copy.allChannels}</option>
           {platforms.map((item) => <option key={item} value={item}>{item}</option>)}
         </SelectBox>
-        <SelectBox label={copy.finding} value={finding} onChange={setFinding}>
-          <option value="">{copy.allFindings}</option>
-          {findings.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-        </SelectBox>
-        <SelectBox label={copy.lens} value={lens} onChange={setLens}>
-          <option value="">{copy.allLenses}</option>
-          {lenses.map((item) => <option key={item} value={item}>{prettifyKey(item)}</option>)}
-        </SelectBox>
-        <SelectBox label={copy.intent} value={signalIntent} onChange={setSignalIntent}>
-          <option value="">{copy.allIntents}</option>
-          {intents.map((item) => <option key={item} value={item}>{prettifyKey(item)}</option>)}
-        </SelectBox>
+        {!isSignalPulse ? (
+          <SelectBox label={copy.finding} value={finding} onChange={setFinding}>
+            <option value="">{copy.allFindings}</option>
+            {findings.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+          </SelectBox>
+        ) : null}
+        {!isSignalPulse ? (
+          <SelectBox label={copy.lens} value={lens} onChange={setLens}>
+            <option value="">{copy.allLenses}</option>
+            {lenses.map((item) => <option key={item} value={item}>{prettifyKey(item)}</option>)}
+          </SelectBox>
+        ) : null}
+        {!isSignalPulse ? (
+          <SelectBox label={copy.intent} value={signalIntent} onChange={setSignalIntent}>
+            <option value="">{copy.allIntents}</option>
+            {intents.map((item) => <option key={item} value={item}>{prettifyKey(item)}</option>)}
+          </SelectBox>
+        ) : null}
         <SelectBox label={copy.entity} value={entity} onChange={setEntity}>
           <option value="">{copy.allEntities}</option>
           {entities.map((item) => <option key={item.entity_id} value={item.entity_id}>{item.entity_label || item.entity_id}</option>)}
@@ -379,6 +441,7 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
           <option value="">{copy.allEvidence}</option>
           <option value="protagonist">{copy.protagonistOnly}</option>
           <option value="support">{copy.supportOnly}</option>
+          {isSignalPulse ? <option value="counter">{copy.counterOnly}</option> : null}
         </SelectBox>
         <SelectBox label={copy.order} value={sort} onChange={(value) => setSort(value as typeof sort)}>
           <option value="relevance">{copy.relevance}</option>
@@ -436,13 +499,13 @@ export function SignalCorpusExplorer({ mentions, outputId }: { mentions: Mention
             <article className={mention.isProtagonist ? "signal-corpus-card signal-corpus-card--protagonist" : "signal-corpus-card"} key={mention.mentionId || index}>
               <header>
                 <SourceToken compact label={sourceDisplayLabel(mention.platform || "unknown", uiLanguage)} value={mention.platform || "unknown"} />
-                {mention.isProtagonist ? <strong><Icon name="star" size={11} /> {copy.protagonist}</strong> : <span>{copy.support}</span>}
+                {mention.isProtagonist ? <strong><Icon name="star" size={11} /> {copy.protagonist}</strong> : <span>{labelEvidenceRole(mention.evidenceRole, copy)}</span>}
                 {mention.publishedAt ? <time>{formatDate(mention.publishedAt, uiLanguage)}</time> : null}
               </header>
               <p>{highlightText(mention.text, query)}</p>
-              {mention.findingName ? (
+              {mention.findingName || mention.canonicalSignalTitle ? (
                 <footer>
-                  <a href={`#${findingAnchor(mention.findingId)}`}>{mention.findingId} · {mention.findingName}</a>
+                  {mention.findingName ? <a href={`#${findingAnchor(mention.findingId)}`}>{mention.findingId} · {mention.findingName}</a> : null}
                   {mention.canonicalSignalTitle ? <span>{mention.canonicalSignalTitle}</span> : null}
                 </footer>
               ) : null}
@@ -513,8 +576,15 @@ function normalizeMention(mention: Mention): CorpusMention {
     queryScope: stringValue(mention.query_scope),
     entityId: stringValue(mention.source_entity_id),
     canonicalSignalId: stringValue(mention.canonical_signal_id),
-    canonicalSignalTitle: stringValue(mention.canonical_signal_title)
+    canonicalSignalTitle: stringValue(mention.canonical_signal_title),
+    evidenceRole: stringValue(mention.evidence_role)
   };
+}
+
+function labelEvidenceRole(value: string, copy: Record<string, string>) {
+  if (value === "counter") return copy.counter;
+  if (value === "protagonist") return copy.protagonist;
+  return copy.support;
 }
 
 function normalizeFacets(input: unknown): CorpusFacets {

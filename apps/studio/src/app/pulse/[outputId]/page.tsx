@@ -178,7 +178,7 @@ export default async function PulseOutputPage({
                 title="Explorar conversación y evidencia"
                 sub="Busca por señal, canal, entidad o fecha dentro del corpus autorizado."
               />
-              <SignalCorpusExplorer mentions={evidence.map(evidenceToMention)} outputId={output.id} />
+              <SignalCorpusExplorer apiBasePath="/api/pulse" mentions={evidence.map(evidenceToMention)} outputId={output.id} variant="signal_pulse" />
             </section>
           ) : null}
         </>
