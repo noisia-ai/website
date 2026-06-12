@@ -24,6 +24,12 @@ import {
   type EmbeddingNeighborhoodRow,
   type TermCluster
 } from "./signal-pulse-clustering";
+import {
+  estimateSignalPulseNamingCostUsd,
+  estimateSignalPulseRunCostUsd,
+  SIGNAL_PULSE_INTERPRETATION_COST_USD,
+  shouldSkipSignalPulseLlmForBudget
+} from "./signal-pulse-budget";
 import { buildSignalPulseDeterministicRead, buildSignalPulseMarketingMove } from "./signal-pulse-copy";
 
 type SignalPulseStepJobData = {
@@ -598,12 +604,6 @@ function readBudgetCapUsd(ctx: AnalysisContext) {
   return numberFrom(ctx.params?.budget_cap_usd) ?? numberFrom(ctx.analysis_plan?.budget_cap_usd) ?? 5;
 }
 
-function estimateSignalPulseRunCostUsd(signalPulseMentions: number) {
-  const estimatedClusters = Math.max(1, Math.min(MAX_SIGNAL_CLUSTERS, Math.ceil(signalPulseMentions / 80)));
-  const namingAndInterpretation = 0.15 + estimatedClusters * 0.015;
-  return Math.round(namingAndInterpretation * 10_000) / 10_000;
-}
-
 function numberFrom(value: unknown) {
   const number = Number(value);
   return Number.isFinite(number) && number > 0 ? number : null;
@@ -948,7 +948,8 @@ async function maybeApplyClaudeSignalNaming(args: {
   candidates: SignalPulseNamingRow[];
 }) {
   const model = signalPulseLlmModel();
-  const unavailableReason = await signalPulseLlmUnavailableReason(args.ctx, args.engineAnalysisId, model);
+  const estimatedNextCostUsd = estimateSignalPulseNamingCostUsd(args.candidates.length, MAX_SIGNAL_CLUSTERS);
+  const unavailableReason = await signalPulseLlmUnavailableReason(args.ctx, args.engineAnalysisId, model, estimatedNextCostUsd);
   if (unavailableReason) {
     await recordEngineCostEvent({
       engineAnalysisId: args.engineAnalysisId,
@@ -957,7 +958,7 @@ async function maybeApplyClaudeSignalNaming(args: {
       model,
       operation: "sp_name_signals_skipped",
       usage: null,
-      metadata: { reason: unavailableReason, cluster_first: true, per_mention_coding: false }
+      metadata: { reason: unavailableReason, estimated_next_cost_usd: estimatedNextCostUsd, cluster_first: true, per_mention_coding: false }
     });
     return { applied: false, updated: 0, reason: unavailableReason };
   }
@@ -1064,7 +1065,7 @@ async function maybeApplyClaudeSignalPulseInterpretation(args: {
   fallback: { headline: string; body: string; action: string };
 }) {
   const model = signalPulseLlmModel();
-  const unavailableReason = await signalPulseLlmUnavailableReason(args.ctx, args.engineAnalysisId, model);
+  const unavailableReason = await signalPulseLlmUnavailableReason(args.ctx, args.engineAnalysisId, model, SIGNAL_PULSE_INTERPRETATION_COST_USD);
   if (unavailableReason) {
     await recordEngineCostEvent({
       engineAnalysisId: args.engineAnalysisId,
@@ -1073,7 +1074,7 @@ async function maybeApplyClaudeSignalPulseInterpretation(args: {
       model,
       operation: "sp_interpret_skipped",
       usage: null,
-      metadata: { reason: unavailableReason, numbers_source: "signal_period_metrics" }
+      metadata: { reason: unavailableReason, estimated_next_cost_usd: SIGNAL_PULSE_INTERPRETATION_COST_USD, numbers_source: "signal_period_metrics" }
     });
     return { applied: false, interpretation: args.fallback, reason: unavailableReason };
   }
@@ -1132,13 +1133,18 @@ function signalPulseLlmModel() {
     ?? "claude-sonnet-4-6";
 }
 
-async function signalPulseLlmUnavailableReason(ctx: AnalysisContext, engineAnalysisId: string, model: string) {
+async function signalPulseLlmUnavailableReason(ctx: AnalysisContext, engineAnalysisId: string, model: string, estimatedNextCostUsd: number) {
   if (!process.env.ANTHROPIC_API_KEY) return "anthropic_key_missing";
   if (!isEngineLlmEnabled()) return "engine_llm_disabled";
   if (!isEngineModelAllowed(model)) return `model_blocked:${model}`;
   const budgetCap = readBudgetCapUsd(ctx);
   const cost = await readEngineCostTotal(engineAnalysisId);
-  if (cost >= budgetCap) return `budget_exhausted:${round(cost, 4)}/${budgetCap}`;
+  const budgetDecision = shouldSkipSignalPulseLlmForBudget({
+    currentCostUsd: cost,
+    budgetCapUsd: budgetCap,
+    estimatedNextCostUsd
+  });
+  if (budgetDecision.skip) return budgetDecision.reason;
   return null;
 }
 
@@ -1146,7 +1152,8 @@ async function readEngineCostTotal(engineAnalysisId: string) {
   const row = (await pool.query<{ cost: string | null }>(
     `SELECT COALESCE(SUM(estimated_cost_usd), 0)::text AS cost
      FROM engine_cost_events
-     WHERE engine_analysis_id = $1`,
+     WHERE engine_analysis_id = $1
+       AND provider <> 'system'`,
     [engineAnalysisId]
   )).rows[0];
   return Number(row?.cost ?? 0);
@@ -1548,6 +1555,7 @@ async function buildSignalPulseQualityGates(args: {
           WHERE engine_analysis_id IN (
             SELECT id FROM engine_analyses WHERE study_corpus_id = $1 AND methodology_slug = 'signal-pulse'
           )
+            AND provider <> 'system'
         ) AS cost
     `,
     [args.ctx.study_corpus_id, args.engineAnalysisId]

@@ -641,7 +641,8 @@ async function buildSignalPulsePublishedPayload(
     pool.query(
       `SELECT COALESCE(SUM(estimated_cost_usd), 0)::text AS estimated_cost_usd
        FROM engine_cost_events
-       WHERE engine_analysis_id = $1`,
+       WHERE engine_analysis_id = $1
+         AND provider <> 'system'`,
       [analysis.id]
     )
   ]);

@@ -6,6 +6,12 @@ import {
   selectSignalPulseClusterPhrase,
   type EmbeddingNeighborhoodRow
 } from "./signal-pulse-clustering";
+import {
+  estimateSignalPulseNamingCostUsd,
+  estimateSignalPulseRunCostUsd,
+  SIGNAL_PULSE_INTERPRETATION_COST_USD,
+  shouldSkipSignalPulseLlmForBudget
+} from "./signal-pulse-budget";
 import { buildSignalPulseDeterministicRead, buildSignalPulseMarketingMove } from "./signal-pulse-copy";
 
 test("Signal Pulse embedding clusters group semantic neighborhoods without reusing mentions", () => {
@@ -128,6 +134,41 @@ test("Signal Pulse marketing moves keep weak signals as bounded experiments", ()
   assert.equal(move.timing, "siguiente sprint");
   assert.match(move.measurementSuggestion, /7 menciones/);
   assert.match(move.noGoNotes ?? "", /No convertirlo en promesa fuerte/);
+});
+
+test("Signal Pulse budget estimate stays cluster-first and bounded before running", () => {
+  assert.equal(estimateSignalPulseNamingCostUsd(0), 0.015);
+  assert.equal(estimateSignalPulseNamingCostUsd(100), 0.36);
+  assert.equal(estimateSignalPulseRunCostUsd(1), 0.165);
+  assert.equal(SIGNAL_PULSE_INTERPRETATION_COST_USD, 0.15);
+  assert.equal(estimateSignalPulseRunCostUsd(6000), 0.51);
+});
+
+test("Signal Pulse LLM budget guard reserves the next cluster-level call", () => {
+  assert.deepEqual(
+    shouldSkipSignalPulseLlmForBudget({
+      currentCostUsd: 0.2,
+      budgetCapUsd: 0.5,
+      estimatedNextCostUsd: 0.15
+    }),
+    { skip: false, reason: null }
+  );
+  assert.deepEqual(
+    shouldSkipSignalPulseLlmForBudget({
+      currentCostUsd: 0.42,
+      budgetCapUsd: 0.5,
+      estimatedNextCostUsd: 0.15
+    }),
+    { skip: true, reason: "budget_would_exceed:0.42+0.15/0.5" }
+  );
+  assert.deepEqual(
+    shouldSkipSignalPulseLlmForBudget({
+      currentCostUsd: 0.5,
+      budgetCapUsd: 0.5,
+      estimatedNextCostUsd: 0.015
+    }),
+    { skip: true, reason: "budget_exhausted:0.5/0.5" }
+  );
 });
 
 function row(
