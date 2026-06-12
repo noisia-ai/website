@@ -15,6 +15,11 @@ import {
   releaseEngineCorpusLock
 } from "./engine-shared";
 import { safeJsonStringifyForPostgres } from "./postgres-json";
+import {
+  buildEmbeddingNeighborhoodClusters,
+  type EmbeddingNeighborhoodRow,
+  type TermCluster
+} from "./signal-pulse-clustering";
 
 type SignalPulseStepJobData = {
   engineAnalysisId: string;
@@ -30,15 +35,6 @@ type AnalysisContext = {
   params: Record<string, unknown> | null;
   analysis_plan: Record<string, unknown> | null;
   target_window_months: number | null;
-};
-
-type TermCluster = {
-  term: string;
-  mention_count: number;
-  platforms: string[];
-  sample_mention_ids: string[];
-  sentiment_avg: number | null;
-  engagement_sum: number;
 };
 
 type MaterializedSignal = {
@@ -62,6 +58,9 @@ const STOPWORDS_ES_MX = new Set([
 
 const MAX_SIGNAL_CLUSTERS = 24;
 const MAX_EVIDENCE_PER_SIGNAL = 8;
+const EMBEDDING_ANCHOR_LIMIT = 220;
+const EMBEDDING_NEIGHBORS_PER_ANCHOR = 36;
+const EMBEDDING_MIN_SIMILARITY = 0.74;
 
 export async function signalPulseReadinessJob(job: Job<SignalPulseStepJobData>) {
   return runSignalPulseStep(job, async ({ engineAnalysisId, pipelineStepId }) => {
@@ -252,12 +251,15 @@ export async function signalPulseClusterJob(job: Job<SignalPulseStepJobData>) {
       `,
       [ctx.study_corpus_id]
     )).rows;
-    const clusters = buildCheapTermClusters(rows).slice(0, MAX_SIGNAL_CLUSTERS);
+    const embeddingClusters = await loadEmbeddingNeighborhoodClusters(ctx.study_corpus_id);
+    const clusters = (embeddingClusters.length > 0 ? embeddingClusters : buildCheapTermClusters(rows))
+      .slice(0, MAX_SIGNAL_CLUSTERS);
     const signals = await materializeCanonicalSignals({ ctx, engineAnalysisId, clusters });
     await mergeMeta(engineAnalysisId, {
       signal_pulse: {
         cluster: {
-          algorithm: "term_cluster_v2_sql_materialized",
+          algorithm: embeddingClusters.length > 0 ? "semantic_embedding_neighborhood_v1" : "term_cluster_v2_sql_materialized",
+          fallback_used: embeddingClusters.length === 0,
           cluster_first: true,
           per_mention_coding: false,
           clusters,
@@ -270,7 +272,12 @@ export async function signalPulseClusterJob(job: Job<SignalPulseStepJobData>) {
       resultSummary: { clusters: clusters.length, materialized_signals: signals.length, mentions_sampled: rows.length }
     });
     const next = await enqueueEngineStep({ engineAnalysisId, step: "sp_name_signals" });
-    return { clusters: clusters.length, materialized_signals: signals.length, next_step_job_id: next.jobId };
+    return {
+      clusters: clusters.length,
+      algorithm: embeddingClusters.length > 0 ? "semantic_embedding_neighborhood_v1" : "term_cluster_v2_sql_materialized",
+      materialized_signals: signals.length,
+      next_step_job_id: next.jobId
+    };
   });
 }
 
@@ -549,9 +556,11 @@ async function materializeCanonicalSignals(args: {
         description,
         JSON.stringify({
           source: "signal_pulse_cluster",
-          algorithm: "term_cluster_v2",
+          algorithm: cluster.algorithm,
           term: cluster.term,
           mention_count: cluster.mention_count,
+          member_mention_ids: cluster.member_mention_ids,
+          sample_mention_ids: cluster.sample_mention_ids,
           rank: index + 1,
           platforms: cluster.platforms,
           engagement_sum: cluster.engagement_sum,
@@ -624,11 +633,13 @@ async function materializePeriodMetrics(args: {
   let evidenceCount = 0;
   for (const signal of signalRows) {
     const term = stringFrom(signal.dimensions?.term) || signal.canonical_title;
+    const memberMentionIds = stringArrayFrom(signal.dimensions?.member_mention_ids);
     const previousVolumes: number[] = [];
     for (const period of periods) {
       const periodMentions = await loadSignalPeriodMentions({
         corpusId: args.ctx.study_corpus_id,
         term,
+        memberMentionIds,
         periodStart: period.period_start,
         periodEnd: period.period_end
       });
@@ -1084,6 +1095,7 @@ async function refreshSignalEvidence(args: {
 async function loadSignalPeriodMentions(args: {
   corpusId: string;
   term: string;
+  memberMentionIds?: string[];
   periodStart: string;
   periodEnd: string;
 }) {
@@ -1114,7 +1126,11 @@ async function loadSignalPeriodMentions(args: {
           AND m.inclusion_status = 'included'
           AND m.published_at >= $2::date
           AND m.published_at < ($3::date + interval '1 day')
-          AND translate(lower(m.text_clean), 'áéíóúüñ', 'aeiouun') LIKE lower($4)
+          AND (
+            (cardinality($5::uuid[]) > 0 AND m.id = ANY($5::uuid[]))
+            OR
+            (cardinality($5::uuid[]) = 0 AND translate(lower(m.text_clean), 'áéíóúüñ', 'aeiouun') LIKE lower($4))
+          )
       ),
       source_counts AS (
         SELECT platform, COUNT(*)::int AS count
@@ -1134,7 +1150,7 @@ async function loadSignalPeriodMentions(args: {
         (SELECT COALESCE(jsonb_object_agg(platform, count), '{}'::jsonb) FROM source_counts) AS source_mix,
         (SELECT COALESCE(jsonb_agg(sample_rows), '[]'::jsonb) FROM sample_rows) AS samples
     `,
-    [args.corpusId, args.periodStart, args.periodEnd, pattern]
+    [args.corpusId, args.periodStart, args.periodEnd, pattern, args.memberMentionIds ?? []]
   );
   const row = result.rows[0];
   return {
@@ -1144,6 +1160,79 @@ async function loadSignalPeriodMentions(args: {
     source_mix: row?.source_mix ?? {},
     samples: Array.isArray(row?.samples) ? row.samples : []
   };
+}
+
+async function loadEmbeddingNeighborhoodClusters(corpusId: string) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SET LOCAL statement_timeout = '120s'");
+    const rows = (await client.query<EmbeddingNeighborhoodRow>(
+      `
+        WITH model_choice AS (
+          SELECT se.embedding_model
+          FROM semantic_embeddings se
+          WHERE se.study_corpus_id = $1
+            AND se.scope_type = 'mention'
+          GROUP BY se.embedding_model
+          ORDER BY COUNT(*) DESC, se.embedding_model
+          LIMIT 1
+        ),
+        anchors AS (
+          SELECT
+            se.mention_id::text AS anchor_id,
+            se.embedding,
+            m.published_at
+          FROM semantic_embeddings se
+          JOIN model_choice mc ON mc.embedding_model = se.embedding_model
+          JOIN mentions m ON m.id = se.mention_id
+          LEFT JOIN mention_query_sources mqs ON mqs.mention_id = m.id AND mqs.lens_slug = 'signal-pulse'
+          WHERE se.study_corpus_id = $1
+            AND se.scope_type = 'mention'
+            AND m.inclusion_status = 'included'
+            AND length(m.text_clean) >= 24
+          ORDER BY CASE WHEN mqs.id IS NOT NULL THEN 0 ELSE 1 END, m.published_at DESC
+          LIMIT $2
+        )
+        SELECT
+          anchors.anchor_id,
+          neighbor.mention_id::text,
+          m.text_clean,
+          COALESCE(m.resolved_platform, m.platform) AS platform,
+          m.sentiment_score::text,
+          CASE
+            WHEN COALESCE(m.engagement->>'total', m.engagement->>'interactions', m.engagement->>'engagement', '') ~ '^-?[0-9]+(\\.[0-9]+)?$'
+            THEN COALESCE(m.engagement->>'total', m.engagement->>'interactions', m.engagement->>'engagement')::numeric
+            ELSE 0
+          END::text AS engagement_score,
+          (1 - (neighbor.embedding <=> anchors.embedding))::text AS similarity
+        FROM anchors
+        JOIN LATERAL (
+          SELECT se.mention_id, se.embedding
+          FROM semantic_embeddings se
+          JOIN model_choice mc ON mc.embedding_model = se.embedding_model
+          JOIN mentions m ON m.id = se.mention_id
+          WHERE se.study_corpus_id = $1
+            AND se.scope_type = 'mention'
+            AND m.inclusion_status = 'included'
+            AND length(m.text_clean) >= 24
+          ORDER BY se.embedding <=> anchors.embedding
+          LIMIT $3
+        ) neighbor ON true
+        JOIN mentions m ON m.id = neighbor.mention_id
+        WHERE 1 - (neighbor.embedding <=> anchors.embedding) >= $4
+        ORDER BY anchors.published_at DESC, anchors.anchor_id, neighbor.embedding <=> anchors.embedding
+      `,
+      [corpusId, EMBEDDING_ANCHOR_LIMIT, EMBEDDING_NEIGHBORS_PER_ANCHOR, EMBEDDING_MIN_SIMILARITY]
+    )).rows;
+    await client.query("COMMIT");
+    return buildEmbeddingNeighborhoodClusters(rows);
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 function buildCheapTermClusters(rows: Array<{
@@ -1171,9 +1260,11 @@ function buildCheapTermClusters(rows: Array<{
       term,
       mention_count: value.mentionIds.size,
       platforms: Array.from(value.platforms).slice(0, 8),
+      member_mention_ids: Array.from(value.mentionIds),
       sample_mention_ids: Array.from(value.mentionIds).slice(0, 12),
       sentiment_avg: value.sentiments.length > 0 ? round(value.sentiments.reduce((sum, item) => sum + item, 0) / value.sentiments.length, 3) : null,
-      engagement_sum: value.engagement
+      engagement_sum: value.engagement,
+      algorithm: "term_cluster_v2" as const
     }))
     .filter((cluster) => cluster.mention_count >= 4)
     .sort((a, b) => b.mention_count - a.mention_count || a.term.localeCompare(b.term))
@@ -1285,6 +1376,10 @@ function gate(id: string, passed: boolean, detail: string) {
 
 function stringFrom(value: unknown) {
   return typeof value === "string" ? value : "";
+}
+
+function stringArrayFrom(value: unknown) {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && item.length > 0) : [];
 }
 
 function numberOrNull(value: unknown) {
