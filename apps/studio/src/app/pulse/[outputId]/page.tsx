@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { SessionBadge } from "@/components/layout/SessionBadge";
 import { SignalCorpusExplorer } from "@/components/signal/SignalCorpusExplorer";
+import { SignalDeckButton } from "@/components/signal/SignalDeckButton";
 import { SignalLiveComposer } from "@/components/signal/SignalLiveComposer";
 import {
   SignalGlobalDateFilter,
@@ -39,7 +40,7 @@ export default async function PulseOutputPage({
   const qualityGates = arrayOfRecords(payload.quality_gates);
   const limitations = arrayValue(payload.limitations).map(String);
   const cost = asRecord(payload.cost);
-  const brandLabel = output.brandName ?? output.brandFallbackName ?? output.themeName ?? stringValue(report.title) ?? "Signal Pulse";
+  const brandLabel = (output.brandName ?? output.brandFallbackName ?? output.themeName ?? stringValue(report.title)) || "Signal Pulse";
   const activePeriod = periods.at(-1);
   const defaultDateFrom = stringValue(periods[0]?.period_start);
   const defaultDateTo = stringValue(activePeriod?.period_end);
@@ -68,6 +69,7 @@ export default async function PulseOutputPage({
             <Icon name="calendar" size={14} />
             {periods.length > 0 ? `${periods.length} periodos comparables` : "Sin periodos"}
           </span>
+          <SignalDeckButton outputId={output.id} hrefBase="/pulse" labelOverride={{ en: "Monthly deck", es: "Deck mensual" }} />
           <SignalGlobalDateFilter />
           <SessionBadge user={session.appUser} compact />
         </div>

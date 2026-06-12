@@ -46,7 +46,9 @@ export async function POST(
   const lang = parsed.data.lang ?? "es";
   const role = "client_viewer";
   const roleLabel = displayRole(role);
-  const reportPath = `/signal/${outputId}/deck?lang=${lang}`;
+  const reportPath = output.kind === "signal_pulse"
+    ? `/pulse/${outputId}/deck?lang=${lang}`
+    : `/signal/${outputId}/deck?lang=${lang}`;
   const reportUrl = absoluteAppUrl(request, reportPath);
   const loginUrl = absoluteAppUrl(
     request,
@@ -261,6 +263,9 @@ async function sendShareEmailBestEffort(args: {
   roleLabel: string;
 }) {
   try {
+    if (args.output.kind === "signal_pulse") {
+      return sendSignalPulseShareEmail(args);
+    }
     const vm = adaptTbSignalPayload(args.output.payload);
     const brandLabel = args.output.brandName ?? args.output.brandFallbackName ?? args.output.themeName ?? vm.report.brand_name;
     const methodologyName = args.output.methodologyName ?? vm.report.methodology_name;
@@ -307,6 +312,54 @@ async function sendShareEmailBestEffort(args: {
   }
 }
 
+async function sendSignalPulseShareEmail(args: {
+  email: string;
+  output: NonNullable<Awaited<ReturnType<typeof getSignalOutputForUser>>>;
+  reportUrl: string;
+  loginUrl: string;
+  roleLabel: string;
+}) {
+  const payload = asRecord(args.output.payload);
+  const report = asRecord(payload.report);
+  const executiveRead = asRecord(payload.executive_read);
+  const signals = arrayOfRecords(payload.signals);
+  const moves = arrayOfRecords(payload.marketing_moves);
+  const brandLabel = (args.output.brandName ?? args.output.brandFallbackName ?? args.output.themeName ?? stringValue(report.title)) || "Signal Pulse";
+  const reportTitle = args.output.headline ?? (stringValue(executiveRead.headline) || args.output.title || "Signal Pulse listo para revisar");
+  const executiveText = [
+    stringValue(executiveRead.body),
+    stringValue(executiveRead.action) ? `Move sugerido: ${stringValue(executiveRead.action)}` : ""
+  ].filter(Boolean).join(" ");
+  const highlights = signals
+    .slice(0, 4)
+    .map((signal) => stringValue(signal.title))
+    .filter(Boolean);
+  const opportunities = moves
+    .slice(0, 3)
+    .map((move) => stringValue(move.action_text))
+    .filter(Boolean);
+
+  const { html, text } = renderSignalShareEmail({
+    brandLabel,
+    methodologyName: "Signal Pulse",
+    reportTitle,
+    businessQuestion: stringValue(report.business_question),
+    executiveRead: truncate(executiveText || args.output.summary || "El Pulse mensual ya está disponible para revisión.", 520),
+    highlights,
+    opportunities,
+    reportUrl: args.reportUrl,
+    loginUrl: args.loginUrl,
+    roleLabel: args.roleLabel
+  });
+
+  return sendEmail({
+    to: args.email,
+    subject: `${brandLabel}: Signal Pulse listo para revisar`,
+    html,
+    text
+  });
+}
+
 function isUniqueViolation(error: unknown) {
   return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
 }
@@ -314,4 +367,16 @@ function isUniqueViolation(error: unknown) {
 function truncate(value: string, max: number) {
   const clean = value.trim();
   return clean.length > max ? `${clean.slice(0, max - 1).trimEnd()}…` : clean;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function arrayOfRecords(value: unknown): Array<Record<string, unknown>> {
+  return Array.isArray(value) ? value.map(asRecord) : [];
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" ? value : value == null ? "" : String(value);
 }
