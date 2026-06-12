@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import { brandKnowledgeSources, methodologies, studyCorpora } from "@noisia/db";
 import { forbidden, unauthorized, validationError } from "@/lib/api/responses";
@@ -44,13 +44,15 @@ export async function POST(request: Request) {
       id: methodologies.id,
       slug: methodologies.slug,
       name: methodologies.name,
-      version: methodologies.version
+      version: methodologies.version,
+      status: methodologies.status
     })
     .from(methodologies)
-    .where(and(eq(methodologies.id, parsed.data.methodology_id), eq(methodologies.status, "active")))
+    .where(eq(methodologies.id, parsed.data.methodology_id))
     .limit(1);
 
-  if (!methodology) {
+  const methodologyAllowed = methodology?.status === "active" || (methodology?.slug === "signal-pulse" && methodology.status === "beta");
+  if (!methodology || !methodologyAllowed) {
     return Response.json(
       { error: "not_found", message: "Metodología activa no encontrada." },
       { status: 404 }

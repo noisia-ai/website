@@ -39,6 +39,28 @@ test("buildStudyAnalysisPlan preserves every selected study lens", () => {
   assert.equal(plan.selected_lenses.length, STUDY_LENS_OPTIONS.length);
 });
 
+test("Signal Pulse uses its own report kind and does not force T&B lenses", () => {
+  const plan = buildStudyAnalysisPlan(["triggers-barriers", "narrative-ownership"], "signal-pulse");
+
+  assert.equal(plan.report_kind, "signal_pulse");
+  assert.deepEqual(plan.selected_lenses, ["signal-pulse"]);
+  assert.equal(plan.lens_configs["signal-pulse"]?.runtime, "signal_pulse_pipeline");
+  assert.deepEqual(plan.composer_modules.slice(0, 3), ["overview", "signals", "marketing_moves"]);
+});
+
+test("normalizeStudyAnalysisPlan preserves Signal Pulse budget and marketing brief", () => {
+  const plan = normalizeStudyAnalysisPlan({
+    primary_methodology_slug: "signal-pulse",
+    selected_lenses: ["signal-pulse"],
+    marketing_brief: { objective: "Defender presupuesto de pauta" },
+    budget_cap_usd: 5
+  });
+
+  assert.equal(plan.report_kind, "signal_pulse");
+  assert.deepEqual(plan.marketing_brief, { objective: "Defender presupuesto de pauta" });
+  assert.equal(plan.budget_cap_usd, 5);
+});
+
 test("composerModulesForLenses dedupes module slugs", () => {
   assert.deepEqual(
     composerModulesForLenses(["triggers-barriers", "narrative-ownership"]).slice(0, 3),

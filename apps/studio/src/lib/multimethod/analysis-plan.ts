@@ -2,10 +2,13 @@ import { lensQueryPackRequirements } from "@noisia/query-engine/src/lens-coverag
 
 export type StudyAnalysisPlan = {
   version: 1;
+  report_kind: "signal" | "signal_pulse";
   primary_methodology_slug: string;
   selected_lenses: string[];
   lens_configs: Record<string, Record<string, unknown>>;
   composer_modules: string[];
+  marketing_brief?: Record<string, unknown>;
+  budget_cap_usd?: number;
 };
 
 export type StudyLensOption = {
@@ -21,6 +24,7 @@ export type StudyLensOption = {
 };
 
 const PRIMARY_METHODOLOGY_SLUG = "triggers-barriers";
+const SIGNAL_PULSE_SLUG = "signal-pulse";
 
 export const STUDY_LENS_OPTIONS: StudyLensOption[] = [
   {
@@ -180,6 +184,7 @@ const knownLensSlugs = new Set(STUDY_LENS_OPTIONS.map((option) => option.slug));
 
 export function defaultStudyLensSlugs(primarySlug = PRIMARY_METHODOLOGY_SLUG) {
   const primary = normalizePrimarySlug(primarySlug);
+  if (primary === SIGNAL_PULSE_SLUG) return [SIGNAL_PULSE_SLUG];
   return Array.from(new Set([
     primary,
     ...STUDY_LENS_OPTIONS
@@ -196,6 +201,7 @@ export function buildStudyAnalysisPlan(
   const lenses = normalizeLensSlugs(selectedLenses, primary);
   return {
     version: 1,
+    report_kind: primary === SIGNAL_PULSE_SLUG ? "signal_pulse" : "signal",
     primary_methodology_slug: primary,
     selected_lenses: lenses,
     lens_configs: Object.fromEntries(lenses.map((slug) => [slug, defaultLensConfig(slug)])),
@@ -208,7 +214,16 @@ export function normalizeStudyAnalysisPlan(input: unknown, primarySlug = PRIMARY
   const selectedLenses = Array.isArray(value.selected_lenses)
     ? value.selected_lenses.map((item) => String(item))
     : undefined;
-  return buildStudyAnalysisPlan(selectedLenses, String(value.primary_methodology_slug || primarySlug));
+  const plan = buildStudyAnalysisPlan(selectedLenses, String(value.primary_methodology_slug || primarySlug));
+  const marketingBrief = value.marketing_brief && typeof value.marketing_brief === "object" && !Array.isArray(value.marketing_brief)
+    ? value.marketing_brief as Record<string, unknown>
+    : undefined;
+  const budgetCapUsd = Number(value.budget_cap_usd);
+  return {
+    ...plan,
+    ...(marketingBrief ? { marketing_brief: marketingBrief } : {}),
+    ...(Number.isFinite(budgetCapUsd) && budgetCapUsd > 0 ? { budget_cap_usd: budgetCapUsd } : {})
+  };
 }
 
 export function labelForLens(slug: string) {
@@ -216,6 +231,9 @@ export function labelForLens(slug: string) {
 }
 
 export function composerModulesForLenses(lenses: string[]) {
+  if (lenses.includes(SIGNAL_PULSE_SLUG)) {
+    return ["overview", "signals", "marketing_moves", "evidence", "corpus_view", "composer", "quality_settings"];
+  }
   return Array.from(new Set(
     lenses.flatMap((slug) => STUDY_LENS_OPTIONS.find((option) => option.slug === slug)?.composerModules ?? [])
   ));
@@ -226,6 +244,7 @@ export function queryPackRequirementForLens(slug: string) {
 }
 
 function normalizeLensSlugs(selectedLenses: string[] | undefined, primarySlug: string) {
+  if (primarySlug === SIGNAL_PULSE_SLUG) return [SIGNAL_PULSE_SLUG];
   const incoming = selectedLenses?.length ? selectedLenses : defaultStudyLensSlugs(primarySlug);
   return Array.from(new Set([primarySlug, ...incoming.map((slug) => slug.trim()).filter(Boolean)]))
     .filter((slug) => knownLensSlugs.has(slug))
@@ -233,10 +252,23 @@ function normalizeLensSlugs(selectedLenses: string[] | undefined, primarySlug: s
 }
 
 function normalizePrimarySlug(primarySlug: string) {
+  if (primarySlug === SIGNAL_PULSE_SLUG) return SIGNAL_PULSE_SLUG;
   return knownLensSlugs.has(primarySlug) ? primarySlug : PRIMARY_METHODOLOGY_SLUG;
 }
 
 function defaultLensConfig(slug: string) {
+  if (slug === SIGNAL_PULSE_SLUG) {
+    return {
+      role: "primary",
+      runtime: "signal_pulse_pipeline",
+      query_pack_required: true,
+      query_pack: {
+        required_scopes: ["brand", "competitors", "category"],
+        validation_level: "signal_pulse_cut_1"
+      },
+      signal_module_keys: ["overview", "signals", "marketing_moves", "evidence", "corpus_view", "composer", "quality_settings"]
+    };
+  }
   if (slug === PRIMARY_METHODOLOGY_SLUG) {
     return {
       role: "primary",

@@ -172,7 +172,7 @@ export async function listActiveMethodologies() {
       status: methodologies.status
     })
     .from(methodologies)
-    .where(eq(methodologies.status, "active"))
+    .where(or(eq(methodologies.status, "active"), and(eq(methodologies.slug, "signal-pulse"), eq(methodologies.status, "beta"))))
     .orderBy(asc(methodologies.name), desc(methodologies.version));
 }
 

@@ -52,12 +52,13 @@ test("engine registry matches seedable beta methodology YAMLs", async () => {
   const seedsDir = resolve(process.cwd(), "../../docs/product/10_methodology_seeds");
   const files = (await readdir(seedsDir)).filter((file) => file.endsWith(".yaml")).sort();
   const betaSlugs: string[] = [];
+  const nonEngineBetaSlugs = new Set(["signal-pulse"]);
 
   for (const file of files) {
     const raw = await readFile(resolve(seedsDir, file), "utf8");
     const slug = raw.match(/^slug:\s*["']?([^"'\n#]+)["']?/m)?.[1]?.trim();
     const status = raw.match(/^status:\s*["']?([^"'\n#]+)["']?/m)?.[1]?.trim();
-    if (status === "beta" && slug) betaSlugs.push(slug);
+    if (status === "beta" && slug && !nonEngineBetaSlugs.has(slug)) betaSlugs.push(slug);
   }
 
   assert.deepEqual(betaSlugs.sort(), [...ENGINE_METHODOLOGY_SLUGS].sort());
@@ -187,9 +188,11 @@ test("engine coding parser requires signal_label for publishable labels", () => 
     ]
   }));
   assert.equal(mixed.length, 1);
-  assert.equal(mixed[0].external_ref, "mention-3");
+  const validMixedCoding = mixed[0];
+  assert.ok(validMixedCoding);
+  assert.equal(validMixedCoding.external_ref, "mention-3");
   // Out-of-range intensity is clamped into [0,5] instead of throwing.
-  assert.equal(mixed[0].intensity, 5);
+  assert.equal(validMixedCoding.intensity, 5);
 
   // Structural errors (no JSON object / no codings[] array) still throw so the
   // worker's batch-level guard can retry or skip the whole batch.

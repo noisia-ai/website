@@ -35,7 +35,12 @@ export type EngineStepName =
   | "code"
   | "score"
   | "synthesize"
-  | "quality_gates";
+  | "quality_gates"
+  | "sp_readiness"
+  | "sp_periods"
+  | "sp_cluster"
+  | "sp_name_signals"
+  | "sp_metrics";
 
 export const ENGINE_STEP_ORDER: EngineStepName[] = [
   "preflight",
@@ -52,7 +57,12 @@ export const ENGINE_STEP_JOB_NAME: Record<EngineStepName, string> = {
   code: "engine_step_code",
   score: "engine_step_score",
   synthesize: "engine_step_synthesize",
-  quality_gates: "engine_quality_gates"
+  quality_gates: "engine_quality_gates",
+  sp_readiness: "engine_sp_readiness",
+  sp_periods: "engine_sp_periods",
+  sp_cluster: "engine_sp_cluster",
+  sp_name_signals: "engine_sp_name_signals",
+  sp_metrics: "engine_sp_metrics"
 };
 
 export function engineNextStep(current: EngineStepName): EngineStepName | null {

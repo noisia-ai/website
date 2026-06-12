@@ -9,6 +9,7 @@ export * from "./engine-signal-block";
 export * from "./engine-lens-budget";
 export * from "./lens-query-packs";
 export * from "./lens-coverage";
+export * from "./signal-pulse";
 export * from "./methodologies/registry";
 export * from "./methodologies/narrative-ownership";
 

@@ -151,6 +151,33 @@ test("T&B packs preserve the three classic query slots", () => {
   );
 });
 
+test("Signal Pulse packs cover brand, competitors and category with marketing language", () => {
+  const packs = buildLensQueryPacks({
+    input: {
+      ...input,
+      methodology: {
+        slug: "signal-pulse",
+        name: "Signal Pulse",
+        version: "0.1",
+        manifest: {}
+      }
+    },
+    composed,
+    analysisPlan: { primary_methodology_slug: "signal-pulse", selected_lenses: ["signal-pulse"] }
+  }).filter((pack) => pack.lensSlug === "signal-pulse");
+
+  assert.deepEqual(
+    packs.map((pack) => [pack.signalIntent, pack.scope]),
+    [
+      ["marketing_signal", "brand"],
+      ["marketing_signal", "competitors"],
+      ["marketing_signal", "category"]
+    ]
+  );
+  assert.match(packs[0]?.queryText ?? "", /esta de moda|lo vi en|creator|campana/);
+  assert.equal(packs.every((pack) => pack.seeds.required === true), true);
+});
+
 test("non-T&B packs add lens-specific signal language and provenance metadata", () => {
   const [pack] = buildLensQueryPacks({
     input,

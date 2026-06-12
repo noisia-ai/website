@@ -8,6 +8,13 @@ import { engineQualityGatesJob } from "../workers/engine-step-quality-gates";
 import { engineRetrieveJob } from "../workers/engine-step-retrieve";
 import { engineScoreJob } from "../workers/engine-step-score";
 import { engineSynthesizeJob } from "../workers/engine-step-synthesize";
+import {
+  signalPulseClusterJob,
+  signalPulseMetricsJob,
+  signalPulseNameSignalsJob,
+  signalPulsePeriodsJob,
+  signalPulseReadinessJob
+} from "../workers/signal-pulse-steps";
 import { redisConnection } from "./query-engine";
 
 export function startEngineAnalysisWorker() {
@@ -29,6 +36,16 @@ export function startEngineAnalysisWorker() {
           return engineSynthesizeJob(job);
         case "engine_quality_gates":
           return engineQualityGatesJob(job);
+        case "engine_sp_readiness":
+          return signalPulseReadinessJob(job);
+        case "engine_sp_periods":
+          return signalPulsePeriodsJob(job);
+        case "engine_sp_cluster":
+          return signalPulseClusterJob(job);
+        case "engine_sp_name_signals":
+          return signalPulseNameSignalsJob(job);
+        case "engine_sp_metrics":
+          return signalPulseMetricsJob(job);
         default:
           throw new Error(`Unsupported engine-analysis job: ${job.name}`);
       }

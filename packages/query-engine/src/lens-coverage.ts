@@ -82,6 +82,14 @@ export const lensQueryPackRequirements: Record<string, Record<string, unknown>> 
     required_dimensions: ["triggers", "barriers", "experience", "noise"],
     charts_expected: ["tb_decision_field", "tb_comparative_dashboard"]
   },
+  "signal-pulse": {
+    validation_level: "required_for_lens",
+    requires_competitors: false,
+    min_mentions_per_entity: 100,
+    required_scopes: ["brand", "competitors", "category"],
+    required_dimensions: ["marketing_signal", "trend", "risk", "move"],
+    charts_expected: ["impact_polarity", "momentum_stream", "coverage_strip", "galaxy_layout"]
+  },
   "narrative-ownership": {
     validation_level: "required_for_lens",
     requires_competitors: true,

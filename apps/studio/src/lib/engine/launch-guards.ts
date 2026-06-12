@@ -14,7 +14,7 @@ export type EngineMethodologyLaunchRow = {
 export type EngineLaunchValidation =
   | {
       ok: true;
-      methodologySlug: EngineRunnableMethodologySlug;
+      methodologySlug: EngineRunnableMethodologySlug | "signal-pulse";
       methodologyVersion: string;
       methodologyStatus: "beta";
     }
@@ -41,6 +41,34 @@ export function validateEngineLaunchRequest(
   requestedSlug: string,
   methodology: EngineMethodologyLaunchRow
 ): EngineLaunchValidation {
+  if (requestedSlug === "signal-pulse") {
+    if (!methodology) {
+      return {
+        ok: false,
+        status: 400,
+        error: "methodology_not_seeded",
+        message: "Methodology manifest not found in DB. Run methodology seeds first.",
+        methodologySlug: requestedSlug
+      };
+    }
+    if (methodology.status !== "beta") {
+      return {
+        ok: false,
+        status: 409,
+        error: "methodology_not_beta",
+        message: "Signal Pulse solo corre como beta controlada en esta fase.",
+        methodologySlug: requestedSlug,
+        methodologyStatus: methodology.status
+      };
+    }
+    return {
+      ok: true,
+      methodologySlug: "signal-pulse",
+      methodologyVersion: methodology.version ?? "0.1",
+      methodologyStatus: "beta"
+    };
+  }
+
   if (!isEngineMethodologySlug(requestedSlug)) {
     return {
       ok: false,

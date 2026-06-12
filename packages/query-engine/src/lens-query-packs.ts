@@ -96,6 +96,32 @@ export const LENS_QUERY_PACK_TEMPLATES: LensQueryPackTemplate[] = [
     required: true
   },
   ...templatesForThreeScopes({
+    lensSlug: "signal-pulse",
+    lensLabel: "Signal Pulse",
+    signalIntent: "marketing_signal",
+    signalLabel: "Senales tacticas de marketing",
+    objective: "Capturar conversacion accionable para claims, contenido, pauta, creators, tendencias, riesgos y movimientos de narrativa.",
+    phraseHints: [
+      "esta de moda",
+      "lo vi en",
+      "vi un video",
+      "trend",
+      "viral",
+      "creator",
+      "influencer",
+      "comparado con",
+      "mejor que",
+      "peor que",
+      "deberian hacer",
+      "nuevo sabor",
+      "campana",
+      "anuncio",
+      "promocion",
+      "lo recomiendo"
+    ],
+    sourceHints: ["SentiOne", "TikTok comments", "Apify social export", "reviews", "creator/community posts"]
+  }),
+  ...templatesForThreeScopes({
     lensSlug: "narrative-ownership",
     lensLabel: "Narrative Ownership",
     signalIntent: "narrative_signal",

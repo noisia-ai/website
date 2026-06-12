@@ -13,7 +13,7 @@ test("live intelligence migrations are journaled in order", async () => {
   const journal = JSON.parse(await readFile(resolve(migrationsDir, "meta/_journal.json"), "utf8")) as {
     entries: Array<{ idx: number; tag: string }>;
   };
-  const tail = journal.entries.slice(-9).map((entry) => ({ idx: entry.idx, tag: entry.tag }));
+  const tail = journal.entries.slice(-10).map((entry) => ({ idx: entry.idx, tag: entry.tag }));
 
   assert.deepEqual(tail, [
     { idx: 25, tag: "0025_engine_methodologies" },
@@ -24,7 +24,8 @@ test("live intelligence migrations are journaled in order", async () => {
     { idx: 30, tag: "0030_monthly_cut_and_composer" },
     { idx: 31, tag: "0031_study_analysis_plan" },
     { idx: 32, tag: "0032_import_batch_query_pack_link" },
-    { idx: 33, tag: "0033_engine_run_mention_map" }
+    { idx: 33, tag: "0033_engine_run_mention_map" },
+    { idx: 34, tag: "0034_signal_pulse_foundation" }
   ]);
 });
 
@@ -60,6 +61,22 @@ test("engine and live intelligence migrations include every required table", asy
   assert.match(runMapSql, /CREATE TABLE IF NOT EXISTS "engine_run_mention_map"/);
   assert.match(runMapSql, /REFERENCES "engine_analyses"\("id"\) ON DELETE CASCADE/);
   assert.match(runMapSql, /REFERENCES "query_packs"\("id"\) ON DELETE SET NULL/);
+
+  const signalPulseSql = await migration("0034_signal_pulse_foundation");
+  for (const table of [
+    "report_periods",
+    "signal_period_metrics",
+    "marketing_moves",
+    "chart_aggregates",
+    "performance_records",
+    "data_sources",
+    "source_sync_runs"
+  ]) {
+    assert.match(signalPulseSql, new RegExp(`CREATE TABLE IF NOT EXISTS "${table}"`));
+  }
+  assert.match(signalPulseSql, /ADD COLUMN IF NOT EXISTS "kind" text NOT NULL DEFAULT 'signal'/);
+  assert.match(signalPulseSql, /ADD COLUMN IF NOT EXISTS "visibility_config" jsonb NOT NULL DEFAULT '\{\}'::jsonb/);
+  assert.match(signalPulseSql, /CREATE UNIQUE INDEX IF NOT EXISTS "uq_signal_observation_signal_engine_analysis_window"/);
 });
 
 test("T&B period backfill joins codings to the internal finding UUID", async () => {
@@ -79,7 +96,8 @@ test("live intelligence migrations preserve additive safety contracts", async ()
     await migration("0030_monthly_cut_and_composer"),
     await migration("0031_study_analysis_plan"),
     await migration("0032_import_batch_query_pack_link"),
-    await migration("0033_engine_run_mention_map")
+    await migration("0033_engine_run_mention_map"),
+    await migration("0034_signal_pulse_foundation")
   ].join("\n");
 
   assert.doesNotMatch(migrations, /\bDROP\s+(TABLE|COLUMN|DATABASE)\b/i);
@@ -92,7 +110,10 @@ test("live intelligence migrations preserve additive safety contracts", async ()
   assert.match(migrations, /CREATE UNIQUE INDEX IF NOT EXISTS "uq_signal_observation_signal_snapshot"/);
   assert.match(migrations, /CREATE UNIQUE INDEX IF NOT EXISTS "uq_signal_observation_signal_tb_analysis"/);
   assert.match(migrations, /CREATE UNIQUE INDEX IF NOT EXISTS "uq_signal_observation_signal_engine_analysis"/);
+  assert.match(migrations, /CREATE UNIQUE INDEX IF NOT EXISTS "uq_signal_observation_signal_engine_analysis_window"/);
   assert.match(migrations, /ADD COLUMN IF NOT EXISTS "analysis_plan"/);
+  assert.match(migrations, /CREATE TABLE IF NOT EXISTS "performance_records"/);
+  assert.match(migrations, /CREATE TABLE IF NOT EXISTS "data_sources"/);
 });
 
 test("query-pack backfill preserves provenance from import batches to mentions", async () => {

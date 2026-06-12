@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import {
   AnyPgColumn,
+  bigint,
   boolean,
   char,
   check,
@@ -1078,8 +1079,13 @@ export const signalObservations = pgTable(
     uniqueIndex("uq_signal_observation_signal_tb_analysis")
       .on(table.canonicalSignalId, table.tbAnalysisId)
       .where(sql`${table.tbAnalysisId} IS NOT NULL`),
-    uniqueIndex("uq_signal_observation_signal_engine_analysis")
-      .on(table.canonicalSignalId, table.engineAnalysisId)
+    uniqueIndex("uq_signal_observation_signal_engine_analysis_window")
+      .on(
+        table.canonicalSignalId,
+        table.engineAnalysisId,
+        sql`COALESCE(${table.windowStart}, DATE '0001-01-01')`,
+        sql`COALESCE(${table.windowEnd}, DATE '9999-12-31')`
+      )
       .where(sql`${table.engineAnalysisId} IS NOT NULL`),
     uniqueIndex("uq_signal_observation_signal_output_window")
       .on(table.canonicalSignalId, table.publishedOutputId, table.windowStart, table.windowEnd)
@@ -1110,6 +1116,207 @@ export const signalObservationEvidence = pgTable(
     index("idx_signal_observation_evidence_observation").on(table.signalObservationId, table.position),
     index("idx_signal_observation_evidence_mention").on(table.mentionId),
     index("idx_signal_observation_evidence_source").on(table.sourceId)
+  ]
+);
+
+export const dataSources = pgTable(
+  "data_sources",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    studyCorpusId: uuid("study_corpus_id").references(() => studyCorpora.id, { onDelete: "cascade" }),
+    organizationId: uuid("organization_id").references(() => organizations.id, { onDelete: "set null" }),
+    brandId: uuid("brand_id").references(() => brands.id, { onDelete: "cascade" }),
+    sourceType: text("source_type").notNull(),
+    provider: text("provider").notNull(),
+    connectionMethod: text("connection_method").notNull(),
+    name: text("name").notNull(),
+    mapping: jsonb("mapping").notNull().default(sql`'{}'::jsonb`),
+    mappingVersion: integer("mapping_version").notNull().default(1),
+    role: jsonb("role").notNull().default(sql`'{}'::jsonb`),
+    status: text("status").notNull().default("draft"),
+    visibility: text("visibility").notNull().default("internal"),
+    createdAt: now(),
+    updatedAt: updatedAt()
+  },
+  (table) => [
+    index("idx_data_sources_corpus").on(table.studyCorpusId, table.sourceType, table.status),
+    index("idx_data_sources_brand").on(table.brandId, table.sourceType, table.status)
+  ]
+);
+
+export const sourceSyncRuns = pgTable(
+  "source_sync_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    dataSourceId: uuid("data_source_id")
+      .notNull()
+      .references(() => dataSources.id, { onDelete: "cascade" }),
+    startedAt: timestamp("started_at", { withTimezone: true }).defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    status: text("status").notNull().default("running"),
+    recordsTotal: integer("records_total"),
+    recordsValid: integer("records_valid"),
+    recordsDuplicate: integer("records_duplicate"),
+    recordsFailed: integer("records_failed"),
+    coverageStart: date("coverage_start"),
+    coverageEnd: date("coverage_end"),
+    errorSummary: jsonb("error_summary").notNull().default(sql`'{}'::jsonb`),
+    createdAt: now()
+  },
+  (table) => [
+    index("idx_source_sync_runs_source").on(table.dataSourceId, table.createdAt)
+  ]
+);
+
+export const reportPeriods = pgTable(
+  "report_periods",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    studyCorpusId: uuid("study_corpus_id")
+      .notNull()
+      .references(() => studyCorpora.id, { onDelete: "cascade" }),
+    granularity: text("granularity").notNull().default("month"),
+    periodStart: date("period_start").notNull(),
+    periodEnd: date("period_end").notNull(),
+    label: text("label").notNull(),
+    coverage: jsonb("coverage").notNull().default(sql`'{}'::jsonb`),
+    comparable: boolean("comparable").notNull().default(true),
+    comparabilityReasons: jsonb("comparability_reasons").notNull().default(sql`'[]'::jsonb`),
+    confidence: text("confidence"),
+    knownGaps: jsonb("known_gaps").notNull().default(sql`'[]'::jsonb`),
+    computedAt: timestamp("computed_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    unique("uq_report_periods_corpus_grain_start").on(table.studyCorpusId, table.granularity, table.periodStart),
+    index("idx_report_periods_corpus_window").on(table.studyCorpusId, table.granularity, table.periodStart, table.periodEnd)
+  ]
+);
+
+export const signalPeriodMetrics = pgTable(
+  "signal_period_metrics",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    canonicalSignalId: uuid("canonical_signal_id")
+      .notNull()
+      .references(() => canonicalSignals.id, { onDelete: "cascade" }),
+    periodId: uuid("period_id")
+      .notNull()
+      .references(() => reportPeriods.id, { onDelete: "cascade" }),
+    studyCorpusId: uuid("study_corpus_id")
+      .notNull()
+      .references(() => studyCorpora.id, { onDelete: "cascade" }),
+    volume: integer("volume").notNull().default(0),
+    engagement: numeric("engagement"),
+    impactV1: numeric("impact_v1"),
+    sentimentScore: numeric("sentiment_score"),
+    polarityBucket: text("polarity_bucket"),
+    dominantEmotion: text("dominant_emotion"),
+    emotionDistribution: jsonb("emotion_distribution").notNull().default(sql`'{}'::jsonb`),
+    sourceMix: jsonb("source_mix").notNull().default(sql`'{}'::jsonb`),
+    evidenceCount: integer("evidence_count").notNull().default(0),
+    confidence: text("confidence"),
+    deltaPrev: numeric("delta_prev"),
+    deltaWindowAvg: numeric("delta_window_avg"),
+    rank: integer("rank"),
+    lifecycleState: text("lifecycle_state"),
+    computedAt: timestamp("computed_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    unique("uq_signal_period_metrics_signal_period").on(table.canonicalSignalId, table.periodId),
+    index("idx_signal_period_metrics_corpus_period").on(table.studyCorpusId, table.periodId, table.rank),
+    index("idx_signal_period_metrics_signal").on(table.canonicalSignalId, table.computedAt)
+  ]
+);
+
+export const marketingMoves = pgTable(
+  "marketing_moves",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    studyCorpusId: uuid("study_corpus_id")
+      .notNull()
+      .references(() => studyCorpora.id, { onDelete: "cascade" }),
+    engineAnalysisId: uuid("engine_analysis_id").references(() => engineAnalyses.id, { onDelete: "set null" }),
+    periodId: uuid("period_id").references(() => reportPeriods.id, { onDelete: "set null" }),
+    moveType: text("move_type").notNull(),
+    actionText: text("action_text").notNull(),
+    signalRefs: uuid("signal_refs").array().notNull().default(sql`ARRAY[]::uuid[]`),
+    evidenceRefs: jsonb("evidence_refs").notNull().default(sql`'[]'::jsonb`),
+    ownerSuggestion: text("owner_suggestion"),
+    timing: text("timing"),
+    measurementSuggestion: text("measurement_suggestion"),
+    noGoNotes: text("no_go_notes"),
+    confidence: text("confidence"),
+    status: text("status").notNull().default("candidate"),
+    position: integer("position"),
+    createdAt: now(),
+    updatedAt: updatedAt()
+  },
+  (table) => [
+    index("idx_marketing_moves_corpus_period").on(table.studyCorpusId, table.periodId, table.status, table.position),
+    index("idx_marketing_moves_engine").on(table.engineAnalysisId, table.status)
+  ]
+);
+
+export const chartAggregates = pgTable(
+  "chart_aggregates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    studyCorpusId: uuid("study_corpus_id")
+      .notNull()
+      .references(() => studyCorpora.id, { onDelete: "cascade" }),
+    chartKey: text("chart_key").notNull(),
+    periodId: uuid("period_id").references(() => reportPeriods.id, { onDelete: "cascade" }),
+    filtersHash: text("filters_hash").notNull().default("default"),
+    payload: jsonb("payload").notNull(),
+    algoVersion: text("algo_version"),
+    computedAt: timestamp("computed_at", { withTimezone: true }).notNull().defaultNow(),
+    staleAfter: timestamp("stale_after", { withTimezone: true })
+  },
+  (table) => [
+    unique("uq_chart_aggregates_ref").on(table.studyCorpusId, table.chartKey, table.periodId, table.filtersHash),
+    index("idx_chart_aggregates_lookup").on(table.studyCorpusId, table.chartKey, table.periodId)
+  ]
+);
+
+export const performanceRecords = pgTable(
+  "performance_records",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    studyCorpusId: uuid("study_corpus_id")
+      .notNull()
+      .references(() => studyCorpora.id, { onDelete: "cascade" }),
+    dataSourceId: uuid("data_source_id").references(() => dataSources.id, { onDelete: "set null" }),
+    importBatchId: uuid("import_batch_id").references(() => importBatches.id, { onDelete: "set null" }),
+    externalId: text("external_id").notNull(),
+    entityKind: text("entity_kind").notNull(),
+    entityName: text("entity_name"),
+    parentExternalId: text("parent_external_id"),
+    platform: text("platform").notNull(),
+    channel: text("channel").notNull().default("paid"),
+    objective: text("objective"),
+    recordDate: date("record_date").notNull(),
+    granularity: text("granularity").notNull().default("day"),
+    spend: numeric("spend"),
+    impressions: bigint("impressions", { mode: "number" }),
+    reach: bigint("reach", { mode: "number" }),
+    clicks: bigint("clicks", { mode: "number" }),
+    videoViews: bigint("video_views", { mode: "number" }),
+    engagement: bigint("engagement", { mode: "number" }),
+    conversions: numeric("conversions"),
+    ctr: numeric("ctr"),
+    cpm: numeric("cpm"),
+    cpc: numeric("cpc"),
+    creativeText: text("creative_text"),
+    creativeAssetRef: text("creative_asset_ref"),
+    metrics: jsonb("metrics").notNull().default(sql`'{}'::jsonb`),
+    rawMetadata: jsonb("raw_metadata"),
+    createdAt: now()
+  },
+  (table) => [
+    unique("uq_performance_records_grain").on(table.studyCorpusId, table.platform, table.externalId, table.recordDate, table.granularity),
+    index("idx_performance_records_date").on(table.studyCorpusId, table.recordDate),
+    index("idx_performance_records_entity").on(table.studyCorpusId, table.entityKind, table.channel),
+    index("idx_performance_records_source").on(table.dataSourceId, table.recordDate)
   ]
 );
 
@@ -1197,6 +1404,7 @@ export const publishedOutputs = pgTable(
     brandId: uuid("brand_id").references(() => brands.id, { onDelete: "cascade" }),
     themeId: uuid("theme_id").references(() => themes.id, { onDelete: "cascade" }),
     methodologySlug: text("methodology_slug").notNull(),
+    kind: text("kind").notNull().default("signal"),
     outputType: text("output_type").notNull().default("narrative_dashboard"),
     status: text("status").notNull().default("draft"),
     title: text("title").notNull(),
@@ -1204,6 +1412,7 @@ export const publishedOutputs = pgTable(
     summary: text("summary"),
     manifest: jsonb("manifest").notNull().default(sql`'{}'::jsonb`),
     payload: jsonb("payload").notNull().default(sql`'{}'::jsonb`),
+    visibilityConfig: jsonb("visibility_config").notNull().default(sql`'{}'::jsonb`),
     version: integer("version").notNull().default(1),
     createdByUserId: uuid("created_by_user_id").references(() => users.id),
     publishedByUserId: uuid("published_by_user_id").references(() => users.id),
@@ -1218,6 +1427,7 @@ export const publishedOutputs = pgTable(
       sql`((${table.tbAnalysisId} IS NOT NULL)::int + (${table.engineAnalysisId} IS NOT NULL)::int) = 1`
     ),
     index("idx_outputs_corpus").on(table.studyCorpusId, table.status, table.updatedAt),
+    index("idx_outputs_kind_status").on(table.kind, table.status, table.updatedAt),
     index("idx_outputs_brand").on(table.brandId, table.status, table.publishedAt),
     index("idx_outputs_analysis").on(table.tbAnalysisId),
     index("idx_outputs_engine_analysis").on(table.engineAnalysisId),

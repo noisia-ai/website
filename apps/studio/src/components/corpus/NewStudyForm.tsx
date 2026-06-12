@@ -83,6 +83,10 @@ type Draft = {
   geoFocus: string;
   targetWindowMonths: string;
   sourceKind: string;
+  activeCampaigns: string;
+  allowedClaims: string;
+  prohibitedClaims: string;
+  runBudgetUsd: string;
 };
 
 type InlineTheme = {
@@ -163,7 +167,11 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
     successCriteria: "",
     geoFocus: "MX",
     targetWindowMonths: "12",
-    sourceKind: "spreadsheet_archive"
+    sourceKind: "spreadsheet_archive",
+    activeCampaigns: "",
+    allowedClaims: "",
+    prohibitedClaims: "",
+    runBudgetUsd: "5"
   });
   const [inlineBrand, setInlineBrand] = useState<InlineBrand>({
     organizationName: "",
@@ -224,6 +232,7 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
       ? inlineTheme.name
       : selectedTheme?.name ?? "";
   const methodologyName = selectedMethodology?.name ?? "Triggers & Barriers";
+  const isSignalPulseStudy = selectedMethodology?.slug === "signal-pulse";
 
   useEffect(() => {
     if (studyNameTouched) return;
@@ -242,9 +251,7 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
     setDraft((current) => ({
       ...current,
       methodologyId,
-      selectedLensSlugs: current.selectedLensSlugs.length > 0
-        ? current.selectedLensSlugs
-        : defaultStudyLensSlugs(methodology?.slug)
+      selectedLensSlugs: defaultStudyLensSlugs(methodology?.slug)
     }));
     setFieldErrors((current) => ({ ...current, methodologyId: undefined }));
   }
@@ -362,7 +369,12 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
     }
 
     if (maxStep >= 2) {
-      if (!draft.selectedLensSlugs.includes("triggers-barriers")) {
+      if (isSignalPulseStudy) {
+        const budget = Number(draft.runBudgetUsd);
+        if (!Number.isFinite(budget) || budget <= 0) {
+          addError(2, "runBudgetUsd", "Define un budget cap mayor a 0.");
+        }
+      } else if (!draft.selectedLensSlugs.includes("triggers-barriers")) {
         addError(2, "selectedLensSlugs", t("validation.methodology"));
       }
     }
@@ -765,12 +777,20 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
         )}
 
         {step === 2 && (
-          <WizardPanel eyebrow="Analysis plan" title="Lentes del reporte">
-            <LensPlanPanel
-              selectedLensSlugs={draft.selectedLensSlugs}
-              selectedMethodology={selectedMethodology}
-              onToggle={toggleLens}
-            />
+          <WizardPanel eyebrow="Analysis plan" title={isSignalPulseStudy ? "Brief Signal Pulse" : "Lentes del reporte"}>
+            {isSignalPulseStudy ? (
+              <SignalPulseBriefPanel
+                draft={draft}
+                fieldErrors={fieldErrors}
+                onChange={updateDraft}
+              />
+            ) : (
+              <LensPlanPanel
+                selectedLensSlugs={draft.selectedLensSlugs}
+                selectedMethodology={selectedMethodology}
+                onToggle={toggleLens}
+              />
+            )}
             {fieldErrors.selectedLensSlugs && <small className="new-study-field-error">{fieldErrors.selectedLensSlugs}</small>}
           </WizardPanel>
         )}
@@ -834,7 +854,15 @@ export function NewStudyForm({ brands, themes, baselineCorpora, methodologies, d
 
         {step === 4 && (
           <WizardPanel eyebrow={t("brief.eyebrow")} title={t("brief.title")}>
-            <BriefPreview draft={draft} subjectLabel={subjectLabel} methodology={selectedMethodology?.name ?? "Triggers & Barriers"} files={files} subjectType={subjectType} lensLabels={selectedLensLabels} />
+            <BriefPreview
+              draft={draft}
+              subjectLabel={subjectLabel}
+              methodology={selectedMethodology?.name ?? "Triggers & Barriers"}
+              files={files}
+              subjectType={subjectType}
+              lensLabels={selectedLensLabels}
+              isSignalPulseStudy={isSignalPulseStudy}
+            />
           </WizardPanel>
         )}
 
@@ -1128,13 +1156,73 @@ function LensPlanPanel({
   );
 }
 
+function SignalPulseBriefPanel({
+  draft,
+  fieldErrors,
+  onChange
+}: {
+  draft: Draft;
+  fieldErrors: FieldErrors;
+  onChange: (key: DraftStringKey, value: string) => void;
+}) {
+  return (
+    <section className="study-lens-plan">
+      <div className="study-lens-plan-intro">
+        <div>
+          <p className="vitals-eyebrow">Signal Pulse</p>
+          <h3>Reporte tactico mensual</h3>
+          <p>
+            Signal Pulse usa el corpus vivo para detectar senales por cluster, periodizarlas y convertirlas en moves de marketing.
+            El costo se confirma antes de correr y Claude solo nombra/interpreta clusters.
+          </p>
+        </div>
+        <div className="study-lens-summary">
+          <span>${Number(draft.runBudgetUsd || 0).toFixed(0)}</span>
+          <small>budget cap</small>
+        </div>
+      </div>
+      <div className="new-study-grid">
+        <TextAreaField
+          compact
+          label="Campanas o territorios activos"
+          value={draft.activeCampaigns}
+          onChange={(value) => onChange("activeCampaigns", value)}
+          placeholder="Ej. Back to school, creators de snack, territorios de picante extremo"
+        />
+        <TextAreaField
+          compact
+          label="Claims permitidos"
+          value={draft.allowedClaims}
+          onChange={(value) => onChange("allowedClaims", value)}
+          placeholder="Claims o temas que Marketing si puede activar"
+        />
+        <TextAreaField
+          compact
+          label="Claims prohibidos / legal"
+          value={draft.prohibitedClaims}
+          onChange={(value) => onChange("prohibitedClaims", value)}
+          placeholder="No-go claims, riesgos regulatorios o territorios sensibles"
+        />
+        <TextField
+          label="Budget cap de corrida (USD)"
+          value={draft.runBudgetUsd}
+          onChange={(value) => onChange("runBudgetUsd", value)}
+          error={fieldErrors.runBudgetUsd}
+          required
+        />
+      </div>
+    </section>
+  );
+}
+
 function BriefPreview({
   draft,
   subjectLabel,
   methodology,
   files,
   subjectType,
-  lensLabels
+  lensLabels,
+  isSignalPulseStudy
 }: {
   draft: Draft;
   subjectLabel: string;
@@ -1142,6 +1230,7 @@ function BriefPreview({
   files: File[];
   subjectType: "brand" | "theme";
   lensLabels: string[];
+  isSignalPulseStudy: boolean;
 }) {
   const t = useTranslations("NewStudy.brief");
   const items = [
@@ -1150,6 +1239,12 @@ function BriefPreview({
     [t("baseline"), draft.baseCorpusId ? t("baselineLinked") : ""],
     [t("methodology"), methodology],
     [t("lenses"), lensLabels.join(", ")],
+    ...(isSignalPulseStudy ? [
+      ["Budget cap", draft.runBudgetUsd ? `$${draft.runBudgetUsd}` : ""],
+      ["Campanas activas", draft.activeCampaigns],
+      ["Claims permitidos", draft.allowedClaims],
+      ["Claims prohibidos", draft.prohibitedClaims]
+    ] : []),
     [t("question"), draft.businessQuestion],
     [t("decision"), draft.decisionToInform],
     [t("audience"), draft.audienceSegment],
@@ -1229,13 +1324,29 @@ function buildStudyPayload(
   subject: { brandId?: string; themeId?: string; baseCorpusId?: string },
   primaryMethodologySlug?: string
 ) {
+  const analysisPlan = buildStudyAnalysisPlan(draft.selectedLensSlugs, primaryMethodologySlug);
+  const isSignalPulse = primaryMethodologySlug === "signal-pulse";
+  const budgetCapUsd = Number(draft.runBudgetUsd || 5);
+  if (isSignalPulse) {
+    analysisPlan.marketing_brief = {
+      objectives: draft.decisionToInform,
+      audience_priorities: draft.audienceSegment,
+      active_campaigns: splitList(draft.activeCampaigns),
+      active_territories: splitList(draft.categoryContext),
+      allowed_claims: splitList(draft.allowedClaims),
+      prohibited_claims: splitList(draft.prohibitedClaims),
+      legal_constraints: splitList(draft.strategicConstraints),
+      success_criteria: splitList(draft.successCriteria)
+    };
+    analysisPlan.budget_cap_usd = Number.isFinite(budgetCapUsd) && budgetCapUsd > 0 ? budgetCapUsd : 5;
+  }
   return {
     name: draft.studyName,
     ...(subject.brandId ? { brand_id: subject.brandId } : {}),
     ...(subject.themeId ? { theme_id: subject.themeId } : {}),
     ...(subject.baseCorpusId ? { base_corpus_id: subject.baseCorpusId } : {}),
     methodology_id: draft.methodologyId,
-    analysis_plan: buildStudyAnalysisPlan(draft.selectedLensSlugs, primaryMethodologySlug),
+    analysis_plan: analysisPlan,
     business_question: draft.businessQuestion,
     decision_to_inform: draft.decisionToInform,
     audience_segment: draft.audienceSegment,

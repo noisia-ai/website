@@ -239,6 +239,13 @@
       "when": 1780643160000,
       "tag": "0033_engine_run_mention_map",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1780643220000,
+      "tag": "0034_signal_pulse_foundation",
+      "breakpoints": true
     }
   ]
 }

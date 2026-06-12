@@ -154,7 +154,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const parsed = startEngineSchema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success) return validationError(parsed.error);
   const allowFixtureCoding = parsed.data.params?.allow_fixture_coding === true;
-  if (!allowFixtureCoding && (!isEngineLlmEnabled() || !process.env.ANTHROPIC_API_KEY)) {
+  const requestedSlug = parsed.data.methodology_slug ?? corpus.methodologySlug;
+  const isSignalPulseRequested = requestedSlug === "signal-pulse";
+  if (!isSignalPulseRequested && !allowFixtureCoding && (!isEngineLlmEnabled() || !process.env.ANTHROPIC_API_KEY)) {
     return Response.json(
       {
         error: "engine_llm_disabled",
@@ -170,7 +172,6 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     );
   }
 
-  const requestedSlug = parsed.data.methodology_slug ?? corpus.methodologySlug;
   try {
     const [methodology] = await db
       .select({
@@ -291,6 +292,15 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     }
 
     const inheritedEngineParams = engineLensParamsFromTbMeta(await loadLatestTbMeta(corpus.id));
+    const analysisPlan = corpus.analysisPlan && typeof corpus.analysisPlan === "object" && !Array.isArray(corpus.analysisPlan)
+      ? corpus.analysisPlan as Record<string, unknown>
+      : {};
+    const signalPulseParams = isSignalPulseRequested
+      ? {
+          budget_cap_usd: Number(analysisPlan.budget_cap_usd ?? parsed.data.params?.budget_cap_usd ?? 5),
+          window_months: Number(corpus.targetWindowMonths ?? parsed.data.params?.window_months ?? 12)
+        }
+      : {};
     const [analysis] = await db
       .insert(engineAnalyses)
       .values({
@@ -304,6 +314,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         businessQuestion: corpus.businessQuestion,
         params: {
           ...inheritedEngineParams,
+          ...signalPulseParams,
           ...(parsed.data.params ?? {})
         },
         metaJson: {

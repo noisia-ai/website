@@ -64,10 +64,13 @@ export const createStudySchema = z.object({
   methodology_id: z.string().uuid(),
   analysis_plan: z.object({
     version: z.literal(1).optional(),
+    report_kind: z.enum(["signal", "signal_pulse"]).optional(),
     primary_methodology_slug: z.string().max(120).optional(),
     selected_lenses: z.array(z.string().max(120)).max(40).optional(),
     lens_configs: z.record(z.unknown()).optional(),
-    composer_modules: z.array(z.string().max(120)).max(40).optional()
+    composer_modules: z.array(z.string().max(120)).max(40).optional(),
+    marketing_brief: z.record(z.unknown()).optional(),
+    budget_cap_usd: z.coerce.number().positive().max(1000).optional()
   }).optional(),
   business_question: z.string().min(10).max(800),
   decision_to_inform: optionalText(800),

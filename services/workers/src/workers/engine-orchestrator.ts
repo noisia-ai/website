@@ -15,16 +15,20 @@ export async function engineOrchestratorJob(job: Job<EngineOrchestratorJobData>)
     `UPDATE engine_analyses
      SET pipeline_version = $1,
          status = 'running',
-         current_step = 'preflight',
+         current_step = CASE WHEN methodology_slug = 'signal-pulse' THEN 'sp_readiness' ELSE 'preflight' END,
          updated_at = NOW()
      WHERE id = $2`,
     [ENGINE_PIPELINE_VERSION, job.data.engineAnalysisId]
   );
 
   await job.updateProgress(60);
+  const methodology = await pool.query<{ methodology_slug: string }>(
+    `SELECT methodology_slug FROM engine_analyses WHERE id = $1`,
+    [job.data.engineAnalysisId]
+  );
   const next = await enqueueEngineStep({
     engineAnalysisId: job.data.engineAnalysisId,
-    step: "preflight"
+    step: methodology.rows[0]?.methodology_slug === "signal-pulse" ? "sp_readiness" : "preflight"
   });
 
   await job.updateProgress(100);

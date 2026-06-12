@@ -87,6 +87,21 @@ test("engine launch allows seeded beta runtime methodologies only", () => {
   });
 });
 
+test("engine launch allows Signal Pulse beta through its own pipeline", () => {
+  const result = validateEngineLaunchRequest("signal-pulse", {
+    slug: "signal-pulse",
+    version: "0.1",
+    status: "beta"
+  });
+
+  assert.deepEqual(result, {
+    ok: true,
+    methodologySlug: "signal-pulse",
+    methodologyVersion: "0.1",
+    methodologyStatus: "beta"
+  });
+});
+
 test("engine analysis reuse requires real retrieval and Claude coding for completed runs", () => {
   assert.equal(shouldReuseEngineAnalysis({ status: "queued" }), true);
   assert.equal(shouldReuseEngineAnalysis({ status: "running" }), true);
