@@ -14,8 +14,16 @@ function createPool() {
 
   return new pg.Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: resolveDatabaseSsl(process.env.DATABASE_SSL)
   });
+}
+
+export function resolveDatabaseSsl(value: string | undefined) {
+  const normalized = value?.trim().toLowerCase();
+  if (normalized === "false" || normalized === "0" || normalized === "disable" || normalized === "disabled") {
+    return false;
+  }
+  return { rejectUnauthorized: false };
 }
 
 // TODO mejora-futura: mover a un db client compartido con retry, tracing y

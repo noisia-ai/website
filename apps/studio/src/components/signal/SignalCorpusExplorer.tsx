@@ -496,7 +496,7 @@ export function SignalCorpusExplorer({
 
         <div className="signal-corpus-list">
           {filtered.length > 0 ? filtered.map((mention, index) => (
-            <article className={mention.isProtagonist ? "signal-corpus-card signal-corpus-card--protagonist" : "signal-corpus-card"} key={mention.mentionId || index}>
+            <article className={mention.isProtagonist ? "signal-corpus-card signal-corpus-card--protagonist" : "signal-corpus-card"} key={corpusMentionKey(mention, index)}>
               <header>
                 <SourceToken compact label={sourceDisplayLabel(mention.platform || "unknown", uiLanguage)} value={mention.platform || "unknown"} />
                 {mention.isProtagonist ? <strong><Icon name="star" size={11} /> {copy.protagonist}</strong> : <span>{labelEvidenceRole(mention.evidenceRole, copy)}</span>}
@@ -560,6 +560,15 @@ function Metric({ label, value }: { label: string; value: string }) {
       <strong>{value}</strong>
     </div>
   );
+}
+
+function corpusMentionKey(mention: CorpusMention, index: number) {
+  return [
+    mention.mentionId || "mention",
+    mention.findingId || mention.canonicalSignalId || "signal",
+    mention.evidenceRole || "role",
+    index
+  ].join(":");
 }
 
 function normalizeMention(mention: Mention): CorpusMention {

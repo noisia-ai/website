@@ -9,9 +9,13 @@ import {
   isInternalRole,
   normalizeRole
 } from "@/lib/auth/roles";
+import { isLocalAuthOverrideEnabled } from "@/lib/auth/local-auth";
 import { syncClientBrandAccessForOrganization } from "@/lib/auth/org-sync";
 
 export async function getAuthenticatedAppUser() {
+  const localSession = await getLocalAuthenticatedAppUser();
+  if (localSession) return localSession;
+
   const session = getKindeServerSession();
   const isAuthenticated = await session.isAuthenticated();
 
@@ -102,6 +106,34 @@ export async function getAuthenticatedAppUser() {
     kindeUser,
     kindeOrganization,
     kindeRoles
+  };
+}
+
+async function getLocalAuthenticatedAppUser() {
+  if (!isLocalAuthOverrideEnabled()) return null;
+  const email = process.env.NOISIA_LOCAL_AUTH_EMAIL?.trim().toLowerCase();
+  if (!email) return null;
+
+  const [appUser] = await db
+    .select()
+    .from(users)
+    .where(eq(sql`lower(${users.email})`, email))
+    .limit(1);
+
+  if (!appUser) {
+    throw new Error(`NOISIA_LOCAL_AUTH_EMAIL does not match an existing local user: ${email}`);
+  }
+
+  return {
+    appUser,
+    kindeUser: {
+      id: `local:${appUser.id}`,
+      email: appUser.email,
+      given_name: appUser.fullName?.split(" ")[0] ?? "Local",
+      family_name: appUser.fullName?.split(" ").slice(1).join(" ") || "User"
+    },
+    kindeOrganization: null,
+    kindeRoles: [{ key: appUser.primaryRole, name: appUser.primaryRole }]
   };
 }
 

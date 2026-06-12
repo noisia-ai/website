@@ -196,8 +196,12 @@ export default async function PulseOutputPage({
             sub="Cada cita conserva plataforma, fecha y rol dentro de la lectura."
           />
           <div className="pulse-evidence-list">
-            {evidence.length > 0 ? evidence.slice(0, 80).map((item) => (
-              <EvidenceRow item={item} signal={signals.find((signal) => stringValue(signal.id) === stringValue(item.signal_id))} key={stringValue(item.evidence_id)} />
+            {evidence.length > 0 ? evidence.slice(0, 80).map((item, index) => (
+              <EvidenceRow
+                item={item}
+                key={pulseEvidenceKey(item, index)}
+                signal={signals.find((signal) => stringValue(signal.id) === stringValue(item.signal_id))}
+              />
             )) : (
               <PulseEmptyState title="Falta evidencia ligada" body="Las señales necesitan citas accesibles antes de presentarse como lectura fuerte." />
             )}
@@ -830,6 +834,15 @@ function evidenceToMention(item: JsonRecord) {
     canonical_signal_title: stringValue(item.signal_title),
     evidence_role: stringValue(item.evidence_role)
   };
+}
+
+function pulseEvidenceKey(item: JsonRecord, index: number) {
+  return [
+    stringValue(item.evidence_id) || stringValue(item.mention_id) || "evidence",
+    stringValue(item.signal_id) || "signal",
+    stringValue(item.evidence_role) || "role",
+    index
+  ].join(":");
 }
 
 function labelMoveType(value: string) {

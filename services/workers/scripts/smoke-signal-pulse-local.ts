@@ -183,7 +183,7 @@ async function seedSignalPulseCorpus(client: pg.Client) {
     const user = await one<{ id: string }>(
       client,
       `INSERT INTO users (email, full_name, user_type, primary_role, organization_id, status)
-       VALUES ('signal-pulse-smoke@noisia.local', 'Signal Pulse Smoke', 'internal', 'admin', $1, 'active')
+       VALUES ('signal-pulse-smoke@noisia.local', 'Signal Pulse Smoke', 'noisia_internal', 'noisia_admin', $1, 'active')
        RETURNING id::text`,
       [organization.id]
     );
