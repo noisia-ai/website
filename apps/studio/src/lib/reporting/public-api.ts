@@ -4,6 +4,10 @@ import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { brands, methodologies, publishedOutputs, studyCorpora, themes } from "@noisia/db";
 
 import { db } from "@/lib/db";
+import {
+  sanitizePulseChartRefsForVisibility,
+  sanitizePulsePeriodsForVisibility
+} from "@/lib/signal-pulse/pulse-api";
 import { resolveSignalPulseVisibility } from "@/lib/signal-pulse/runtime-contracts";
 import { adaptTbSignalPayload } from "@/lib/signal/adapters/tb";
 
@@ -657,7 +661,7 @@ function buildSignalPulseReportingDataset(output: NonNullable<PublishedOutputRow
   const payload = asRecord(output.payload);
   const report = asRecord(payload.report);
   const executiveRead = asRecord(payload.executive_read);
-  const periods = arrayValue(payload.periods).map(asRecord);
+  const rawPeriods = arrayValue(payload.periods).map(asRecord);
   const signals = arrayValue(payload.signals).map(asRecord);
   const moves = arrayValue(payload.marketing_moves).map(asRecord);
   const evidence = arrayValue(payload.evidence).map(asRecord);
@@ -666,6 +670,7 @@ function buildSignalPulseReportingDataset(output: NonNullable<PublishedOutputRow
     config: output.visibilityConfig,
     isInternalUser: false
   });
+  const periods = sanitizePulsePeriodsForVisibility(rawPeriods, visibility);
 
   if (dataset === "summary") {
     return [
@@ -943,19 +948,21 @@ function buildSignalPulseReportingV2Document(output: NonNullable<PublishedOutput
   const payload = asRecord(output.payload);
   const report = asRecord(payload.report);
   const executiveRead = asRecord(payload.executive_read);
-  const periods = arrayValue(payload.periods).map(asRecord);
+  const rawPeriods = arrayValue(payload.periods).map(asRecord);
   const signals = arrayValue(payload.signals).map(asRecord);
   const moves = arrayValue(payload.marketing_moves).map(asRecord);
   const evidence = arrayValue(payload.evidence).map(asRecord);
   const sources = arrayValue(payload.sources).map(asRecord);
   const qualityGates = arrayValue(payload.quality_gates).map(asRecord);
   const performance = asRecord(payload.performance);
-  const chartRefs = asRecord(payload.chart_refs);
+  const rawChartRefs = asRecord(payload.chart_refs);
   const cost = asRecord(payload.cost);
   const visibility = resolveSignalPulseVisibility({
     config: output.visibilityConfig,
     isInternalUser: false
   });
+  const periods = sanitizePulsePeriodsForVisibility(rawPeriods, visibility);
+  const chartRefs = sanitizePulseChartRefsForVisibility(rawChartRefs, visibility);
   const sectionsEnabled = getSignalPulseV2Sections(visibility);
   const subjectName = reportSubjectName(output, report) ?? stringValue(report.title);
   const metadata = {
@@ -997,7 +1004,6 @@ function buildSignalPulseReportingV2Document(output: NonNullable<PublishedOutput
       },
       executive_read: executiveRead,
       periods,
-      cost,
       chart_refs: chartRefs
     },
     signals,
@@ -1011,7 +1017,8 @@ function buildSignalPulseReportingV2Document(output: NonNullable<PublishedOutput
     sources: visibility.showSources ? sources : locked("sources"),
     quality: visibility.showQuality ? {
       quality_gates: qualityGates,
-      limitations: arrayValue(payload.limitations).map(stringValue).filter(Boolean)
+      limitations: arrayValue(payload.limitations).map(stringValue).filter(Boolean),
+      cost
     } : locked("quality"),
     manifest: {
       kind: "signal_pulse",

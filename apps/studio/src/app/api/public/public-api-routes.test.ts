@@ -315,6 +315,7 @@ test("public v1 Signal Pulse datasets expose safe legacy rows", () => {
   assert.equal(findingRow.finding_name, "Confianza en entrega");
   assert.equal(recommendationRow.recommendation_text, "Probar claim de entrega");
   assert.deepEqual(timeline, [{ output_id: "out_123", month: "2026-05", mention_count: 42 }]);
+  assert.doesNotMatch(JSON.stringify([summary, findings, recommendations, timeline]), /performance|spend|campaign/i);
 });
 
 test("public v1 Signal Pulse evidence obeys client visibility", () => {
@@ -435,11 +436,30 @@ test("public v2 Signal Pulse document hides paid data and internal support by de
       kind: "signal_pulse",
       report: { title: "Pulse", business_question: "Que movemos?" },
       executive_read: { headline: "Mover el claim principal", body: "Hay traccion.", action: "Probar contenido." },
-      periods: [{ id: "p1", period_start: "2026-05-01", period_end: "2026-05-31" }],
+      periods: [{
+        id: "p1",
+        period_start: "2026-05-01",
+        period_end: "2026-05-31",
+        coverage: {
+          conversation: 42,
+          performance: 18,
+          spend: 1000,
+          impressions: 9000,
+          by_source: { tiktok: 30 }
+        }
+      }],
       signals: [{ id: "s1", title: "Confianza en entrega" }],
       marketing_moves: [{ id: "m1", action_text: "Probar claim de entrega" }],
       evidence: [{ evidence_id: "e1", quote: "Llego rapido" }],
       performance: { campaigns: [{ external_id: "ad-1", spend: 1000 }] },
+      chart_refs: {
+        source_coverage_strip: {
+          rows: [{ source: "TikTok", coverage: { conversation: 42, performance: 18, spend: 1000 } }]
+        },
+        paid_performance: {
+          rows: [{ campaign: "ad-1", spend: 1000 }]
+        }
+      },
       sources: [{ id: "src-1", name: "Meta export" }],
       quality_gates: [{ id: "performance_structured", passed: true }],
       cost: { estimated_cost_usd: 1.2 }
@@ -450,6 +470,7 @@ test("public v2 Signal Pulse document hides paid data and internal support by de
   const sections = document.sections as Record<string, unknown>;
   const paid = publicApi.buildReportingV2Section(signalPulseOutput as never, "paid-organic") as Record<string, unknown>;
   const sources = publicApi.buildReportingV2Section(signalPulseOutput as never, "sources") as Record<string, unknown>;
+  const overview = publicApi.buildReportingV2Section(signalPulseOutput as never, "overview") as Record<string, unknown>;
   const enabled = publicApi.getEnabledV2Sections(signalPulseOutput.manifest, signalPulseOutput.payload, signalPulseOutput.visibilityConfig);
 
   assert.equal(enabled.includes("paid-organic"), false);
@@ -458,6 +479,7 @@ test("public v2 Signal Pulse document hides paid data and internal support by de
   assert.equal((sections.sources as Record<string, unknown>).locked, true);
   assert.equal(paid.reason, "not_authorized_for_client_export");
   assert.equal(sources.reason, "not_authorized_for_client_export");
+  assert.doesNotMatch(JSON.stringify(overview), /performance|spend|impressions|paid_performance|estimated_cost_usd/i);
 });
 
 test("public v2 Signal Pulse document exposes paid data only with explicit visibility", () => {
