@@ -85,7 +85,7 @@ export function buildSignalPulseLaunchPlan(args: {
     estimatedCostUsd: 0,
     windowMonths,
     clusterFirst: true,
-    status: normalizedCoverage.conversationMentions > 0 ? "ready" : "blocked",
+    status: warnings.length === 0 ? "ready" : "blocked",
     coverage: normalizedCoverage,
     warnings
   };

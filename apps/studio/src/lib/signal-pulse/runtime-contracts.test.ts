@@ -105,3 +105,19 @@ test("Signal Pulse launch plan warns before running when required coverage is mi
   assert.match(plan.warnings.join(" "), /performance estructurada/);
   assert.match(plan.warnings.join(" "), /query pack Signal Pulse/);
 });
+
+test("Signal Pulse launch plan blocks incomplete paid organic coverage", () => {
+  const plan = buildSignalPulseLaunchPlan({
+    analysisPlan: { budget_cap_usd: 5 },
+    targetWindowMonths: 12,
+    coverage: {
+      conversationMentions: 1200,
+      signalPulseMentions: 900,
+      performanceRecords: 0,
+      queryPacks: 3
+    }
+  });
+
+  assert.equal(plan.status, "blocked");
+  assert.match(plan.warnings.join(" "), /performance estructurada/);
+});

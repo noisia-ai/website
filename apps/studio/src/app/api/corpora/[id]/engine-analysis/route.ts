@@ -289,6 +289,23 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         { status: 422 }
       );
     }
+    if (isSignalPulseRequested) {
+      const signalPulseLaunchPlan = await loadSignalPulseLaunchPlan({
+        corpusId: corpus.id,
+        analysisPlan: corpus.analysisPlan,
+        targetWindowMonths: corpus.targetWindowMonths
+      });
+      if (signalPulseLaunchPlan.status === "blocked") {
+        return Response.json(
+          {
+            error: "signal_pulse_not_ready",
+            message: "Completa menciones, query pack y performance estructurada antes de correr Signal Pulse.",
+            signalPulseLaunchPlan
+          },
+          { status: 422 }
+        );
+      }
+    }
 
     const snapshotLabel = `Pre-engine ${launch.methodologySlug} · ${new Date().toISOString().slice(0, 16).replace("T", " ")}`;
     const snapshot = await createCorpusSnapshot({
