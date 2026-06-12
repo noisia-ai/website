@@ -878,19 +878,25 @@ async function materializeChartAggregates(ctx: AnalysisContext) {
   ] = await Promise.all([
     pool.query(
       `
+        WITH latest AS (
+          SELECT DISTINCT ON (spm.canonical_signal_id)
+            spm.*
+          FROM signal_period_metrics spm
+          JOIN report_periods rp ON rp.id = spm.period_id
+          WHERE spm.study_corpus_id = $1
+          ORDER BY spm.canonical_signal_id, rp.period_start DESC
+        )
         SELECT
           cs.id::text AS signal_id,
           cs.canonical_title AS title,
-          spm.impact_v1::float AS impact,
-          spm.sentiment_score::float AS sentiment,
-          spm.volume,
-          spm.confidence,
-          spm.lifecycle_state
-        FROM signal_period_metrics spm
-        JOIN canonical_signals cs ON cs.id = spm.canonical_signal_id
-        JOIN report_periods rp ON rp.id = spm.period_id
-        WHERE spm.study_corpus_id = $1
-        ORDER BY rp.period_start DESC, spm.impact_v1 DESC NULLS LAST
+          latest.impact_v1::float AS impact,
+          latest.sentiment_score::float AS sentiment,
+          latest.volume,
+          latest.confidence,
+          latest.lifecycle_state
+        FROM latest
+        JOIN canonical_signals cs ON cs.id = latest.canonical_signal_id
+        ORDER BY latest.impact_v1 DESC NULLS LAST, latest.volume DESC
         LIMIT 80
       `,
       [ctx.study_corpus_id]
