@@ -391,7 +391,13 @@ async function handleSignalPulseOutput(args: {
     );
   }
 
-  const payload = await buildSignalPulsePublishedPayload(args.analysis, args.corpus);
+  const payload = applySignalPulseEditorialRead(
+    await buildSignalPulsePublishedPayload(args.analysis, args.corpus),
+    {
+      headline: args.headline,
+      summary: args.summary
+    }
+  );
   const manifest = normalizeSignalPulseManifest(args.manifest, readiness.checks);
   const output = await upsertEngineOutput({
     engineAnalysisId: args.analysis.id,
@@ -422,6 +428,22 @@ async function handleSignalPulseOutput(args: {
   }
 
   return Response.json({ ok: true, output, liveIntelligence: { status: "ok", kind: "signal_pulse" } });
+}
+
+function applySignalPulseEditorialRead(
+  payload: Record<string, unknown>,
+  editorial: { headline: string | null; summary: string | null }
+) {
+  if (!editorial.headline && !editorial.summary) return payload;
+  const executiveRead = asRecord(payload.executive_read);
+  return {
+    ...payload,
+    executive_read: {
+      ...executiveRead,
+      headline: editorial.headline || executiveRead.headline,
+      body: editorial.summary || executiveRead.body
+    }
+  };
 }
 
 async function buildSignalPulsePublishedPayload(
