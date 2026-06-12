@@ -6,7 +6,7 @@ import {
   selectSignalPulseClusterPhrase,
   type EmbeddingNeighborhoodRow
 } from "./signal-pulse-clustering";
-import { buildSignalPulseDeterministicRead } from "./signal-pulse-copy";
+import { buildSignalPulseDeterministicRead, buildSignalPulseMarketingMove } from "./signal-pulse-copy";
 
 test("Signal Pulse embedding clusters group semantic neighborhoods without reusing mentions", () => {
   const rows: EmbeddingNeighborhoodRow[] = [
@@ -87,6 +87,46 @@ test("Signal Pulse deterministic copy changes posture for risks and weak signals
   assert.equal(directional.title, "Merch Especial");
   assert.match(directional.description, /apenas alcanzan para monitoreo/);
   assert.match(directional.actionHint, /prueba de bajo costo/);
+});
+
+test("Signal Pulse marketing moves reuse the signal action hint and define measurement", () => {
+  const move = buildSignalPulseMarketingMove({
+    title: "Oportunidad: Botana Crujiente Con Chile",
+    moveType: "amplify",
+    lifecycle: "rising",
+    confidence: "alta",
+    impact: 72,
+    volume: 96,
+    marketingRead: "La senal trae energia positiva suficiente para probarla como angulo creativo.",
+    actionHint: "Testear botana crujiente con chile como hook principal en una celda pequena de pauta"
+  });
+
+  assert.match(move.actionText, /Testear botana crujiente con chile/);
+  assert.match(move.actionText, /distribucion controlada/);
+  assert.equal(move.ownerSuggestion, "Paid media + Brand");
+  assert.equal(move.timing, "este mes");
+  assert.match(move.measurementSuggestion, /CTR/);
+  assert.equal(move.noGoNotes, null);
+  assert.doesNotMatch(move.actionText, /Amplificar .* en pauta y comparar contra el territorio actual/);
+});
+
+test("Signal Pulse marketing moves keep weak signals as bounded experiments", () => {
+  const move = buildSignalPulseMarketingMove({
+    title: "Merch Especial",
+    moveType: "create_content",
+    lifecycle: "stable",
+    confidence: "baja",
+    impact: 28,
+    volume: 7,
+    marketingRead: "",
+    actionHint: ""
+  });
+
+  assert.match(move.actionText, /Bajarlo a una serie corta de contenido/);
+  assert.equal(move.ownerSuggestion, "Social + Content");
+  assert.equal(move.timing, "siguiente sprint");
+  assert.match(move.measurementSuggestion, /7 menciones/);
+  assert.match(move.noGoNotes ?? "", /No convertirlo en promesa fuerte/);
 });
 
 function row(

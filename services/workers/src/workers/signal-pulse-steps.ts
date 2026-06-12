@@ -20,7 +20,7 @@ import {
   type EmbeddingNeighborhoodRow,
   type TermCluster
 } from "./signal-pulse-clustering";
-import { buildSignalPulseDeterministicRead } from "./signal-pulse-copy";
+import { buildSignalPulseDeterministicRead, buildSignalPulseMarketingMove } from "./signal-pulse-copy";
 
 type SignalPulseStepJobData = {
   engineAnalysisId: string;
@@ -775,6 +775,8 @@ async function materializeMarketingMoves(args: {
   const rows = (await pool.query<{
     canonical_signal_id: string;
     title: string;
+    signal_type: string;
+    dimensions: Record<string, unknown>;
     impact: string | null;
     volume: number;
     confidence: string | null;
@@ -808,6 +810,8 @@ async function materializeMarketingMoves(args: {
       SELECT
         latest.canonical_signal_id,
         cs.canonical_title AS title,
+        cs.signal_type,
+        cs.dimensions,
         latest.impact,
         latest.volume,
         latest.confidence,
@@ -825,7 +829,17 @@ async function materializeMarketingMoves(args: {
   let inserted = 0;
   for (const [index, row] of rows.entries()) {
     const moveType = moveTypeFor(row.lifecycle_state, Number(row.impact ?? 0));
-    const title = row.title.toLowerCase();
+    const dimensions = row.dimensions ?? {};
+    const move = buildSignalPulseMarketingMove({
+      title: row.title,
+      moveType,
+      lifecycle: row.lifecycle_state,
+      confidence: row.confidence,
+      impact: Number(row.impact ?? 0),
+      volume: Number(row.volume ?? 0),
+      marketingRead: stringFrom(dimensions.marketing_read),
+      actionHint: stringFrom(dimensions.action_hint)
+    });
     await pool.query(
       `
         INSERT INTO marketing_moves (
@@ -839,13 +853,13 @@ async function materializeMarketingMoves(args: {
         args.ctx.study_corpus_id,
         args.engineAnalysisId,
         moveType,
-        actionTextForMove(moveType, title),
+        move.actionText,
         row.canonical_signal_id,
         JSON.stringify(row.evidence_refs ?? []),
-        ownerForMove(moveType),
-        index < 3 ? "este mes" : "siguiente sprint",
-        measurementForMove(moveType),
-        noGoForMove(row.confidence),
+        move.ownerSuggestion,
+        index < 3 ? move.timing : "siguiente sprint",
+        move.measurementSuggestion,
+        move.noGoNotes,
         row.confidence ?? "baja",
         index + 1
       ]
@@ -1369,33 +1383,6 @@ function moveTypeFor(lifecycle: string | null, impact: number) {
   if (lifecycle === "rising" || impact >= 65) return "amplify";
   if (lifecycle === "declining") return "monitor";
   return "create_content";
-}
-
-function actionTextForMove(moveType: string, title: string) {
-  if (moveType === "test_claim") return `Testear un claim concreto sobre ${title} con dos hooks y una pieza corta.`;
-  if (moveType === "amplify") return `Amplificar ${title} en pauta y comparar contra el territorio actual.`;
-  if (moveType === "monitor") return `Monitorear ${title} antes de mover presupuesto fuerte.`;
-  return `Convertir ${title} en una serie de contenido con evidencia del corpus.`;
-}
-
-function ownerForMove(moveType: string) {
-  if (moveType === "amplify") return "Paid media + brand";
-  if (moveType === "test_claim") return "Brand + creative";
-  if (moveType === "monitor") return "Insights";
-  return "Social + content";
-}
-
-function measurementForMove(moveType: string) {
-  if (moveType === "amplify") return "Comparar CTR, saves y menciones orgánicas del territorio.";
-  if (moveType === "test_claim") return "Medir hook rate, comentarios útiles y costo por interacción.";
-  if (moveType === "monitor") return "Revisar volumen y sentiment en el siguiente corte.";
-  return "Medir retención, shares y conversación incremental.";
-}
-
-function noGoForMove(confidence: string | null) {
-  return confidence === "alta"
-    ? null
-    : "Usarlo como prueba controlada; todavía no alcanza para promesa fuerte.";
 }
 
 function gate(id: string, passed: boolean, detail: string) {

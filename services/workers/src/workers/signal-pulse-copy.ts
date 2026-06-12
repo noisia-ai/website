@@ -16,6 +16,25 @@ export type SignalPulseCopy = {
   interpretationSource: "deterministic_marketing_read_v2";
 };
 
+export type SignalPulseMoveInput = {
+  title: string;
+  moveType: string;
+  lifecycle: string | null;
+  confidence: string | null;
+  impact: number;
+  volume: number;
+  marketingRead: string;
+  actionHint: string;
+};
+
+export type SignalPulseMoveCopy = {
+  actionText: string;
+  ownerSuggestion: string;
+  timing: string;
+  measurementSuggestion: string;
+  noGoNotes: string | null;
+};
+
 export function buildSignalPulseDeterministicRead(input: SignalPulseCopyInput): SignalPulseCopy {
   const territory = cleanTerritory(input.term || input.canonicalTitle);
   const title = titleForSignal(territory, input);
@@ -31,6 +50,81 @@ export function buildSignalPulseDeterministicRead(input: SignalPulseCopyInput): 
     actionHint: posture.action,
     interpretationSource: "deterministic_marketing_read_v2"
   };
+}
+
+export function buildSignalPulseMarketingMove(input: SignalPulseMoveInput): SignalPulseMoveCopy {
+  const territory = cleanTerritory(input.title);
+  const actionHint = stripTerminalPunctuation(input.actionHint || defaultAction(input.moveType, territory));
+  const urgency = urgencyFor(input);
+
+  return {
+    actionText: actionTextFor(input.moveType, actionHint, territory),
+    ownerSuggestion: ownerForMove(input.moveType),
+    timing: urgency.timing,
+    measurementSuggestion: measurementFor(input, territory),
+    noGoNotes: noGoFor(input, urgency.reason)
+  };
+}
+
+function actionTextFor(moveType: string, actionHint: string, territory: string) {
+  if (moveType === "test_claim") {
+    return `${actionHint}. Convertirlo en dos hooks rivales y correr una prueba chica antes de volverlo claim de campana.`;
+  }
+  if (moveType === "amplify") {
+    return `${actionHint}. Darle distribucion controlada y compararlo contra el mensaje base, no contra intuicion interna.`;
+  }
+  if (moveType === "monitor") {
+    return `Mantener "${territory}" en monitoreo activo y preparar respuesta solo si sube volumen o negatividad.`;
+  }
+  return `${actionHint}. Bajarlo a una serie corta de contenido con un aprendizaje claro por pieza.`;
+}
+
+function measurementFor(input: SignalPulseMoveInput, territory: string) {
+  const impactLabel = input.impact >= 65 ? "impacto alto" : input.impact >= 35 ? "impacto medio" : "impacto bajo";
+  if (input.moveType === "test_claim") {
+    return `Comparar hook rate, comentarios utiles y costo por interaccion del territorio "${territory}" contra el control.`;
+  }
+  if (input.moveType === "amplify") {
+    return `Medir CTR, saves, menciones organicas y cambio de sentimiento; separar aprendizaje de performance por ${impactLabel}.`;
+  }
+  if (input.moveType === "monitor") {
+    return `Revisar volumen, sentimiento y evidencia protagonista en el siguiente corte antes de activar piezas.`;
+  }
+  return `Medir retencion, shares y comentarios con lenguaje reutilizable; cerrar decision con ${input.volume} menciones como base.`;
+}
+
+function noGoFor(input: SignalPulseMoveInput, urgencyReason: string) {
+  if (input.confidence === "alta" && input.impact >= 50) return null;
+  if (input.moveType === "monitor") return `No mover presupuesto todavia: ${urgencyReason}`;
+  if (input.confidence === "media") return `Mantenerlo como experimento: ${urgencyReason}`;
+  return `No convertirlo en promesa fuerte hasta sumar evidencia: ${urgencyReason}`;
+}
+
+function urgencyFor(input: SignalPulseMoveInput) {
+  if (input.lifecycle === "emerging") {
+    return { timing: "esta semana", reason: "la senal esta emergiendo y necesita validacion rapida" };
+  }
+  if (input.lifecycle === "rising" || input.impact >= 65) {
+    return { timing: "este mes", reason: "la senal ya trae momentum suficiente para una prueba visible" };
+  }
+  if (input.lifecycle === "declining") {
+    return { timing: "siguiente corte", reason: "la senal viene perdiendo fuerza" };
+  }
+  return { timing: "siguiente sprint", reason: "la senal todavia necesita aprendizaje incremental" };
+}
+
+function ownerForMove(moveType: string) {
+  if (moveType === "amplify") return "Paid media + Brand";
+  if (moveType === "test_claim") return "Brand + Creative";
+  if (moveType === "monitor") return "Insights";
+  return "Social + Content";
+}
+
+function defaultAction(moveType: string, territory: string) {
+  if (moveType === "test_claim") return `Testear "${territory}" como claim especifico`;
+  if (moveType === "amplify") return `Amplificar "${territory}" con presupuesto controlado`;
+  if (moveType === "monitor") return `Monitorear "${territory}" sin escalarlo todavia`;
+  return `Convertir "${territory}" en contenido de prueba`;
 }
 
 function titleForSignal(territory: string, input: SignalPulseCopyInput) {
@@ -90,6 +184,10 @@ function cleanTerritory(value: string) {
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase() || "senal de conversacion";
+}
+
+function stripTerminalPunctuation(value: string) {
+  return value.trim().replace(/[.!?]+$/g, "");
 }
 
 function titleCase(value: string) {
