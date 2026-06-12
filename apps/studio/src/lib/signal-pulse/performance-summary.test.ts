@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { summarizePulsePerformance } from "./performance-summary";
+import { buildOrganicPaidCandidates, summarizePulsePerformance } from "./performance-summary";
 
 test("summarizePulsePerformance calculates totals and paid efficiency from structured rows", () => {
   const summary = summarizePulsePerformance({
@@ -61,4 +61,36 @@ test("summarizePulsePerformance matches performance rows by report period id", (
   assert.equal(summary.totals.impressions, 9000);
   assert.equal(summary.coverage.conversationWithoutSpend, 1);
   assert.equal(summary.coverage.periodsWithPerformance, 1);
+});
+
+test("buildOrganicPaidCandidates ranks organic signals for bounded paid tests", () => {
+  const candidates = buildOrganicPaidCandidates({
+    signals: [
+      { id: "s_low", title: "Cupón genérico", volume: 4, impact_v1: 3, confidence: "baja" },
+      { id: "s_1", title: "Rutina de hidratación en clima seco", volume: 180, impact_v1: 72, confidence: "media", lifecycle_state: "accelerating" },
+      { id: "s_2", title: "Entrega lenta", volume: 90, impact_v1: 50, confidence: "alta", polarity_bucket: "negative", signal_type: "risk" }
+    ],
+    campaigns: [],
+    limit: 2
+  });
+
+  assert.equal(candidates[0]?.signalId, "s_1");
+  assert.match(candidates[0]?.rationale ?? "", /tracción orgánica/);
+  assert.match(candidates[0]?.suggestedTest ?? "", /claim corto/);
+  assert.equal(candidates.length, 2);
+});
+
+test("buildOrganicPaidCandidates surfaces nearby campaign coverage without inventing metrics", () => {
+  const candidates = buildOrganicPaidCandidates({
+    signals: [
+      { id: "s_1", title: "Protector solar mineral", description: "Textura ligera para piel sensible", volume: 220, impact_v1: 80, confidence: "alta" }
+    ],
+    campaigns: [
+      { entity_name: "Campaña protector mineral", creative_text: "Protector solar ligero para piel sensible", platform: "Meta" }
+    ]
+  });
+
+  assert.deepEqual(candidates[0]?.matchedCampaigns, ["Campaña protector mineral"]);
+  assert.match(candidates[0]?.rationale ?? "", /variante antes de escalar/);
+  assert.equal(Object.prototype.hasOwnProperty.call(candidates[0] ?? {}, "score"), false);
 });

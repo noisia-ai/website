@@ -12,7 +12,7 @@ import {
 import { Icon } from "@/components/ui/Icon";
 import { requirePortalUser } from "@/lib/auth/guards";
 import { getSignalOutputForUser } from "@/lib/data/signal";
-import { summarizePulsePerformance } from "@/lib/signal-pulse/performance-summary";
+import { buildOrganicPaidCandidates, summarizePulsePerformance } from "@/lib/signal-pulse/performance-summary";
 
 export const dynamic = "force-dynamic";
 
@@ -136,7 +136,7 @@ export default async function PulseOutputPage({
           title="Conversación contra performance"
           sub="Performance se lee desde registros estructurados por periodo, campaña y creatividad."
         />
-        <PaidOrganicPanel periods={periods} performance={performance} />
+        <PaidOrganicPanel periods={periods} performance={performance} signals={signals} />
       </section>
 
       <section className="signal-section pulse-section" data-signal-section="competitive" hidden id="competitive">
@@ -459,10 +459,11 @@ function ContentCreativePanel({ signals, moves, performance }: { signals: JsonRe
   );
 }
 
-function PaidOrganicPanel({ periods, performance }: { periods: JsonRecord[]; performance: JsonRecord }) {
+function PaidOrganicPanel({ periods, performance, signals }: { periods: JsonRecord[]; performance: JsonRecord; signals: JsonRecord[] }) {
   const performancePeriods = arrayOfRecords(performance.periods);
   const campaigns = arrayOfRecords(performance.campaigns);
   const summary = summarizePulsePerformance({ periods, performancePeriods });
+  const organicPaidCandidates = buildOrganicPaidCandidates({ signals, campaigns, limit: 5 });
   const byPeriod = new Map(performancePeriods.map((item) => [stringValue(item.period_id), item]));
   const rows = periods.map((period) => ({ period, performance: byPeriod.get(stringValue(period.id)) ?? {} }));
   return (
@@ -499,7 +500,7 @@ function PaidOrganicPanel({ periods, performance }: { periods: JsonRecord[]; per
         </div>
       </section>
       <section className="pulse-source-panel">
-        <PulseSectionHead eyebrow="Periodo" title="Conversación vs inversión" sub="La conversación viene de mentions; spend e impresiones vienen de performance_records." compact />
+        <PulseSectionHead eyebrow="Periodo" title="Conversación vs inversión" sub="La conversación viene de menciones; inversión e impresiones vienen de performance_records." compact />
         <div className="pulse-paid-bars">
           {rows.map(({ period, performance: perf }) => {
             const coverage = asRecord(period.coverage);
@@ -515,6 +516,26 @@ function PaidOrganicPanel({ periods, performance }: { periods: JsonRecord[]; per
               </div>
             );
           })}
+        </div>
+      </section>
+      <section className="pulse-source-panel">
+        <PulseSectionHead eyebrow="Orgánico a paid" title="Señales candidatas para prueba pagada" sub="Candidatos calculados desde señales publicadas y campañas estructuradas; Composer decide qué entra al corte." compact />
+        <div className="pulse-source-table">
+          {organicPaidCandidates.length > 0 ? organicPaidCandidates.map((candidate) => (
+            <div className="pulse-source-row" key={candidate.signalId}>
+              <strong>{candidate.title}</strong>
+              <span>{candidate.rationale}</span>
+              <small>
+                {candidate.suggestedTest}
+                {" · "}
+                {fmtNumber(candidate.volume)} menciones · impacto {fmtNumber(candidate.impact)}
+                {candidate.matchedCampaigns.length ? ` · cerca de ${candidate.matchedCampaigns.join(", ")}` : ""}
+              </small>
+              <small>{candidate.guardrail}</small>
+            </div>
+          )) : (
+            <PulseEmptyState title="Sin candidatos orgánico a paid" body="Cuando existan señales con volumen e impacto suficientes, aparecerán pruebas pagadas acotadas para revisar en Composer." />
+          )}
         </div>
       </section>
       <section className="pulse-source-panel">

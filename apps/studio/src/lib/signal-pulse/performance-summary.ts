@@ -11,6 +11,39 @@ export type PulsePerformancePeriodInput = {
   records?: unknown;
 };
 
+export type PulsePerformanceCampaignInput = {
+  entity_name?: unknown;
+  campaign_name?: unknown;
+  creative_text?: unknown;
+  platform?: unknown;
+  channel?: unknown;
+  spend?: unknown;
+  impressions?: unknown;
+};
+
+export type PulseOrganicPaidSignalInput = {
+  id?: unknown;
+  title?: unknown;
+  description?: unknown;
+  signal_type?: unknown;
+  lifecycle_state?: unknown;
+  polarity_bucket?: unknown;
+  confidence?: unknown;
+  volume?: unknown;
+  impact_v1?: unknown;
+};
+
+export type PulseOrganicPaidCandidate = {
+  signalId: string;
+  title: string;
+  volume: number;
+  impact: number;
+  rationale: string;
+  suggestedTest: string;
+  guardrail: string;
+  matchedCampaigns: string[];
+};
+
 export type PulseReportPeriodInput = {
   id?: unknown;
   label?: unknown;
@@ -111,6 +144,19 @@ export function summarizePulsePerformance(args: {
   };
 }
 
+export function buildOrganicPaidCandidates(args: {
+  signals: PulseOrganicPaidSignalInput[];
+  campaigns: PulsePerformanceCampaignInput[];
+  limit?: number;
+}): PulseOrganicPaidCandidate[] {
+  const campaigns = args.campaigns.map(normalizeCampaign).filter((campaign) => campaign.label);
+  const scored = args.signals
+    .map((signal) => scoreOrganicSignal(signal, campaigns))
+    .filter((candidate): candidate is PulseOrganicPaidCandidate & { score: number } => Boolean(candidate))
+    .sort((a, b) => b.score - a.score || b.impact - a.impact || b.volume - a.volume);
+  return scored.slice(0, Math.max(1, args.limit ?? 5)).map(stripCandidateScore);
+}
+
 function indexPerformancePeriods(periods: PulsePerformancePeriodInput[]) {
   const index = new Map<string, PulsePerformancePeriodInput>();
   for (const period of periods) {
@@ -157,6 +203,95 @@ function buildAlerts(args: {
     alerts.push(`${args.coverage.conversationWithoutSpend} periodos tienen conversación sin spend registrado.`);
   }
   return alerts.slice(0, 4);
+}
+
+function scoreOrganicSignal(signal: PulseOrganicPaidSignalInput, campaigns: Array<{ label: string; tokens: Set<string> }>) {
+  const title = stringValue(signal.title).trim();
+  if (!title) return null;
+  const volume = numberFrom(signal.volume);
+  const impact = numberFrom(signal.impact_v1);
+  if (volume <= 0 && impact <= 0) return null;
+
+  const polarity = stringValue(signal.polarity_bucket).toLowerCase();
+  const confidence = stringValue(signal.confidence).toLowerCase();
+  const lifecycle = stringValue(signal.lifecycle_state).toLowerCase();
+  const type = stringValue(signal.signal_type).toLowerCase();
+  const normalizedTitleTokens = tokensFor(`${title} ${stringValue(signal.description)}`);
+  const matchedCampaigns = campaigns
+    .filter((campaign) => intersects(normalizedTitleTokens, campaign.tokens))
+    .map((campaign) => campaign.label)
+    .slice(0, 3);
+  const isRisk = polarity.includes("neg") || type.includes("risk") || type.includes("barrier");
+  const confidenceScore = confidence.includes("alta") || confidence.includes("high")
+    ? 18
+    : confidence.includes("media") || confidence.includes("medium")
+      ? 12
+      : 5;
+  const lifecycleScore = lifecycle.includes("accelerating") || lifecycle.includes("creciendo") || lifecycle.includes("emerging")
+    ? 14
+    : lifecycle.includes("new") || lifecycle.includes("nueva")
+      ? 10
+      : 4;
+  const score = impact * 0.55 + Math.min(volume, 500) * 0.06 + confidenceScore + lifecycleScore - (isRisk ? 18 : 0) - matchedCampaigns.length * 4;
+  if (score <= 0) return null;
+
+  return {
+    signalId: stringValue(signal.id) || title,
+    title,
+    volume: round(volume, 2),
+    impact: round(impact, 2),
+    rationale: matchedCampaigns.length > 0
+      ? `Ya aparece cerca de ${matchedCampaigns[0]}; conviene probar una variante antes de escalar.`
+      : "Tiene tracción orgánica suficiente y no aparece claramente cubierta por campañas activas.",
+    suggestedTest: isRisk
+      ? "Usar pauta de bajo riesgo para validar un mensaje de contención o aclaración."
+      : lifecycle.includes("accelerating") || lifecycle.includes("creciendo")
+        ? "Convertir la señal en un claim corto y testearlo contra la pieza actual."
+        : "Probar un hook de contenido con audiencia pequeña antes de mover inversión fuerte.",
+    guardrail: confidence.includes("baja") || confidence.includes("low")
+      ? "Mantener presupuesto pequeño: la señal todavía es direccional."
+      : "Comparar CTR, costo por conversación y comentarios cualitativos contra la base anterior.",
+    matchedCampaigns,
+    score
+  };
+}
+
+function stripCandidateScore(candidate: PulseOrganicPaidCandidate & { score: number }): PulseOrganicPaidCandidate {
+  return {
+    signalId: candidate.signalId,
+    title: candidate.title,
+    volume: candidate.volume,
+    impact: candidate.impact,
+    rationale: candidate.rationale,
+    suggestedTest: candidate.suggestedTest,
+    guardrail: candidate.guardrail,
+    matchedCampaigns: candidate.matchedCampaigns
+  };
+}
+
+function normalizeCampaign(campaign: PulsePerformanceCampaignInput) {
+  const label = stringValue(campaign.entity_name) || stringValue(campaign.campaign_name) || stringValue(campaign.creative_text).slice(0, 80);
+  return {
+    label,
+    tokens: tokensFor(`${label} ${stringValue(campaign.creative_text)} ${stringValue(campaign.platform)} ${stringValue(campaign.channel)}`)
+  };
+}
+
+function tokensFor(value: string) {
+  const stopwords = new Set(["para", "con", "por", "una", "uno", "los", "las", "del", "que", "the", "and", "from", "this", "that", "signal", "pulse"]);
+  return new Set(value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 4 && !stopwords.has(token)));
+}
+
+function intersects(a: Set<string>, b: Set<string>) {
+  for (const token of a) {
+    if (b.has(token)) return true;
+  }
+  return false;
 }
 
 function asRecord(value: unknown): JsonRecord {
