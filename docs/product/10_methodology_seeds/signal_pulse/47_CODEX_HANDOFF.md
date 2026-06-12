@@ -2,9 +2,27 @@
 
 La pausa del engine multimétodo (Issue #2) se ejecutó y el rumbo quedó definido. **Este doc + `AGENTS.md` (raíz del repo) son tu punto de entrada.**
 
-### Qué cambió desde que dejaste la rama
+### La historia completa desde que dejaste la rama (léela: explica POR QUÉ existen las reglas de abajo)
 
-Tu trabajo NO se perdió: está commiteado y pusheado en `codex/live-intelligence-store` (commits `88989cb..708528c`), estabilizado tras una sesión de debugging real con Takis (fixes de timeout, coding resiliente, guards, SQL — detalle en `98_PROD_READINESS_TRACKER.md`). Dos lentes corrieron end-to-end con Claude real (2,207 findings). Después el negocio pivoteó: **los 16 lentes quedan pausados** (este issue) y la prioridad absoluta es **Signal Pulse**, un reporte táctico marketing-first.
+**1. Lo que tú construiste** (lo dejaste en working tree; ya está commiteado en `88989cb..708528c`):
+Live Intelligence Store (migraciones 0025-0033: canonical_signals, signal_observations, evidencia, cost ledger, run_mention_map), runtime multimétodo (workers preflight→retrieve→code→score→synthesize→quality_gates), query packs por lente con provenance y fan-out CSV, wizard multimétodo, Live Composer con edits persistentes y corpus explorer vivo. Foundation sólida — nada se tiró.
+
+**2. Lo que pasó al probarlo con corpus real** (Takis, 13k menciones):
+La primera corrida salió **genérica/vacía**: `retrieved_units=0` en los 5 lentes (corrieron antes de que existiera la provenance; el backfill llegó después). Al re-correr aparecieron 4 causas raíz más, ya corregidas:
+- **Timeout en retrieve:** stats de Postgres obsoletas (434k filas en `mention_query_sources` sin ANALYZE → planner estimaba rows=1 → plan pésimo → >8 min → `statement timeout`). Fix: ANALYZE (la query bajó a 0.8s) + `SET LOCAL statement_timeout` en el worker.
+- **Coding frágil:** 1 batch malo de ~112 tumbaba el lente entero y quemaba lo ya codificado (errores reales: JSON inválido por surrogates, intensity fuera de rango, timeouts de API). Fix: parser tolerante + batch retry→skip con umbral en `engine-step-code.ts` + sanitización del texto para el LLM.
+- **Worker zombie:** un proceso huérfano con código viejo consumió jobs 7 horas produciendo errores "imposibles" (el hijo node no matchea `pkill cli.mjs`; solo `pkill -f preflight.cjs`). Costó ~$13 en corridas fallidas.
+- **Bugs que bloqueaban UI:** SQL ambiguo de Drizzle (`${queryPacks.id}` → `"id"` sin calificar, 10 casos) tiraba la vista del engine; `ce.archived_at` inexistente tiraba el composer con 500.
+
+**3. Lo que quedó validado:** narrative-ownership (1,136 findings) y sentiment-advocacy (1,071) completos end-to-end con Claude real — insights específicos de marca con evidencia citada y señales vivas en el composer. Costo medido: **~$0.003/mención codificada**; total del aprendizaje ~$30 ($17 a producto, $13 quemados). De ahí salen las reglas de presupuesto de abajo.
+
+**4. El pivote (decisión de negocio, no técnica):** al revisar el output con ojos del comprador real (KAM de agencia, Brand Manager, Insights Manager de Marketing), los insights tipo "mejorar el PDP / falta acompañamiento" son de Producto/CX — **Marketing no puede accionarlos**. Marketing necesita qué contenido pautar, qué tendencia activar, qué claim testear, el wordcloud y el sentiment reinventados. Por eso: los 16 lentes se PAUSAN (capa estratégica, no se borran) y nace **Signal Pulse** como capa táctica con pipeline propio. T&B sigue vivo y funcional.
+
+**5. Qué de lo tuyo reutiliza Signal Pulse vs qué queda dormido:**
+- **Reutilizas:** cola/orquestador/steps, cost ledger, patrón de batch resilience, canonical_signals/observations/evidencia, run_mention_map, composer edits, corpus explorer, ingest CSV con provenance, publish guards.
+- **Dormido (no tocar, no romper):** los 16 specs de lentes, sus prompts/scoring, el panel beta de metodologías, los 3 lentes de Takis sin correr.
+
+Detalle exhaustivo: `engine_comparative/98_PROD_READINESS_TRACKER.md` e Issue #2.
 
 ### Tu nueva misión
 
