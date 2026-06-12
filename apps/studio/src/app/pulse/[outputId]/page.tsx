@@ -12,6 +12,7 @@ import {
 import { Icon } from "@/components/ui/Icon";
 import { requirePortalUser } from "@/lib/auth/guards";
 import { getSignalOutputForUser } from "@/lib/data/signal";
+import { summarizePulsePerformance } from "@/lib/signal-pulse/performance-summary";
 
 export const dynamic = "force-dynamic";
 
@@ -461,10 +462,42 @@ function ContentCreativePanel({ signals, moves, performance }: { signals: JsonRe
 function PaidOrganicPanel({ periods, performance }: { periods: JsonRecord[]; performance: JsonRecord }) {
   const performancePeriods = arrayOfRecords(performance.periods);
   const campaigns = arrayOfRecords(performance.campaigns);
+  const summary = summarizePulsePerformance({ periods, performancePeriods });
   const byPeriod = new Map(performancePeriods.map((item) => [stringValue(item.period_id), item]));
   const rows = periods.map((period) => ({ period, performance: byPeriod.get(stringValue(period.id)) ?? {} }));
   return (
     <div className="pulse-source-stack">
+      <section className="pulse-source-panel">
+        <PulseSectionHead eyebrow="Lectura táctica" title="Qué dice la mezcla paid/organic" sub="Resumen calculado desde performance_records y cobertura mensual." compact />
+        <div className="pulse-paid-summary">
+          <div>
+            <strong>USD {fmtMoney(summary.totals.spend)}</strong>
+            <span>Spend estructurado</span>
+          </div>
+          <div>
+            <strong>{fmtNumber(summary.totals.impressions)}</strong>
+            <span>Impresiones</span>
+          </div>
+          <div>
+            <strong>{summary.efficiency.ctr == null ? "n/d" : `${fmtNumber(summary.efficiency.ctr * 100)}%`}</strong>
+            <span>CTR calculado</span>
+          </div>
+          <div>
+            <strong>{summary.efficiency.costPerConversation == null ? "n/d" : `USD ${fmtMoney(summary.efficiency.costPerConversation)}`}</strong>
+            <span>Costo por mención</span>
+          </div>
+        </div>
+        <div className="pulse-paid-read">
+          <p>{summary.read}</p>
+          {summary.alerts.length > 0 ? (
+            <ul>
+              {summary.alerts.map((alert) => <li key={alert}>{alert}</li>)}
+            </ul>
+          ) : (
+            <small>{summary.coverage.periodsWithPerformance}/{summary.coverage.periods} periodos con performance y conversación suficiente para comparar.</small>
+          )}
+        </div>
+      </section>
       <section className="pulse-source-panel">
         <PulseSectionHead eyebrow="Periodo" title="Conversación vs inversión" sub="La conversación viene de mentions; spend e impresiones vienen de performance_records." compact />
         <div className="pulse-paid-bars">
