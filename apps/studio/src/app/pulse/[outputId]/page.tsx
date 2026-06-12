@@ -13,6 +13,7 @@ import { Icon } from "@/components/ui/Icon";
 import { requirePortalUser } from "@/lib/auth/guards";
 import { getSignalOutputForUser } from "@/lib/data/signal";
 import { alignPulsePerformancePeriods, buildOrganicPaidCandidates, summarizePulsePerformance } from "@/lib/signal-pulse/performance-summary";
+import { sanitizePulseChartRefsForVisibility, sanitizePulsePeriodsForVisibility } from "@/lib/signal-pulse/pulse-api";
 import { resolveSignalPulseVisibility, type SignalPulseResolvedVisibility } from "@/lib/signal-pulse/runtime-contracts";
 
 export const dynamic = "force-dynamic";
@@ -32,25 +33,27 @@ export default async function PulseOutputPage({
   const payload = asRecord(output.payload);
   const report = asRecord(payload.report);
   const executiveRead = asRecord(payload.executive_read);
-  const periods = arrayOfRecords(payload.periods);
+  const rawPeriods = arrayOfRecords(payload.periods);
   const signals = arrayOfRecords(payload.signals);
   const moves = arrayOfRecords(payload.marketing_moves);
   const evidence = arrayOfRecords(payload.evidence);
   const sources = arrayOfRecords(payload.sources);
   const performance = asRecord(payload.performance);
-  const chartRefs = asRecord(payload.chart_refs);
+  const rawChartRefs = asRecord(payload.chart_refs);
   const qualityGates = arrayOfRecords(payload.quality_gates);
   const limitations = arrayValue(payload.limitations).map(String);
   const cost = asRecord(payload.cost);
   const brandLabel = (output.brandName ?? output.brandFallbackName ?? output.themeName ?? stringValue(report.title)) || "Signal Pulse";
-  const activePeriod = periods.at(-1);
-  const defaultDateFrom = stringValue(periods[0]?.period_start);
-  const defaultDateTo = stringValue(activePeriod?.period_end);
   const isInternalUser = session.appUser.userType === "noisia_internal";
   const visibility = resolveSignalPulseVisibility({
     config: output.visibilityConfig,
     isInternalUser
   });
+  const periods = sanitizePulsePeriodsForVisibility(rawPeriods, visibility);
+  const chartRefs = sanitizePulseChartRefsForVisibility(rawChartRefs, visibility);
+  const activePeriod = periods.at(-1);
+  const defaultDateFrom = stringValue(periods[0]?.period_start);
+  const defaultDateTo = stringValue(activePeriod?.period_end);
   const groups = buildPulseGroups(visibility);
 
   return (

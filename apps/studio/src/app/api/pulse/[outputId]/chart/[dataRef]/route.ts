@@ -11,7 +11,8 @@ export async function GET(_request: Request, context: { params: Promise<{ output
 
   const chart = buildPulseChartResponse({
     payload: loaded.payload,
-    dataRef
+    dataRef,
+    visibility: loaded.visibility
   });
   if (!chart) {
     return Response.json({ error: "not_found", message: "Chart aggregate not found in this Pulse." }, { status: 404 });

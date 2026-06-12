@@ -34,8 +34,8 @@ const output: PulseOutputLike = {
       action: "Probar un hook de rutina."
     },
     periods: [
-      { id: "rp_1", label: "2026-05", comparable: true, confidence: "media", coverage: { conversation: 100 } },
-      { id: "rp_2", label: "2026-06", comparable: true, confidence: "alta", coverage: { conversation: 140 } }
+      { id: "rp_1", label: "2026-05", comparable: true, confidence: "media", coverage: { conversation: 100, performance: 20, spend: 1000 } },
+      { id: "rp_2", label: "2026-06", comparable: true, confidence: "alta", coverage: { conversation: 140, performance: 30, spend: 1200 } }
     ],
     signals: [
       {
@@ -81,7 +81,9 @@ const output: PulseOutputLike = {
     ],
     chart_refs: {
       impact_polarity_map: { rows: [{ signal_id: "s_1", impact: 82 }] },
-      signal_momentum_stream: { rows: [{ signal_id: "s_1", label: "2026-06", volume: 140 }] }
+      signal_momentum_stream: { rows: [{ signal_id: "s_1", label: "2026-06", volume: 140 }] },
+      source_coverage_strip: { rows: [{ label: "2026-06", coverage: { conversation: 140, performance: 30, spend: 1200 } }] },
+      paid_campaign_alignment: { rows: [{ campaign: "always on", spend: 1200 }] }
     },
     quality_gates: [
       { id: "period_coverage", passed: true, detail: "2 periodos." },
@@ -109,7 +111,9 @@ test("Pulse overview returns tactical KPIs, chart refs and visible warnings", ()
   assert.equal(overview.kpis.risks, 1);
   assert.deepEqual(overview.charts, {
     impact_polarity_map: "impact_polarity_map",
-    signal_momentum_stream: "signal_momentum_stream"
+    signal_momentum_stream: "signal_momentum_stream",
+    source_coverage_strip: "source_coverage_strip",
+    paid_campaign_alignment: "paid_campaign_alignment"
   });
   assert.equal(overview.top_signals[0]?.impact_v1, 82);
   assert.match(overview.warnings.join(" "), /Performance parcial/);
@@ -148,11 +152,30 @@ test("Pulse signals expose evidence internally and moves group by status", () =>
   assert.equal(((moves.moves[0] as Record<string, unknown>).evidence as unknown[]).length, 2);
 });
 
-test("Pulse chart endpoint resolves aliases without exposing raw performance", () => {
+test("Pulse chart endpoint resolves aliases for internal users", () => {
   const context = buildPulseApiContext({ output, isInternalUser: true });
-  const chart = buildPulseChartResponse({ payload: context.payload, dataRef: "impact_polarity" });
+  const chart = buildPulseChartResponse({ payload: context.payload, dataRef: "impact_polarity", visibility: context.visibility });
 
   assert.equal(chart?.chart_key, "impact_polarity_map");
   assert.deepEqual(chart?.payload, { rows: [{ signal_id: "s_1", impact: 82 }] });
-  assert.equal(buildPulseChartResponse({ payload: context.payload, dataRef: "nope" }), null);
+  assert.equal(buildPulseChartResponse({ payload: context.payload, dataRef: "nope", visibility: context.visibility }), null);
+});
+
+test("Pulse API strips paid coverage and paid charts for clients without paid permission", () => {
+  const context = buildPulseApiContext({ output, isInternalUser: false });
+  const overview = buildPulseOverviewResponse({ output, ...context });
+  const coverageChart = buildPulseChartResponse({ payload: context.payload, dataRef: "coverage", visibility: context.visibility });
+  const paidChart = buildPulseChartResponse({ payload: context.payload, dataRef: "paid_campaign_alignment", visibility: context.visibility });
+
+  assert.equal(context.visibility.showPaidOrganic, false);
+  assert.deepEqual((overview.periods[0] as Record<string, unknown>).coverage, { conversation: 100 });
+  assert.deepEqual(overview.charts, {
+    impact_polarity_map: "impact_polarity_map",
+    signal_momentum_stream: "signal_momentum_stream",
+    source_coverage_strip: "source_coverage_strip"
+  });
+  assert.equal(paidChart, null);
+  assert.deepEqual(coverageChart?.payload, {
+    rows: [{ label: "2026-06", coverage: { conversation: 140 } }]
+  });
 });

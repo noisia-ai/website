@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { DeckRuntime } from "@/components/signal/deck/DeckRuntime";
 import { requirePortalUser } from "@/lib/auth/guards";
 import { getSignalOutputForUser } from "@/lib/data/signal";
+import { sanitizePulsePeriodsForVisibility } from "@/lib/signal-pulse/pulse-api";
 import { resolveSignalPulseVisibility, type SignalPulseResolvedVisibility } from "@/lib/signal-pulse/runtime-contracts";
 
 import "../../../signal/[outputId]/deck/deck.css";
@@ -97,20 +98,21 @@ export default async function PulseDeckPage({
   const payload = asRecord(output.payload);
   const report = asRecord(payload.report);
   const executiveRead = asRecord(payload.executive_read);
-  const periods = arrayOfRecords(payload.periods);
+  const rawPeriods = arrayOfRecords(payload.periods);
   const signals = arrayOfRecords(payload.signals);
   const moves = arrayOfRecords(payload.marketing_moves);
   const evidence = arrayOfRecords(payload.evidence);
   const sources = arrayOfRecords(payload.sources);
   const qualityGates = arrayOfRecords(payload.quality_gates);
   const cost = asRecord(payload.cost);
-  const activePeriod = periods.at(-1);
   const brandLabel = (output.brandName ?? output.brandFallbackName ?? output.themeName ?? stringValue(report.title)) || "Signal Pulse";
-  const dateLabel = stringValue(activePeriod?.label) || formatDate(output.publishedAt?.toISOString?.() ?? String(output.publishedAt ?? ""));
   const visibility = resolveSignalPulseVisibility({
     config: output.visibilityConfig,
     isInternalUser: session.appUser.userType === "noisia_internal"
   });
+  const periods = sanitizePulsePeriodsForVisibility(rawPeriods, visibility);
+  const activePeriod = periods.at(-1);
+  const dateLabel = stringValue(activePeriod?.label) || formatDate(output.publishedAt?.toISOString?.() ?? String(output.publishedAt ?? ""));
   const visibleEvidence = visibility.showEvidence ? evidence : [];
   const confidence = visibility.showQuality && qualityGates.some((gate) => gate.passed === false) ? "con límites visibles" : "listo para presentar";
 

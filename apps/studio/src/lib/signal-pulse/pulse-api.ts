@@ -47,7 +47,7 @@ export function buildPulseOverviewResponse(args: {
 }) {
   const report = asRecord(args.payload.report);
   const executiveRead = asRecord(args.payload.executive_read);
-  const periods = arrayOfRecords(args.payload.periods);
+  const periods = sanitizePulsePeriodsForVisibility(arrayOfRecords(args.payload.periods), args.visibility);
   const signals = arrayOfRecords(args.payload.signals);
   const moves = arrayOfRecords(args.payload.marketing_moves);
   const qualityGates = arrayOfRecords(args.payload.quality_gates);
@@ -79,7 +79,7 @@ export function buildPulseOverviewResponse(args: {
       risks: signals.filter((signal) => stringValue(signal.signal_type) === "risk").length,
       confidence: confidenceFromSignals(signals)
     },
-    charts: chartInventory(args.payload),
+    charts: chartInventory(args.payload, args.visibility),
     top_signals: topSignals,
     top_moves: topMoves,
     quality: {
@@ -157,15 +157,48 @@ export function buildPulseMovesResponse(args: {
 export function buildPulseChartResponse(args: {
   payload: JsonRecord;
   dataRef: string;
+  visibility?: SignalPulseResolvedVisibility;
 }) {
-  const charts = chartRefs(args.payload);
-  const chart = charts[args.dataRef] ?? charts[chartAlias(args.dataRef)];
+  const charts = chartRefs(args.payload, args.visibility);
+  const key = chartAlias(args.dataRef);
+  if (isPaidChartKey(key) && args.visibility && !args.visibility.showPaidOrganic) return null;
+  const chart = charts[args.dataRef] ?? charts[key];
   if (!chart) return null;
   return {
     data_ref: args.dataRef,
-    chart_key: chartAlias(args.dataRef),
+    chart_key: key,
     payload: chart
   };
+}
+
+export function sanitizePulsePeriodsForVisibility(periods: JsonRecord[], visibility: SignalPulseResolvedVisibility): JsonRecord[] {
+  if (visibility.showPaidOrganic) return periods;
+  return periods.map((period) => ({
+    ...period,
+    coverage: stripPaidCoverage(asRecord(period.coverage))
+  }));
+}
+
+export function sanitizePulseChartRefsForVisibility(chartRefsInput: JsonRecord, visibility: SignalPulseResolvedVisibility): JsonRecord {
+  if (visibility.showPaidOrganic) return chartRefsInput;
+  const output: JsonRecord = {};
+  for (const [key, value] of Object.entries(chartRefsInput)) {
+    const normalizedKey = chartAlias(key);
+    if (isPaidChartKey(normalizedKey)) continue;
+    if (normalizedKey === "source_coverage_strip") {
+      const chart = asRecord(value);
+      output[key] = {
+        ...chart,
+        rows: arrayOfRecords(chart.rows).map((row) => ({
+          ...row,
+          coverage: stripPaidCoverage(asRecord(row.coverage))
+        }))
+      };
+      continue;
+    }
+    output[key] = value;
+  }
+  return output;
 }
 
 function enrichSignal(signal: JsonRecord, args: { periods: JsonRecord[]; evidence: JsonRecord[]; moves: JsonRecord[] }): JsonRecord {
@@ -212,14 +245,15 @@ function compactMove(move: JsonRecord) {
   };
 }
 
-function chartInventory(payload: JsonRecord) {
+function chartInventory(payload: JsonRecord, visibility: SignalPulseResolvedVisibility) {
   return Object.fromEntries(
-    Object.keys(chartRefs(payload)).map((key) => [key, key])
+    Object.keys(chartRefs(payload, visibility)).map((key) => [key, key])
   );
 }
 
-function chartRefs(payload: JsonRecord) {
-  return asRecord(payload.chart_refs);
+function chartRefs(payload: JsonRecord, visibility?: SignalPulseResolvedVisibility) {
+  const refs = asRecord(payload.chart_refs);
+  return visibility ? sanitizePulseChartRefsForVisibility(refs, visibility) : refs;
 }
 
 function chartAlias(value: string) {
@@ -231,6 +265,21 @@ function chartAlias(value: string) {
     coverage: "source_coverage_strip"
   };
   return aliases[value] ?? value;
+}
+
+function isPaidChartKey(value: string) {
+  const key = value.toLowerCase();
+  return key.includes("paid") || key.includes("organic") || key.includes("performance") || key.includes("campaign");
+}
+
+function stripPaidCoverage(coverage: JsonRecord) {
+  const output = { ...coverage };
+  delete output.performance;
+  delete output.spend;
+  delete output.impressions;
+  delete output.clicks;
+  delete output.conversions;
+  return output;
 }
 
 function confidenceFromSignals(signals: JsonRecord[]) {
