@@ -10,6 +10,12 @@ import {
   getDefaultEngineMethodologySlug,
   type EngineMethodologyOption
 } from "@/lib/engine/methodology-options";
+import {
+  SIGNAL_PULSE_SLUG,
+  buildRuntimeMethodologyOptions,
+  isSignalPulseMethodology,
+  shouldLoadSelectedLensState
+} from "@/lib/signal-pulse/runtime-contracts";
 
 type EngineAnalysis = {
   id: string;
@@ -78,18 +84,6 @@ type SelectedLensState = {
   statuses: SelectedLensStatus[];
 };
 
-const SIGNAL_PULSE_OPTION: EngineMethodologyOption = {
-  slug: "signal-pulse",
-  label: "Signal Pulse",
-  shortLabel: "Signal Pulse",
-  priority: "SP",
-  runtimeKind: "engine",
-  seeded: true,
-  status: "beta",
-  version: "0.1",
-  runnable: true
-};
-
 export function EngineMethodologyBetaPanel({
   corpusId,
   corpusName,
@@ -103,13 +97,12 @@ export function EngineMethodologyBetaPanel({
   const [state, setState] = useState<EngineState | null>(null);
   const [selectedLensState, setSelectedLensState] = useState<SelectedLensState | null>(null);
   const fallbackOptions = useMemo(() => buildEngineMethodologyOptions(), []);
-  const isSignalPulseCorpus = primaryMethodologySlug === "signal-pulse";
+  const isSignalPulseCorpus = isSignalPulseMethodology(primaryMethodologySlug);
   const methodologyOptions = useMemo(() => {
     const base = state?.methodologyOptions?.length ? state.methodologyOptions : fallbackOptions;
-    if (!isSignalPulseCorpus) return base;
-    return [SIGNAL_PULSE_OPTION, ...base.filter((option) => option.slug !== "signal-pulse")];
-  }, [fallbackOptions, isSignalPulseCorpus, state?.methodologyOptions]);
-  const [methodologySlug, setMethodologySlug] = useState(isSignalPulseCorpus ? "signal-pulse" : getDefaultEngineMethodologySlug(fallbackOptions));
+    return buildRuntimeMethodologyOptions({ primaryMethodologySlug, baseOptions: base });
+  }, [fallbackOptions, primaryMethodologySlug, state?.methodologyOptions]);
+  const [methodologySlug, setMethodologySlug] = useState(isSignalPulseCorpus ? SIGNAL_PULSE_SLUG : getDefaultEngineMethodologySlug(fallbackOptions));
   const [isLoading, setIsLoading] = useState(true);
   const [isStarting, setIsStarting] = useState(false);
   const [isStartingSelected, setIsStartingSelected] = useState(false);
@@ -157,7 +150,7 @@ export function EngineMethodologyBetaPanel({
   }, [methodologyOptions, selectedMethodology]);
 
   useEffect(() => {
-    if (isSignalPulseCorpus) setMethodologySlug("signal-pulse");
+    if (isSignalPulseCorpus) setMethodologySlug(SIGNAL_PULSE_SLUG);
   }, [isSignalPulseCorpus]);
 
   async function loadState(showSpinner = true) {
@@ -168,13 +161,13 @@ export function EngineMethodologyBetaPanel({
       if (!response.ok) throw new Error(payload.message ?? (isSignalPulseCorpus ? "No se pudo cargar Signal Pulse." : "No se pudo cargar engine beta."));
       if (payload.unavailable) setError(payload.message ?? (isSignalPulseCorpus ? "Schema de Signal Pulse pendiente." : "Engine beta schema pendiente."));
       setState(payload as EngineState);
-      if (isSignalPulseCorpus) {
-        setSelectedLensState(null);
-      } else {
+      if (shouldLoadSelectedLensState(primaryMethodologySlug)) {
         const selectedResponse = await fetch(`/api/corpora/${corpusId}/engine-analysis/selected`);
         const selectedPayload = await selectedResponse.json();
         if (!selectedResponse.ok) throw new Error(selectedPayload.message ?? "No se pudo cargar lentes seleccionados.");
         setSelectedLensState(selectedPayload as SelectedLensState);
+      } else {
+        setSelectedLensState(null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : isSignalPulseCorpus ? "No se pudo cargar Signal Pulse." : "No se pudo cargar engine beta.");

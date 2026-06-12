@@ -15,6 +15,7 @@ import {
 import { attachLiveIntelligenceLinksToPayload } from "@/lib/live-intelligence/published-output";
 import { buildEngineOutputManifestForMethodology } from "@/lib/engine/methodology-options";
 import { validateEnginePublishReadiness } from "@/lib/engine/publish-guards";
+import { enginePublishedOutputTypeForMethodology } from "@/lib/signal-pulse/runtime-contracts";
 import { buildEngineSignalPayload, normalizeSignalManifest } from "@/lib/signal/build";
 import { SIGNAL_PAYLOAD_VERSION, type CompetitiveOwnership, type TbConfidence } from "@/lib/signal/contracts";
 
@@ -216,7 +217,7 @@ export async function GET(
   if (!analysis) {
     return Response.json({ error: "not_found", message: "Engine analysis not found." }, { status: 404 });
   }
-  const outputType = analysis.methodology_slug === "signal-pulse" ? "signal_pulse_dashboard" : "narrative_dashboard";
+  const outputType = enginePublishedOutputTypeForMethodology(analysis.methodology_slug);
 
   const [output] = await db
     .select({
