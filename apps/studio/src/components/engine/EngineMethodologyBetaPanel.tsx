@@ -12,6 +12,7 @@ import {
 } from "@/lib/engine/methodology-options";
 import {
   SIGNAL_PULSE_SLUG,
+  buildSignalPulseLaunchChecklist,
   buildRuntimeMethodologyOptions,
   isSignalPulseMethodology,
   shouldLoadSelectedLensState,
@@ -274,8 +275,9 @@ export function EngineMethodologyBetaPanel({
   const signalPulseCoverage = signalPulseLaunchPlan?.coverage;
   const signalPulseWindowMonths = signalPulseLaunchPlan?.windowMonths ?? 12;
   const signalPulseCoverageLabel = signalPulseCoverage
-    ? `${signalPulseCoverage.conversationMentions} menciones · ${signalPulseCoverage.performanceRecords} performance records · ${signalPulseWindowMonths} meses`
+    ? `${signalPulseCoverage.conversationMentions} menciones · ${signalPulseCoverage.performanceRecords} registros de performance · ${signalPulseWindowMonths} meses`
     : "Cobertura pendiente de calcular.";
+  const signalPulseChecklist = signalPulseLaunchPlan ? buildSignalPulseLaunchChecklist(signalPulseLaunchPlan) : [];
 
   return (
     <section className={isSignalPulseCorpus ? "engine-beta-panel signal-pulse-runtime-panel" : "engine-beta-panel"}>
@@ -364,6 +366,20 @@ export function EngineMethodologyBetaPanel({
               <dd>{signalPulseLaunchBlocked ? "Completa cobertura" : signalPulseCostOk ? "Dentro del tope" : "Revisar antes de publicar"}</dd>
             </div>
           </dl>
+          {signalPulseChecklist.length > 0 ? (
+            <div className="signal-pulse-readiness-list" aria-label="Checklist para correr Signal Pulse">
+              {signalPulseChecklist.map((item) => (
+                <article data-passed={item.passed} key={item.id}>
+                  <Icon name={item.passed ? "check" : "alert"} size={14} />
+                  <div>
+                    <strong>{item.label}</strong>
+                    <span>{item.value}</span>
+                    <p>{item.detail}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : null}
           <button className="wizard-cta" disabled={isLoading || isStarting || schemaUnavailable || runtimeDisabled || signalPulseLaunchBlocked} onClick={startAnalysis} type="button">
             {isStarting ? <Icon name="spinner" size={16} /> : <Icon name="play" size={16} />}
             {runtimeDisabled ? "Runtime apagado" : signalPulseLaunchBlocked ? "Completa cobertura" : latest && latest.status !== "failed" ? "Correr nuevo corte" : "Correr Signal Pulse"}

@@ -123,7 +123,7 @@ export default async function PulseOutputPage({
 
       <section className="signal-section pulse-section" data-signal-section="content" hidden id="content">
         <PulseSectionHead
-          eyebrow="Content & Creative"
+          eyebrow="Contenido y creatividad"
           title="Hooks, claims y tono para probar"
           sub="Ideas derivadas de señales con evidencia. Si la confianza es baja, se marca como prueba pequeña."
         />
@@ -132,7 +132,7 @@ export default async function PulseOutputPage({
 
       <section className="signal-section pulse-section" data-signal-section="paid-organic" hidden id="paid-organic">
         <PulseSectionHead
-          eyebrow="Paid / Organic"
+          eyebrow="Paid y orgánico"
           title="Conversación contra performance"
           sub="Performance se lee desde registros estructurados por periodo, campaña y creatividad."
         />
@@ -141,7 +141,7 @@ export default async function PulseOutputPage({
 
       <section className="signal-section pulse-section" data-signal-section="competitive" hidden id="competitive">
         <PulseSectionHead
-          eyebrow="Competitive & Category"
+          eyebrow="Competencia y categoría"
           title="Dónde la categoría está empujando la conversación"
           sub="Lectura por señales y entidades cuando el corpus trae scope competitivo o de categoría."
         />
@@ -159,7 +159,7 @@ export default async function PulseOutputPage({
 
       <section className="signal-section pulse-section" data-signal-section="corpus" hidden id="corpus">
         <PulseSectionHead
-          eyebrow="Corpus View"
+          eyebrow="Vista de corpus"
           title="Explorar conversación y evidencia"
           sub="Busca por señal, canal, entidad o fecha dentro del corpus autorizado."
         />
@@ -224,7 +224,7 @@ function PulseHeader({
   return (
     <header className="pulse-hero">
       <div>
-        <p className="pulse-eyebrow">Overview</p>
+        <p className="pulse-eyebrow">Resumen</p>
         <h1>{headline || "Signal Pulse listo para lectura."}</h1>
         <p>{body || "El corte resume qué cambió, qué evidencia lo sostiene y qué puede mover Marketing."}</p>
       </div>
@@ -330,7 +330,7 @@ function SignalCard({ signal }: { signal: JsonRecord }) {
         <div><dt>Confianza</dt><dd>{stringValue(signal.confidence) || "baja"}</dd></div>
       </dl>
       <footer>
-        <span>{stringValue(signal.dominant_emotion) || "observacion"}</span>
+        <span>{stringValue(signal.dominant_emotion) || "observación"}</span>
         <span>{fmtNumber(signal.evidence_count)} evidencias</span>
       </footer>
     </article>
@@ -346,10 +346,10 @@ function MoveCard({ move, signals }: { move: JsonRecord; signals: JsonRecord[] }
         <span>{labelMoveType(stringValue(move.move_type))}</span>
         <strong>{stringValue(move.action_text)}</strong>
       </div>
-      <p>{signal ? `Sale de: ${stringValue(signal.title)}.` : "Move ligado a evidencia del corpus."}</p>
+      <p>{signal ? `Sale de: ${stringValue(signal.title)}.` : "Acción ligada a evidencia del corpus."}</p>
       <dl>
-        <div><dt>Owner</dt><dd>{stringValue(move.owner_suggestion) || "Marketing"}</dd></div>
-        <div><dt>Timing</dt><dd>{stringValue(move.timing) || "este mes"}</dd></div>
+        <div><dt>Responsable</dt><dd>{stringValue(move.owner_suggestion) || "Marketing"}</dd></div>
+        <div><dt>Cuándo</dt><dd>{stringValue(move.timing) || "este mes"}</dd></div>
         <div><dt>Medición</dt><dd>{stringValue(move.measurement_suggestion) || "Definir KPI antes de ejecutar."}</dd></div>
       </dl>
       {stringValue(move.no_go_notes) ? <small>{stringValue(move.no_go_notes)}</small> : null}
@@ -362,7 +362,7 @@ function EvidenceRow({ item, signal }: { item: JsonRecord; signal?: JsonRecord }
     <article className="pulse-evidence-row">
       <span>{stringValue(item.platform) || "fuente"}</span>
       <p>{stringValue(item.quote) || "Evidencia sin texto disponible."}</p>
-      <small>{signal ? stringValue(signal.title) : "Signal Pulse"} · {formatDate(stringValue(item.published_at))} · {stringValue(item.evidence_role) || "support"}</small>
+      <small>{signal ? stringValue(signal.title) : "Signal Pulse"} · {formatDate(stringValue(item.published_at))} · {stringValue(item.evidence_role) || "soporte"}</small>
     </article>
   );
 }
@@ -375,7 +375,7 @@ function SourceCoverage({ periods, sources }: { periods: JsonRecord[]; sources: 
         <div className="pulse-source-cards">
           {sources.length > 0 ? sources.map((source) => (
             <article key={stringValue(source.id)}>
-              <span>{stringValue(source.source_type) || "source"}</span>
+              <span>{stringValue(source.source_type) || "fuente"}</span>
               <strong>{stringValue(source.name)}</strong>
               <p>{stringValue(source.provider)} · {stringValue(source.connection_method)} · {stringValue(source.sync_status) || stringValue(source.status)}</p>
               <small>
@@ -549,7 +549,7 @@ function CompetitiveCategoryPanel({ signals, evidence }: { signals: JsonRecord[]
         <div className="pulse-content-cards">
           {signals.slice(0, 9).map((signal) => (
             <article key={stringValue(signal.id)}>
-              <span>{stringValue(signal.signal_type) || "signal"}</span>
+              <span>{stringValue(signal.signal_type) || "señal"}</span>
               <strong>{stringValue(signal.title)}</strong>
               <p>{stringValue(asRecord(signal.dimensions).marketing_read) || stringValue(signal.description)}</p>
               <small>Impacto {fmtNumber(signal.impact_v1)} · {stringValue(signal.polarity_bucket) || "sin polaridad"}</small>
@@ -564,7 +564,7 @@ function CompetitiveCategoryPanel({ signals, evidence }: { signals: JsonRecord[]
             <div className="pulse-source-row" key={label}>
               <strong>{label}</strong>
               <span>{fmtNumber(count)} evidencias publicadas</span>
-              <small>Usar filtros del Corpus View para abrir la lectura.</small>
+              <small>Usar filtros de la vista de corpus para abrir la lectura.</small>
             </div>
           )) : (
             <PulseEmptyState title="Sin cobertura competitiva" body="El corpus no trae evidencia suficiente para una lectura comparativa." />
@@ -722,22 +722,22 @@ function buildPulseGroups(): SignalShellGroup[] {
     {
       label: "Signal Pulse",
       sections: [
-        { key: "overview", label: "Overview", icon: "wave" },
-        { key: "signals", label: "Signals", icon: "sparkle" },
+        { key: "overview", label: "Resumen", icon: "wave" },
+        { key: "signals", label: "Señales", icon: "sparkle" },
         { key: "moves", label: "Acciones", icon: "layers" },
-        { key: "content", label: "Content & Creative", icon: "sparkle" },
-        { key: "paid-organic", label: "Paid / Organic", icon: "wave" },
-        { key: "competitive", label: "Competitive", icon: "platform" }
+        { key: "content", label: "Contenido", icon: "sparkle" },
+        { key: "paid-organic", label: "Paid y orgánico", icon: "wave" },
+        { key: "competitive", label: "Categoría", icon: "platform" }
       ]
     },
     {
-      label: "Evidence",
+      label: "Soporte",
       sections: [
         { key: "composer", label: "Composer", icon: "layers" },
-        { key: "corpus", label: "Corpus View", icon: "message" },
-        { key: "evidence", label: "Evidence", icon: "message" },
-        { key: "sources", label: "Sources", icon: "platform" },
-        { key: "quality", label: "Quality", icon: "info" }
+        { key: "corpus", label: "Corpus", icon: "message" },
+        { key: "evidence", label: "Evidencia", icon: "message" },
+        { key: "sources", label: "Fuentes", icon: "platform" },
+        { key: "quality", label: "Calidad", icon: "info" }
       ]
     }
   ];
@@ -790,11 +790,11 @@ function labelQualityGate(value: string) {
     period_coverage: "Periodos listos",
     period_comparability: "Meses comparables",
     signal_min_evidence: "Evidencia ligada",
-    chart_data_available: "Charts con datos",
+    chart_data_available: "Gráficas con datos",
     move_has_signal: "Acciones con señal",
-    cost_within_budget: "Costo en budget",
+    cost_within_budget: "Costo dentro del tope",
     no_invented_numbers: "Números calculados",
-    humanizer_passed: "Copy publicable"
+    humanizer_passed: "Copy listo para publicar"
   };
   return labels[value] ?? value.replace(/_/g, " ");
 }

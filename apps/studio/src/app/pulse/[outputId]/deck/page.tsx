@@ -256,7 +256,7 @@ function LimitsSlide({ cost, gates, periods, sources }: { cost: JsonRecord; gate
               <MetricCard label="Periodos" value={periods.length} detail={`${periods.filter((period) => period.comparable !== false).length} comparables`} />
               <MetricCard label="Fuentes" value={sources.length} detail="conversación + performance" />
               <MetricCard label="Costo" value={`USD ${fmtMoney(cost.estimated_cost_usd)}`} detail={Number(cost.budget_cap_usd ?? 0) > 0 ? `tope USD ${fmtMoney(cost.budget_cap_usd)}` : "sin tope declarado"} />
-              <MetricCard label="Gates" value={failed.length === 0 ? "OK" : failed.length} detail={failed.length === 0 ? "sin bloqueos" : "con límites visibles"} />
+              <MetricCard label="Checks" value={failed.length === 0 ? "OK" : failed.length} detail={failed.length === 0 ? "sin bloqueos" : "con límites visibles"} />
             </div>
           </div>
           <div className="deck-stack">
@@ -399,11 +399,11 @@ function labelQualityGate(value: string) {
     period_coverage: "Periodos listos",
     period_comparability: "Meses comparables",
     signal_min_evidence: "Evidencia ligada",
-    chart_data_available: "Charts con datos",
+    chart_data_available: "Gráficas con datos",
     move_has_signal: "Acciones con señal",
-    cost_within_budget: "Costo en budget",
+    cost_within_budget: "Costo dentro del tope",
     no_invented_numbers: "Números calculados",
-    humanizer_passed: "Copy publicable"
+    humanizer_passed: "Copy listo para publicar"
   };
   return labels[value] ?? value.replace(/_/g, " ");
 }

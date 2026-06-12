@@ -4,6 +4,7 @@ import test from "node:test";
 import type { EngineMethodologyOption } from "@/lib/engine/methodology-options";
 import {
   SIGNAL_PULSE_RUNTIME_OPTION,
+  buildSignalPulseLaunchChecklist,
   buildSignalPulseLaunchPlan,
   buildRuntimeMethodologyOptions,
   enginePublishedOutputTypeForMethodology,
@@ -84,6 +85,11 @@ test("Signal Pulse launch plan exposes pre-run cost, budget cap and structured c
   assert.equal(plan.status, "ready");
   assert.equal(plan.coverage.performanceRecords, 144);
   assert.deepEqual(plan.warnings, []);
+
+  const checklist = buildSignalPulseLaunchChecklist(plan);
+  assert.deepEqual(checklist.map((item) => item.passed), [true, true, true, true]);
+  assert.equal(checklist.find((item) => item.id === "performance")?.value, "144 registros");
+  assert.match(checklist.find((item) => item.id === "budget")?.detail ?? "", /Cluster-first/);
 });
 
 test("Signal Pulse launch plan warns before running when required coverage is missing", () => {
@@ -104,6 +110,11 @@ test("Signal Pulse launch plan warns before running when required coverage is mi
   assert.match(plan.warnings.join(" "), /menciones incluidas/);
   assert.match(plan.warnings.join(" "), /performance estructurada/);
   assert.match(plan.warnings.join(" "), /query pack Signal Pulse/);
+
+  const checklist = buildSignalPulseLaunchChecklist(plan);
+  assert.deepEqual(checklist.map((item) => item.passed), [false, false, false, true]);
+  assert.match(checklist.find((item) => item.id === "conversation")?.detail ?? "", /Carga o aprueba menciones/);
+  assert.match(checklist.find((item) => item.id === "performance")?.detail ?? "", /performance_records/);
 });
 
 test("Signal Pulse launch plan blocks incomplete paid organic coverage", () => {

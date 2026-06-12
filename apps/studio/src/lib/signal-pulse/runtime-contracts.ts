@@ -59,6 +59,14 @@ export type SignalPulseLaunchPlan = {
   warnings: string[];
 };
 
+export type SignalPulseLaunchChecklistItem = {
+  id: "conversation" | "query_pack" | "performance" | "budget";
+  label: string;
+  value: string;
+  passed: boolean;
+  detail: string;
+};
+
 export function buildSignalPulseLaunchPlan(args: {
   analysisPlan?: unknown;
   targetWindowMonths?: unknown;
@@ -91,6 +99,47 @@ export function buildSignalPulseLaunchPlan(args: {
   };
 }
 
+export function buildSignalPulseLaunchChecklist(plan: SignalPulseLaunchPlan): SignalPulseLaunchChecklistItem[] {
+  return [
+    {
+      id: "conversation",
+      label: "Conversación para clusterizar",
+      value: `${formatWhole(plan.coverage.conversationMentions)} menciones`,
+      passed: plan.coverage.conversationMentions > 0,
+      detail: plan.coverage.conversationMentions > 0
+        ? "Lista para detectar señales por embeddings y clustering."
+        : "Carga o aprueba menciones del corpus antes de correr."
+    },
+    {
+      id: "query_pack",
+      label: "Query pack Signal Pulse",
+      value: `${formatWhole(plan.coverage.signalPulseMentions)} menciones SP`,
+      passed: plan.coverage.signalPulseMentions > 0 && plan.coverage.queryPacks > 0,
+      detail: plan.coverage.signalPulseMentions > 0 && plan.coverage.queryPacks > 0
+        ? `${formatWhole(plan.coverage.queryPacks)} consultas materializadas para el corte.`
+        : "Materializa el query pack Signal Pulse para atribuir la cobertura."
+    },
+    {
+      id: "performance",
+      label: "Performance estructurada",
+      value: `${formatWhole(plan.coverage.performanceRecords)} registros`,
+      passed: plan.coverage.performanceRecords > 0,
+      detail: plan.coverage.performanceRecords > 0
+        ? `Paid y orgánico tendrán base de ${plan.windowMonths} meses para comparar.`
+        : "Sube el export de Meta/TikTok como performance_records, no como texto."
+    },
+    {
+      id: "budget",
+      label: "Costo antes de correr",
+      value: `USD ${formatMoney(plan.estimatedCostUsd)} / ${formatMoney(plan.budgetCapUsd)}`,
+      passed: plan.budgetCapUsd > 0 && plan.estimatedCostUsd <= plan.budgetCapUsd,
+      detail: plan.clusterFirst
+        ? "Cluster-first mantiene Claude para nombrar e interpretar señales."
+        : "Revisar configuración: Signal Pulse debe correr cluster-first."
+    }
+  ];
+}
+
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
@@ -108,4 +157,15 @@ function positiveInteger(value: unknown, fallback: number) {
 function wholeNumber(value: unknown) {
   const number = Math.trunc(Number(value ?? 0));
   return Number.isFinite(number) && number > 0 ? number : 0;
+}
+
+function formatWhole(value: number) {
+  return new Intl.NumberFormat("es-MX", { maximumFractionDigits: 0 }).format(value);
+}
+
+function formatMoney(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: value > 0 && value < 1 ? 4 : 2,
+    minimumFractionDigits: value > 0 && value < 1 ? 4 : 2
+  }).format(value);
 }
