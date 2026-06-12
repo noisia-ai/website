@@ -110,6 +110,74 @@ ALTER TABLE published_outputs ADD COLUMN kind text NOT NULL DEFAULT 'signal';   
 ALTER TABLE published_outputs ADD COLUMN visibility_config jsonb DEFAULT '{}';     -- {paid_data: false, competitive: true, corpus_view: 'limited'} (M1 doc 43)
 ```
 
+### 2.6 `performance_records` — performance como ciudadano de primera clase (REQUISITO DURO, Cut 1)
+
+> Directiva del negocio: un archivo de performance de 12 meses de Social Media (Meta/TikTok export) debe integrarse **estructurado y coherente** al corpus. PROHIBIDO convertirlo en "texto de contexto" para Claude. Nunca entra a `mentions`.
+
+```sql
+CREATE TABLE performance_records (
+  id uuid PK DEFAULT gen_random_uuid(),
+  study_corpus_id uuid NOT NULL REFERENCES study_corpora(id),
+  data_source_id uuid REFERENCES data_sources(id),     -- provenance (§2.7)
+  import_batch_id uuid,                                -- provenance de upload
+  external_id text NOT NULL,                           -- id de campaña/ad/post
+  entity_kind text NOT NULL,                           -- campaign|adset|ad|post|creative|account
+  entity_name text,
+  parent_external_id text,                             -- ad→adset→campaign
+  platform text NOT NULL,                              -- meta|tiktok|youtube|ga4|metricool
+  channel text NOT NULL DEFAULT 'paid',                -- paid|organic|earned
+  objective text,
+  record_date date NOT NULL,
+  granularity text NOT NULL DEFAULT 'day',             -- day|week|month (según el export)
+  spend numeric, impressions bigint, reach bigint, clicks bigint,
+  video_views bigint, engagement bigint, conversions numeric,
+  ctr numeric, cpm numeric, cpc numeric,
+  creative_text text,                                  -- copy/caption → embeddings → link semántico a señales
+  creative_asset_ref text,
+  metrics jsonb NOT NULL DEFAULT '{}',                 -- columnas no mapeadas, sin pérdida
+  raw_metadata jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (study_corpus_id, platform, external_id, record_date, granularity)
+);
+CREATE INDEX ON performance_records (study_corpus_id, record_date);
+CREATE INDEX ON performance_records (study_corpus_id, entity_kind, channel);
+```
+
+**Flujo de ingest de un export de 12 meses (50k-200k filas):** Source Wizard clasifica `performance` → mapping de columnas (doc 05 §Performance mapping) → validación (fecha + campaña/asset + ≥1 métrica, no todo ceros) → bulk insert con dedupe por la unique key → provenance vía `data_sources`/import batch → los 12 meses se periodizan SOLOS porque cada fila trae `record_date` → `report_periods.coverage.performance` se llena en `sp_periods`.
+
+**Cómo se cruza con conversación (3 niveles, en orden de certeza):**
+1. **Por periodo (Cut 1, garantizado):** alineación temporal pura — "Conversation vs Spend" dual-axis, coverage strip, deltas mensuales. Cero mapping necesario.
+2. **Por entidad (Cut 1 si el corpus tiene campaign refs):** join contra `corpus_entities`/campaign names.
+3. **Semántico campaña↔señal (Cut 1 best-effort + confirmación humana):** embeddings de `creative_text` vs señales → sugerencias con score → el Composer confirma/rechaza. Auto-mapping sin humano = Cut 2.
+
+**Regla Claude:** `sp_interpret` recibe SOLO agregados SQL de performance (spend/engagement por periodo/territorio, con refs). Claude lee números calculados y los interpreta; jamás procesa el archivo.
+
+### 2.7 `data_sources` + `source_sync_runs` — registro de fuentes (alineado con Issue #1)
+```sql
+CREATE TABLE data_sources (
+  id uuid PK,
+  study_corpus_id uuid REFERENCES study_corpora(id),   -- NULL = nivel marca/org
+  organization_id uuid, brand_id uuid,
+  source_type text NOT NULL,        -- conversation|performance|entity|knowledge
+  provider text NOT NULL,           -- sentione|apify|meta|tiktok|manual_csv|...
+  connection_method text NOT NULL,  -- file_upload|api_key|oauth|scheduled|manual
+  name text NOT NULL,
+  mapping jsonb DEFAULT '{}',       -- column mapping versionado
+  mapping_version int DEFAULT 1,
+  role jsonb DEFAULT '{}',          -- {feeds_signals, feeds_charts, feeds_filters, internal_only}
+  status text NOT NULL DEFAULT 'draft',  -- draft|validating|active|stale|broken|paused|internal_only|archived
+  visibility text DEFAULT 'internal',
+  created/updated timestamptz
+);
+CREATE TABLE source_sync_runs (
+  id uuid PK, data_source_id uuid NOT NULL REFERENCES data_sources(id),
+  started/finished timestamptz, status text,
+  records_total int, records_valid int, records_duplicate int, records_failed int,
+  coverage_start date, coverage_end date, error_summary jsonb, created_at timestamptz
+);
+```
+Esto materializa el "source health" del doc 05 y la arquitectura del Issue #1 (connectors → sync runs → normalización). El ingest CSV existente se registra retroactivamente como `data_source` provider='sentione', method='file_upload'.
+
 ## 3. Pipeline SP — steps concretos (misma cola/orquestador que el engine)
 
 Run = `engine_analyses` con `methodology_slug='signal-pulse'`. Steps (job names nuevos en la cola existente):

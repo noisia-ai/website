@@ -45,7 +45,8 @@ El paquete omitía que el corpus nace de queries SentiOne. El query de SP difier
 |---|---|---|---|
 | SentiOne CSV | ✅ funciona (ingest + provenance) | ✅ | ✅ |
 | CSV genérico (Apify TikTok, reviews, etc.) | ❌ el ingest asume formato SentiOne | ✅ construir mapping configurable del wizard (doc 05 pasos 3-5) sobre el ingest existente | ✅ |
-| Performance (Meta/TikTok/GA4) | ❌ | 🔒 gated `Needs data` | conectores |
+| **Performance por ARCHIVO (export 12 meses Meta/TikTok, paid+organic)** | ❌ | ✅ **REQUISITO DURO Cut 1**: estructurado a `performance_records` (doc 44 §2.6), periodizado por record_date, joins por periodo/entidad/semántica. Nunca texto de contexto | ✅ |
+| Performance por conector OAuth/API | ❌ | 🔒 Cut 2 | conectores |
 | Entity / Knowledge | ❌ (knowledge sources de marca existen parcialmente) | manual mínimo | wizard completo |
 
 El "Source Wizard" del Cut 1 = clasificación de tipo + mapping de columnas configurable + preview + validación, montado sobre `mentions-csv-ingest`. No es el wizard OAuth completo del doc 05.

@@ -4,7 +4,11 @@
 
 ## Alcance del Corte 1
 
-**Fuente de datos:** solo conversation evidence — el ingest CSV/SentiOne que YA funciona (con provenance y fan-out). El Source Wizard del Corte 1 es la clasificación de tipo + mapping preview sobre ese flujo existente, no los conectores OAuth.
+**Fuentes de datos (revisado por directiva del negocio):**
+1. **Conversation evidence** — el ingest CSV/SentiOne que YA funciona (con provenance y fan-out) + mapping configurable para CSVs no-SentiOne.
+2. **Performance evidence vía archivo (REQUISITO DURO Cut 1)** — un export de 12 meses de Social Media (Meta/TikTok, paid+organic) entra **estructurado** a `performance_records` (doc 44 §2.6) por el Source Wizard: clasificación → mapping de columnas → validación → bulk insert periodizado. JAMÁS como texto de contexto para Claude, JAMÁS como mentions.
+
+Lo único que queda para Cut 2 en fuentes: conectores OAuth/scheduled sync (Meta API, TikTok API, GA4). El camino por archivo es completo y profesional desde el Corte 1.
 
 **Corpus de validación:** Takis (13k menciones, ~4 meses) — ya cargado, ya aprobado, costo cero de adquisición.
 
@@ -16,7 +20,7 @@
 | Signals | ✅ completa | library + lifecycle + momentum detail + drawers |
 | Marketing Moves | ✅ completa | board + cards + aprobación en composer |
 | Content & Creative | ✅ parcial | hooks/claims/tone derivan de señales (no requieren performance). Creators si hay author metadata. Sin "format performance" |
-| Paid / Organic | 🔒 gated `Needs data` | hasta tener performance evidence |
+| Paid / Organic | ✅ funcional con archivo de performance | dual-axis conversation vs spend (alineación por periodo, sin mapping), campaign alignment table, organic-to-paid candidates, sugerencias semánticas campaña↔señal con confirmación en Composer. Gated solo si el cliente no sube performance |
 | Competitive & Category | ✅ si el corpus trae scope competitivo | Takis lo trae (Doritos etc. vía fan-out) |
 | Evidence | ✅ completa | packs + counter + authors + provenance |
 | Corpus View | ✅ reusa | SignalCorpusExplorer existente, filtros por señal SP |
@@ -40,8 +44,8 @@ Los 8 steps del doc 44 §3 completos, con: budget cap por corrida (param visible
 
 ## Qué NO entra al Corte 1 (explícito, para que nadie lo "adelante")
 
-- Conectores OAuth (Meta/TikTok/Google) y scheduled sync.
-- Campaign↔signal mapping / spend by narrative.
+- Conectores OAuth (Meta/TikTok/Google) y scheduled sync — el camino por ARCHIVO sí entra completo.
+- Campaign↔signal mapping 100% automático ("spend by narrative" sin humano) — las sugerencias semánticas + confirmación en Composer SÍ entran.
 - Per-mention emotion classification.
 - Exports (PDF/deck/briefs) — el deck infra existe, se conecta en Corte 2.
 - Galaxy con física/canvas y time-scrubber animado.
@@ -59,7 +63,8 @@ Los 8 steps del doc 44 §3 completos, con: budget cap por corrida (param visible
 
 ## Secuencia de PRs sugerida (cada una shippeable)
 
-1. **PR-1 Data foundation:** migración 0034 + seed + steps sp_readiness/sp_periods/sp_cluster/sp_name_signals/sp_metrics + tests de periodización e impact_v1.
+1. **PR-1 Data foundation:** migración 0034 (incluye `performance_records` + `data_sources` + `source_sync_runs`, doc 44 §2.6-2.7) + seed + brief SP en wizard + query template `signal-pulse` + steps sp_readiness/sp_periods/sp_cluster/sp_name_signals/sp_metrics + tests de periodización e impact_v1.
+1b. **PR-1.5 Performance ingestion:** Source Wizard con clasificación de tipo + mapping configurable de columnas + validación + bulk insert a `performance_records` + source health. Test: export Meta de 12 meses (daily, paid+organic) entra completo, deduplicado y periodizado.
 2. **PR-2 Interpretación + gates:** sp_interpret + sp_moves + sp_charts + sp_gates + linter no_invented_numbers + cost cap.
 3. **PR-3 UI núcleo:** `/pulse/[outputId]` shell + navegación agrupada + Overview (4 charts v1) + Signals + drawers.
 4. **PR-4 Moves + Evidence + Composer:** boards, packs, aprobación, publish.
