@@ -55,9 +55,10 @@ test("Signal Pulse deterministic copy sounds like a marketing read, not a placeh
 
   assert.equal(copy.title, "Oportunidad: Botana Crujiente Con Chile");
   assert.match(copy.description, /64 menciones/);
-  assert.match(copy.marketingRead, /angulo creativo/);
+  assert.match(copy.marketingRead, /ángulo creativo/);
   assert.match(copy.actionHint, /claim o hook/);
   assert.doesNotMatch(copy.description, /La conversacion esta agrupando/i);
+  assert.doesNotMatch(copy.description, /senal|conclusion|esta empujando/i);
   assert.doesNotMatch(copy.marketingRead, /Probar contenido o pauta alrededor/i);
 });
 
@@ -81,7 +82,7 @@ test("Signal Pulse deterministic copy changes posture for risks and weak signals
     rank: 5
   });
 
-  assert.equal(risk.title, "Friccion: Empaque Roto");
+  assert.equal(risk.title, "Fricción: Empaque Roto");
   assert.match(risk.marketingRead, /contener/);
   assert.match(risk.actionHint, /reduzca duda/);
   assert.equal(directional.title, "Merch Especial");
@@ -97,12 +98,12 @@ test("Signal Pulse marketing moves reuse the signal action hint and define measu
     confidence: "alta",
     impact: 72,
     volume: 96,
-    marketingRead: "La senal trae energia positiva suficiente para probarla como angulo creativo.",
-    actionHint: "Testear botana crujiente con chile como hook principal en una celda pequena de pauta"
+    marketingRead: "La señal trae energía positiva suficiente para probarla como ángulo creativo.",
+    actionHint: "Testear botana crujiente con chile como hook principal en una celda pequeña de pauta"
   });
 
   assert.match(move.actionText, /Testear botana crujiente con chile/);
-  assert.match(move.actionText, /distribucion controlada/);
+  assert.match(move.actionText, /distribución controlada/);
   assert.equal(move.ownerSuggestion, "Paid media + Brand");
   assert.equal(move.timing, "este mes");
   assert.match(move.measurementSuggestion, /CTR/);

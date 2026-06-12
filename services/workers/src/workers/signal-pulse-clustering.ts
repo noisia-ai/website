@@ -90,7 +90,7 @@ export function selectSignalPulseClusterPhrase(texts: string[]) {
   const [best] = Array.from(scores.entries())
     .filter(([phrase, score]) => score >= 2 && phrase.length <= 46)
     .sort((a, b) => b[1] - a[1] || b[0].split(" ").length - a[0].split(" ").length || a[0].localeCompare(b[0]))[0] ?? [];
-  return best ?? "senal de conversacion";
+  return best ?? "señal de conversación";
 }
 
 function tokenize(text: string) {

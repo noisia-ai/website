@@ -138,8 +138,8 @@ function CoverSlide({ brandLabel, confidence, dateLabel, periods }: { brandLabel
           </dl>
         </div>
         <div className="deck-foot">
-          <span className="deck-brand-row"><img className="deck-logo-img" src={LOGO} alt="Noisia" /> · Tactical Intelligence</span>
-          <span>Monthly Pulse</span>
+          <span className="deck-brand-row"><img className="deck-logo-img" src={LOGO} alt="Noisia" /> · Inteligencia táctica</span>
+          <span>Corte mensual</span>
         </div>
       </div>
     </section>
@@ -149,7 +149,7 @@ function CoverSlide({ brandLabel, confidence, dateLabel, periods }: { brandLabel
 function ExecutiveSlide({ cost, executiveRead, moves, signals }: { cost: JsonRecord; executiveRead: JsonRecord; moves: JsonRecord[]; signals: JsonRecord[] }) {
   return (
     <section className="deck-slide" data-label="Executive Read">
-      <SlideFrame num="02" eyebrow="Executive Signal Read" title={stringValue(executiveRead.headline) || "Qué cambió este mes"}>
+      <SlideFrame num="02" eyebrow="Lectura ejecutiva" title={stringValue(executiveRead.headline) || "Qué cambió este mes"}>
         <div className="deck-cols is-wide-left">
           <div className="deck-stack is-center">
             <p className="deck-body">{stringValue(executiveRead.body) || "El corte resume las señales con evidencia suficiente y la acción que Marketing puede mover primero."}</p>
@@ -160,9 +160,9 @@ function ExecutiveSlide({ cost, executiveRead, moves, signals }: { cost: JsonRec
           </div>
           <div className="deck-metrics pulse-deck-metrics">
             <Metric label="Señales" value={signals.length} />
-            <Metric label="Moves" value={moves.length} />
+            <Metric label="Acciones" value={moves.length} />
             <Metric label="Costo" value={`USD ${fmtMoney(cost.estimated_cost_usd)}`} />
-            <Metric label="Tope" value={Number(cost.budget_cap_usd ?? 0) > 0 ? `USD ${fmtMoney(cost.budget_cap_usd)}` : "n/d"} />
+            <Metric label="Tope" value={Number(cost.budget_cap_usd ?? 0) > 0 ? `USD ${fmtMoney(cost.budget_cap_usd)}` : "sin tope"} />
           </div>
         </div>
       </SlideFrame>
@@ -220,8 +220,8 @@ function SignalsSlide({ evidence, signals }: { evidence: JsonRecord[]; signals: 
 
 function MovesSlide({ moves, signals }: { moves: JsonRecord[]; signals: JsonRecord[] }) {
   return (
-    <section className="deck-slide" data-label="Marketing Moves">
-      <SlideFrame num="05" eyebrow="Marketing Moves" title="Qué puede mover Marketing">
+    <section className="deck-slide" data-label="Acciones de marketing">
+      <SlideFrame num="05" eyebrow="Acciones de marketing" title="Qué puede mover Marketing">
         <div className="deck-cards cols-3 pulse-deck-move-cards">
           {moves.map((move, index) => {
             const refs = arrayValue(move.signal_refs).map(String);
@@ -254,9 +254,9 @@ function LimitsSlide({ cost, gates, periods, sources }: { cost: JsonRecord; gate
           <div className="deck-stack">
             <div className="deck-cards cols-2">
               <MetricCard label="Periodos" value={periods.length} detail={`${periods.filter((period) => period.comparable !== false).length} comparables`} />
-              <MetricCard label="Fuentes" value={sources.length} detail="conversation + performance" />
+              <MetricCard label="Fuentes" value={sources.length} detail="conversación + performance" />
               <MetricCard label="Costo" value={`USD ${fmtMoney(cost.estimated_cost_usd)}`} detail={Number(cost.budget_cap_usd ?? 0) > 0 ? `tope USD ${fmtMoney(cost.budget_cap_usd)}` : "sin tope declarado"} />
-              <MetricCard label="Gates" value={failed.length === 0 ? "OK" : failed.length} detail={failed.length === 0 ? "sin blockers" : "con límites visibles"} />
+              <MetricCard label="Gates" value={failed.length === 0 ? "OK" : failed.length} detail={failed.length === 0 ? "sin bloqueos" : "con límites visibles"} />
             </div>
           </div>
           <div className="deck-stack">
@@ -400,7 +400,7 @@ function labelQualityGate(value: string) {
     period_comparability: "Meses comparables",
     signal_min_evidence: "Evidencia ligada",
     chart_data_available: "Charts con datos",
-    move_has_signal: "Moves con señal",
+    move_has_signal: "Acciones con señal",
     cost_within_budget: "Costo en budget",
     no_invented_numbers: "Números calculados",
     humanizer_passed: "Copy publicable"

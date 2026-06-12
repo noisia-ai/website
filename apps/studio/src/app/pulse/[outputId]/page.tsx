@@ -108,15 +108,15 @@ export default async function PulseOutputPage({
 
       <section className="signal-section pulse-section" data-signal-section="moves" hidden id="moves">
         <PulseSectionHead
-          eyebrow="Marketing Moves"
+          eyebrow="Acciones de marketing"
           title="Acciones que Marketing sí puede mover"
-          sub="Moves cortos, medibles y ligados a señales. No se convierten fricciones de CX en acciones de marketing sin traducción."
+          sub="Acciones cortas, medibles y ligadas a señales. No se convierten fricciones de CX en acciones de marketing sin traducción."
         />
         <div className="pulse-move-board">
           {moves.length > 0 ? moves.map((move) => (
             <MoveCard key={stringValue(move.id)} move={move} signals={signals} />
           )) : (
-            <PulseEmptyState title="Sin moves todavía" body="Cuando existan señales con evidencia, el reporte propondrá acciones para claim, pauta, contenido o monitoreo." />
+            <PulseEmptyState title="Sin acciones todavía" body="Cuando existan señales con evidencia, el reporte propondrá acciones para claim, pauta, contenido o monitoreo." />
           )}
         </div>
       </section>
@@ -229,7 +229,7 @@ function PulseHeader({
         <p>{body || "El corte resume qué cambió, qué evidencia lo sostiene y qué puede mover Marketing."}</p>
       </div>
       <aside className="pulse-hero-action">
-        <span>Move sugerido</span>
+        <span>Acción sugerida</span>
         <strong>{action || "Revisar señales con mayor impacto antes de mover presupuesto."}</strong>
         <div className="pulse-run-cost">
           <span>Costo de corrida</span>
@@ -240,7 +240,7 @@ function PulseHeader({
       <div className="pulse-kpi-strip">
         <PulseKpi label="Periodos" value={periods} />
         <PulseKpi label="Señales" value={signals} />
-        <PulseKpi label="Moves" value={moves} />
+        <PulseKpi label="Acciones" value={moves} />
       </div>
     </header>
   );
@@ -301,7 +301,7 @@ function PulseTopSignals({ signals }: { signals: JsonRecord[] }) {
 function PulseMovesPreview({ moves }: { moves: JsonRecord[] }) {
   return (
     <section className="pulse-band">
-      <PulseSectionHead eyebrow="Siguientes moves" title="Qué haría Marketing después" sub="Acciones cortas, con medición y límite cuando la confianza es baja." compact />
+      <PulseSectionHead eyebrow="Siguientes acciones" title="Qué haría Marketing después" sub="Acciones cortas, con medición y límite cuando la confianza es baja." compact />
       <div className="pulse-move-preview">
         {moves.map((move) => (
           <article key={stringValue(move.id)}>
@@ -479,11 +479,11 @@ function PaidOrganicPanel({ periods, performance }: { periods: JsonRecord[]; per
             <span>Impresiones</span>
           </div>
           <div>
-            <strong>{summary.efficiency.ctr == null ? "n/d" : `${fmtNumber(summary.efficiency.ctr * 100)}%`}</strong>
+            <strong>{summary.efficiency.ctr == null ? "sin dato" : `${fmtNumber(summary.efficiency.ctr * 100)}%`}</strong>
             <span>CTR calculado</span>
           </div>
           <div>
-            <strong>{summary.efficiency.costPerConversation == null ? "n/d" : `USD ${fmtMoney(summary.efficiency.costPerConversation)}`}</strong>
+            <strong>{summary.efficiency.costPerConversation == null ? "sin dato" : `USD ${fmtMoney(summary.efficiency.costPerConversation)}`}</strong>
             <span>Costo por mención</span>
           </div>
         </div>
@@ -724,7 +724,7 @@ function buildPulseGroups(): SignalShellGroup[] {
       sections: [
         { key: "overview", label: "Overview", icon: "wave" },
         { key: "signals", label: "Signals", icon: "sparkle" },
-        { key: "moves", label: "Marketing Moves", icon: "layers" },
+        { key: "moves", label: "Acciones", icon: "layers" },
         { key: "content", label: "Content & Creative", icon: "sparkle" },
         { key: "paid-organic", label: "Paid / Organic", icon: "wave" },
         { key: "competitive", label: "Competitive", icon: "platform" }
@@ -791,7 +791,7 @@ function labelQualityGate(value: string) {
     period_comparability: "Meses comparables",
     signal_min_evidence: "Evidencia ligada",
     chart_data_available: "Charts con datos",
-    move_has_signal: "Moves con señal",
+    move_has_signal: "Acciones con señal",
     cost_within_budget: "Costo en budget",
     no_invented_numbers: "Números calculados",
     humanizer_passed: "Copy publicable"

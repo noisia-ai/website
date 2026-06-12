@@ -45,7 +45,7 @@ export function buildSignalPulseDeterministicRead(input: SignalPulseCopyInput): 
 
   return {
     title,
-    description: `${evidenceLabel} ${platformLabel} esta empujando "${territory}" con tono ${sentimentLabel}. No es una conclusion de escritorio: sale de un cluster de menciones y debe leerse como territorio accionable del mes.`,
+    description: `${evidenceLabel} ${platformLabel} está empujando "${territory}" con tono ${sentimentLabel}. No es una conclusión de escritorio: sale de un cluster de menciones y debe leerse como territorio accionable del mes.`,
     marketingRead: `${posture.read} El equipo puede convertirlo en una prueba concreta sin sobrerreaccionar: un hook, una pieza corta o una variante de pauta que mida respuesta real.`,
     actionHint: posture.action,
     interpretationSource: "deterministic_marketing_read_v2"
@@ -68,10 +68,10 @@ export function buildSignalPulseMarketingMove(input: SignalPulseMoveInput): Sign
 
 function actionTextFor(moveType: string, actionHint: string, territory: string) {
   if (moveType === "test_claim") {
-    return `${actionHint}. Convertirlo en dos hooks rivales y correr una prueba chica antes de volverlo claim de campana.`;
+    return `${actionHint}. Convertirlo en dos hooks rivales y correr una prueba chica antes de volverlo claim de campaña.`;
   }
   if (moveType === "amplify") {
-    return `${actionHint}. Darle distribucion controlada y compararlo contra el mensaje base, no contra intuicion interna.`;
+    return `${actionHint}. Darle distribución controlada y compararlo contra el mensaje base, no contra intuición interna.`;
   }
   if (moveType === "monitor") {
     return `Mantener "${territory}" en monitoreo activo y preparar respuesta solo si sube volumen o negatividad.`;
@@ -82,35 +82,35 @@ function actionTextFor(moveType: string, actionHint: string, territory: string) 
 function measurementFor(input: SignalPulseMoveInput, territory: string) {
   const impactLabel = input.impact >= 65 ? "impacto alto" : input.impact >= 35 ? "impacto medio" : "impacto bajo";
   if (input.moveType === "test_claim") {
-    return `Comparar hook rate, comentarios utiles y costo por interaccion del territorio "${territory}" contra el control.`;
+    return `Comparar hook rate, comentarios útiles y costo por interacción del territorio "${territory}" contra el control.`;
   }
   if (input.moveType === "amplify") {
-    return `Medir CTR, saves, menciones organicas y cambio de sentimiento; separar aprendizaje de performance por ${impactLabel}.`;
+    return `Medir CTR, guardados, menciones orgánicas y cambio de sentimiento; separar aprendizaje de performance por ${impactLabel}.`;
   }
   if (input.moveType === "monitor") {
     return `Revisar volumen, sentimiento y evidencia protagonista en el siguiente corte antes de activar piezas.`;
   }
-  return `Medir retencion, shares y comentarios con lenguaje reutilizable; cerrar decision con ${input.volume} menciones como base.`;
+  return `Medir retención, shares y comentarios con lenguaje reutilizable; cerrar decisión con ${input.volume} menciones como base.`;
 }
 
 function noGoFor(input: SignalPulseMoveInput, urgencyReason: string) {
   if (input.confidence === "alta" && input.impact >= 50) return null;
-  if (input.moveType === "monitor") return `No mover presupuesto todavia: ${urgencyReason}`;
+  if (input.moveType === "monitor") return `No mover presupuesto todavía: ${urgencyReason}`;
   if (input.confidence === "media") return `Mantenerlo como experimento: ${urgencyReason}`;
   return `No convertirlo en promesa fuerte hasta sumar evidencia: ${urgencyReason}`;
 }
 
 function urgencyFor(input: SignalPulseMoveInput) {
   if (input.lifecycle === "emerging") {
-    return { timing: "esta semana", reason: "la senal esta emergiendo y necesita validacion rapida" };
+    return { timing: "esta semana", reason: "la señal está emergiendo y necesita validación rápida" };
   }
   if (input.lifecycle === "rising" || input.impact >= 65) {
-    return { timing: "este mes", reason: "la senal ya trae momentum suficiente para una prueba visible" };
+    return { timing: "este mes", reason: "la señal ya trae momentum suficiente para una prueba visible" };
   }
   if (input.lifecycle === "declining") {
-    return { timing: "siguiente corte", reason: "la senal viene perdiendo fuerza" };
+    return { timing: "siguiente corte", reason: "la señal viene perdiendo fuerza" };
   }
-  return { timing: "siguiente sprint", reason: "la senal todavia necesita aprendizaje incremental" };
+  return { timing: "siguiente sprint", reason: "la señal todavía necesita aprendizaje incremental" };
 }
 
 function ownerForMove(moveType: string) {
@@ -121,15 +121,15 @@ function ownerForMove(moveType: string) {
 }
 
 function defaultAction(moveType: string, territory: string) {
-  if (moveType === "test_claim") return `Testear "${territory}" como claim especifico`;
+  if (moveType === "test_claim") return `Testear "${territory}" como claim específico`;
   if (moveType === "amplify") return `Amplificar "${territory}" con presupuesto controlado`;
-  if (moveType === "monitor") return `Monitorear "${territory}" sin escalarlo todavia`;
+  if (moveType === "monitor") return `Monitorear "${territory}" sin escalarlo todavía`;
   return `Convertir "${territory}" en contenido de prueba`;
 }
 
 function titleForSignal(territory: string, input: SignalPulseCopyInput) {
   const core = titleCase(territory).replace(/^Territorio\s+/i, "");
-  if (input.signalType === "risk") return `Friccion: ${core}`;
+  if (input.signalType === "risk") return `Fricción: ${core}`;
   if (input.signalType === "opportunity") return `Oportunidad: ${core}`;
   if (input.rank <= 3) return `Prioridad: ${core}`;
   return core;
@@ -139,25 +139,25 @@ function postureFor(input: SignalPulseCopyInput) {
   const territory = cleanTerritory(input.term || input.canonicalTitle);
   if (input.signalType === "risk" || (input.sentimentAvg ?? 0) < -0.12) {
     return {
-      read: `La senal marca una friccion que conviene contener antes de amplificar el territorio.`,
-      action: `Preparar una respuesta de contenido que reduzca duda sobre "${territory}" y medir si baja la conversacion negativa.`
+      read: `La señal marca una fricción que conviene contener antes de amplificar el territorio.`,
+      action: `Preparar una respuesta de contenido que reduzca duda sobre "${territory}" y medir si baja la conversación negativa.`
     };
   }
   if (input.signalType === "opportunity" || (input.sentimentAvg ?? 0) > 0.18) {
     return {
-      read: `La senal trae energia positiva suficiente para probarla como angulo creativo.`,
-      action: `Testear "${territory}" como claim o hook principal en una celda pequena de contenido/pauta.`
+      read: `La señal trae energía positiva suficiente para probarla como ángulo creativo.`,
+      action: `Testear "${territory}" como claim o hook principal en una celda pequeña de contenido/pauta.`
     };
   }
   return {
-    read: `La senal todavia no pide una apuesta grande; pide aprender rapido si el territorio mueve respuesta.`,
+    read: `La señal todavía no pide una apuesta grande; pide aprender rápido si el territorio mueve respuesta.`,
     action: `Convertir "${territory}" en una prueba de bajo costo y comparar contra el mensaje base del mes.`
   };
 }
 
 function evidencePhrase(count: number) {
-  if (count >= 80) return `${count} menciones sostienen una senal de alta presencia.`;
-  if (count >= 30) return `${count} menciones sostienen una senal con traccion suficiente.`;
+  if (count >= 80) return `${count} menciones sostienen una señal de alta presencia.`;
+  if (count >= 30) return `${count} menciones sostienen una señal con tracción suficiente.`;
   if (count >= 8) return `${count} menciones alcanzan para una lectura direccional.`;
   return `${count} menciones apenas alcanzan para monitoreo.`;
 }
@@ -166,7 +166,7 @@ function sentimentPhrase(value: number | null) {
   if (value === null) return "sin polaridad clara";
   if (value > 0.35) return "muy favorable";
   if (value > 0.12) return "favorable";
-  if (value < -0.28) return "critico";
+  if (value < -0.28) return "crítico";
   if (value < -0.08) return "cauto";
   return "mixto";
 }
@@ -183,7 +183,7 @@ function cleanTerritory(value: string) {
     .replace(/^territorio\s+/i, "")
     .replace(/\s+/g, " ")
     .trim()
-    .toLowerCase() || "senal de conversacion";
+    .toLowerCase() || "señal de conversación";
 }
 
 function stripTerminalPunctuation(value: string) {
