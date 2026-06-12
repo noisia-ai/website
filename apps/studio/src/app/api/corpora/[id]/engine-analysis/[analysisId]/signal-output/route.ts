@@ -86,6 +86,19 @@ export async function POST(
     );
   }
 
+  if (analysis.methodology_slug === "signal-pulse") {
+    return handleSignalPulseOutput({
+      analysis,
+      corpus,
+      isPublish: parsed.data.action === "publish",
+      manifest: parsed.data.manifest ?? {},
+      title: parsed.data.title,
+      headline: parsed.data.headline ?? null,
+      summary: parsed.data.summary ?? null,
+      userId: session.appUser.id
+    });
+  }
+
   const findings = await loadEngineFindings(analysis.id);
   const isPublish = parsed.data.action === "publish";
   if (isPublish) {
@@ -136,6 +149,8 @@ export async function POST(
     brandId: corpus.brandId,
     themeId: corpus.themeId,
     methodologySlug: analysis.methodology_slug,
+    kind: "signal",
+    outputType: "narrative_dashboard",
     status: isPublish ? "published" : "draft",
     title: parsed.data.title,
     headline: parsed.data.headline ?? null,
@@ -286,6 +301,8 @@ async function upsertEngineOutput(args: {
   brandId: string | null;
   themeId: string | null;
   methodologySlug: string;
+  kind: "signal" | "signal_pulse";
+  outputType: string;
   status: "draft" | "published";
   title: string;
   headline: string | null;
@@ -298,23 +315,25 @@ async function upsertEngineOutput(args: {
   const result = await pool.query<{ id: string; status: string; title: string }>(
     `INSERT INTO published_outputs (
        engine_analysis_id, study_corpus_id, brand_id, theme_id, methodology_slug,
-       output_type, status, title, headline, summary, manifest, payload, version,
+       kind, output_type, status, title, headline, summary, manifest, payload, visibility_config, version,
        created_by_user_id, published_by_user_id, published_at, updated_at
      )
-     VALUES ($1, $2, $3, $4, $5, 'narrative_dashboard', $6, $7, $8, $9, $10::jsonb, $11::jsonb, $12,
-       $13, $14, CASE WHEN $15::boolean THEN NOW() ELSE NULL END, NOW())
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::jsonb, $13::jsonb, $14,
+       $15, $16, CASE WHEN $17::boolean THEN NOW() ELSE NULL END, NOW())
      ON CONFLICT (engine_analysis_id, output_type)
        WHERE engine_analysis_id IS NOT NULL
      DO UPDATE SET
+       kind = EXCLUDED.kind,
        status = EXCLUDED.status,
        title = EXCLUDED.title,
        headline = EXCLUDED.headline,
        summary = EXCLUDED.summary,
        manifest = EXCLUDED.manifest,
        payload = EXCLUDED.payload,
+       visibility_config = EXCLUDED.visibility_config,
        version = EXCLUDED.version,
        published_by_user_id = EXCLUDED.published_by_user_id,
-       published_at = CASE WHEN $15::boolean THEN NOW() ELSE published_outputs.published_at END,
+       published_at = CASE WHEN $17::boolean THEN NOW() ELSE published_outputs.published_at END,
        archived_at = NULL,
        updated_at = NOW()
      RETURNING id, status, title`,
@@ -324,12 +343,15 @@ async function upsertEngineOutput(args: {
       args.brandId,
       args.themeId,
       args.methodologySlug,
+      args.kind,
+      args.outputType,
       args.status,
       args.title,
       args.headline,
       args.summary,
       JSON.stringify(args.manifest),
       JSON.stringify(args.payload),
+      JSON.stringify(args.kind === "signal_pulse" ? { client_default: true, internal_quality: true } : {}),
       SIGNAL_PAYLOAD_VERSION,
       args.userId,
       args.publish ? args.userId : null,
@@ -337,6 +359,258 @@ async function upsertEngineOutput(args: {
     ]
   );
   return result.rows[0] ?? null;
+}
+
+async function handleSignalPulseOutput(args: {
+  analysis: EngineAnalysisRow;
+  corpus: NonNullable<Awaited<ReturnType<typeof getCorpusForUser>>>;
+  isPublish: boolean;
+  manifest: Record<string, unknown>;
+  title: string;
+  headline: string | null;
+  summary: string | null;
+  userId: string;
+}) {
+  const readiness = validateSignalPulsePublishReadiness(args.analysis.meta_json);
+  if (args.isPublish && !readiness.ok) {
+    return Response.json(
+      {
+        error: readiness.error,
+        message: readiness.message,
+        failedChecks: readiness.failedChecks
+      },
+      { status: 409 }
+    );
+  }
+
+  const payload = await buildSignalPulsePublishedPayload(args.analysis, args.corpus);
+  const manifest = normalizeSignalPulseManifest(args.manifest, readiness.checks);
+  const output = await upsertEngineOutput({
+    engineAnalysisId: args.analysis.id,
+    studyCorpusId: args.corpus.id,
+    brandId: args.corpus.brandId,
+    themeId: args.corpus.themeId,
+    methodologySlug: "signal-pulse",
+    kind: "signal_pulse",
+    outputType: "signal_pulse_dashboard",
+    status: args.isPublish ? "published" : "draft",
+    title: args.title,
+    headline: args.headline,
+    summary: args.summary,
+    manifest,
+    payload,
+    userId: args.userId,
+    publish: args.isPublish
+  });
+
+  if (output?.id) {
+    await pool.query(
+      `UPDATE signal_observations
+       SET published_output_id = $1
+       WHERE engine_analysis_id = $2
+         AND published_output_id IS NULL`,
+      [output.id, args.analysis.id]
+    );
+  }
+
+  return Response.json({ ok: true, output, liveIntelligence: { status: "ok", kind: "signal_pulse" } });
+}
+
+async function buildSignalPulsePublishedPayload(
+  analysis: EngineAnalysisRow,
+  corpus: NonNullable<Awaited<ReturnType<typeof getCorpusForUser>>>
+) {
+  const [periods, signals, moves, charts, evidence, cost] = await Promise.all([
+    pool.query(
+      `SELECT id::text, label, period_start::text, period_end::text, coverage, comparable, confidence, known_gaps
+       FROM report_periods
+       WHERE study_corpus_id = $1 AND granularity = 'month'
+       ORDER BY period_start`,
+      [corpus.id]
+    ),
+    pool.query(
+      `
+        WITH latest AS (
+          SELECT DISTINCT ON (spm.canonical_signal_id)
+            spm.*
+          FROM signal_period_metrics spm
+          JOIN report_periods rp ON rp.id = spm.period_id
+          WHERE spm.study_corpus_id = $1
+          ORDER BY spm.canonical_signal_id, rp.period_start DESC
+        )
+        SELECT
+          cs.id::text AS id,
+          cs.canonical_title AS title,
+          cs.description,
+          cs.signal_type,
+          cs.dimensions,
+          latest.volume,
+          latest.impact_v1::text AS impact_v1,
+          latest.sentiment_score::text AS sentiment_score,
+          latest.polarity_bucket,
+          latest.dominant_emotion,
+          latest.source_mix,
+          latest.evidence_count,
+          latest.confidence,
+          latest.delta_prev::text AS delta_prev,
+          latest.lifecycle_state
+        FROM canonical_signals cs
+        JOIN latest ON latest.canonical_signal_id = cs.id
+        WHERE cs.study_corpus_id = $1
+          AND cs.methodology_slug = 'signal-pulse'
+          AND cs.status <> 'archived'
+        ORDER BY COALESCE(latest.impact_v1, 0) DESC, latest.volume DESC
+        LIMIT 80
+      `,
+      [corpus.id]
+    ),
+    pool.query(
+      `SELECT id::text, move_type, action_text, signal_refs::text[], evidence_refs, owner_suggestion,
+              timing, measurement_suggestion, no_go_notes, confidence, status, position
+       FROM marketing_moves
+       WHERE study_corpus_id = $1 AND engine_analysis_id = $2
+       ORDER BY position NULLS LAST, created_at`,
+      [corpus.id, analysis.id]
+    ),
+    pool.query(
+      `SELECT chart_key, payload, algo_version, computed_at::text
+       FROM chart_aggregates
+       WHERE study_corpus_id = $1
+       ORDER BY chart_key`,
+      [corpus.id]
+    ),
+    pool.query(
+      `
+        SELECT
+          so.canonical_signal_id::text AS signal_id,
+          soe.id::text AS evidence_id,
+          soe.mention_id::text,
+          soe.quote,
+          soe.evidence_role,
+          soe.is_protagonist,
+          m.resolved_platform AS platform,
+          m.published_at::text,
+          m.url
+        FROM signal_observations so
+        JOIN signal_observation_evidence soe ON soe.signal_observation_id = so.id
+        LEFT JOIN mentions m ON m.id = soe.mention_id
+        WHERE so.study_corpus_id = $1
+          AND so.engine_analysis_id = $2
+        ORDER BY so.rank NULLS LAST, soe.is_protagonist DESC, soe.position ASC
+        LIMIT 240
+      `,
+      [corpus.id, analysis.id]
+    ),
+    pool.query(
+      `SELECT COALESCE(SUM(estimated_cost_usd), 0)::text AS estimated_cost_usd
+       FROM engine_cost_events
+       WHERE engine_analysis_id = $1`,
+      [analysis.id]
+    )
+  ]);
+
+  const chartMap = Object.fromEntries(charts.rows.map((row: { chart_key: string; payload: unknown }) => [row.chart_key, row.payload]));
+  return {
+    kind: "signal_pulse",
+    version: 1,
+    report: {
+      corpus_id: corpus.id,
+      brand_id: corpus.brandId,
+      theme_id: corpus.themeId,
+      title: corpus.name,
+      business_question: corpus.businessQuestion,
+      generated_from_engine_analysis_id: analysis.id
+    },
+    executive_read: buildSignalPulseExecutiveRead(signals.rows, moves.rows),
+    periods: periods.rows,
+    signals: signals.rows,
+    marketing_moves: moves.rows,
+    chart_refs: chartMap,
+    evidence: evidence.rows,
+    quality_gates: Array.isArray((analysis.meta_json ?? {}).quality_gates) ? (analysis.meta_json ?? {}).quality_gates : [],
+    cost: {
+      estimated_cost_usd: Number(cost.rows[0]?.estimated_cost_usd ?? 0),
+      budget_cap_usd: Number(asRecord((analysis.meta_json ?? {}).signal_pulse).readiness && asRecord(asRecord((analysis.meta_json ?? {}).signal_pulse).readiness).budget_cap_usd || 0)
+    },
+    limitations: signalPulseLimitations(analysis.meta_json)
+  };
+}
+
+function buildSignalPulseExecutiveRead(signals: Array<Record<string, unknown>>, moves: Array<Record<string, unknown>>) {
+  const topSignal = signals[0];
+  const topMove = moves[0];
+  if (!topSignal) {
+    return {
+      headline: "Todavía no hay señales suficientes para mover marketing.",
+      body: "Sube más conversación o amplía el periodo antes de convertir esto en acciones.",
+      action: "Revisar fuentes y cobertura."
+    };
+  }
+  return {
+    headline: `${String(topSignal.title ?? "La señal principal")} concentra la prioridad del corte.`,
+    body: `Tiene ${Number(topSignal.volume ?? 0)} menciones en el periodo más reciente y confianza ${String(topSignal.confidence ?? "baja")}.`,
+    action: String(topMove?.action_text ?? "Usarla como prueba controlada antes de mover presupuesto fuerte.")
+  };
+}
+
+function signalPulseLimitations(metaJson: unknown) {
+  const gates = Array.isArray(asRecord(metaJson).quality_gates) ? asRecord(metaJson).quality_gates as Array<Record<string, unknown>> : [];
+  return gates
+    .filter((gate) => gate.passed !== true)
+    .map((gate) => String(gate.detail ?? gate.id ?? "Limitacion pendiente"))
+    .slice(0, 8);
+}
+
+function normalizeSignalPulseManifest(input: Record<string, unknown>, checks: Array<{ id: string; passed: boolean; detail: string }>) {
+  return {
+    kind: "signal_pulse",
+    version: 1,
+    modules: ["overview", "signals", "marketing_moves", "evidence", "corpus_view", "composer", "quality_settings"],
+    quality_gates: checks,
+    ...input
+  };
+}
+
+function validateSignalPulsePublishReadiness(metaJson: unknown):
+  | { ok: true; checks: Array<{ id: string; passed: boolean; detail: string }> }
+  | { ok: false; error: "signal_pulse_gates_failed" | "signal_pulse_gates_missing"; message: string; failedChecks: Array<{ id: string; detail: string }>; checks: Array<{ id: string; passed: boolean; detail: string }> } {
+  const checks = Array.isArray(asRecord(metaJson).quality_gates)
+    ? (asRecord(metaJson).quality_gates as unknown[]).map(normalizeSignalPulseGate).filter((gate): gate is { id: string; passed: boolean; detail: string } => Boolean(gate))
+    : [];
+  if (checks.length === 0) {
+    return {
+      ok: false,
+      error: "signal_pulse_gates_missing",
+      message: "Faltan quality gates de Signal Pulse antes de publicar.",
+      failedChecks: [],
+      checks
+    };
+  }
+  const blockers = new Set(["source_presence", "signal_min_evidence", "chart_data_available", "move_has_signal", "cost_within_budget", "no_invented_numbers"]);
+  const failedChecks = checks
+    .filter((gate) => blockers.has(gate.id) && !gate.passed)
+    .map((gate) => ({ id: gate.id, detail: gate.detail }));
+  if (failedChecks.length > 0) {
+    return {
+      ok: false,
+      error: "signal_pulse_gates_failed",
+      message: "Signal Pulse no puede publicarse con blockers activos.",
+      failedChecks,
+      checks
+    };
+  }
+  return { ok: true, checks };
+}
+
+function normalizeSignalPulseGate(value: unknown) {
+  const gate = asRecord(value);
+  const id = typeof gate.id === "string" ? gate.id : "";
+  if (!id) return null;
+  return {
+    id,
+    passed: gate.passed === true,
+    detail: typeof gate.detail === "string" ? gate.detail : ""
+  };
 }
 
 async function engineAnalysisUsedFixtureCoding(engineAnalysisId: string, metaJson: unknown) {
