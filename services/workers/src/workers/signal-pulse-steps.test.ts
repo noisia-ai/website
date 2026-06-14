@@ -17,7 +17,7 @@ import {
 import { buildClaudeSignalNamingPrompt } from "./signal-pulse-prompts";
 import { buildSignalPulseDeterministicRead, buildSignalPulseMarketingMove } from "./signal-pulse-copy";
 import { splitSignalPulseMetaForMerge } from "./signal-pulse-meta";
-import { isActionableSignalPulseTerm, isRawKeywordSignalPhrase } from "./signal-pulse-actionability";
+import { isActionableSignalPulseTerm, isRawKeywordSignalPhrase, validateSignalPulseSynthesis } from "./signal-pulse-actionability";
 import { chooseSignalPulseWindowEnd } from "./signal-pulse-window";
 import { summarizeSignalPulseMarketingActivity } from "./signal-pulse-marketing-activity";
 import { rankSignalPulseMarketingRecordsForCluster } from "./signal-pulse-marketing-record-match";
@@ -141,6 +141,60 @@ test("Signal Pulse accepts raw cluster anchors but still identifies raw output p
   assert.equal(isActionableSignalPulseTerm("renovacion enero urgente"), true);
   assert.equal(isRawKeywordSignalPhrase("renovacion enero urgente"), false);
   assert.equal(isActionableSignalPulseTerm("morena"), false);
+});
+
+test("Signal Pulse synthesis validation requires marketing-first qualitative reads", () => {
+  const valid = validateSignalPulseSynthesis({
+    title: "Gap de pauta: La campaña habla de confianza, pero la conversación pide claridad",
+    description: "En 2026-05 la conversación sube desde dudas sobre claridad de respuesta; no es sólo volumen, coincide con una pieza de confianza y aparece en el pico semanal.",
+    marketingRead: "La pauta está empujando confianza, pero la evidencia muestra que el aprendizaje movible es claridad operativa antes que promesa emocional.",
+    actionHint: "Probar una pieza de claridad sobre tiempos de respuesta y medir dudas, comentarios útiles y CTR contra el claim de confianza",
+    signalRole: "paid_gap",
+    analysisScope: "mixed",
+    performanceConnection: "connected: creative y brief comparten lenguaje de confianza con evidencia de dudas en mayo",
+    evidenceBasis: "Samples 11111111-1111-4111-8111-111111111111 y periodo 2026-05 sostienen la lectura.",
+    confidenceRationale: "Publicable porque cruza serie mensual, pico semanal, overlap de creative text y evidencia semántica trazable.",
+    contextSummary: strongContextSummary({ direct_marketing_matches: 1 })
+  });
+
+  assert.equal(valid.publishable, true);
+  assert.deepEqual(valid.reasons, []);
+
+  const keyword = validateSignalPulseSynthesis({
+    title: "Fricción: Seguro",
+    description: "134 menciones sostienen una señal con tracción suficiente. El corpus está empujando seguro.",
+    marketingRead: "Usar seguro como experimento de contenido.",
+    actionHint: "Usar \"seguro\" como experimento de contenido",
+    signalRole: "friction",
+    analysisScope: "current_cut",
+    performanceConnection: "no_connection: sólo comparte periodo",
+    evidenceBasis: "No hay evidencia trazable.",
+    confidenceRationale: "Se ve volumen.",
+    contextSummary: strongContextSummary({ current_volume: 134, active_periods: 1, direct_marketing_matches: 0 })
+  });
+
+  assert.equal(keyword.publishable, false);
+  assert.ok(keyword.reasons.includes("title_keyword_or_non_synthetic"));
+  assert.ok(keyword.reasons.includes("generic_keyword_template_copy"));
+  assert.ok(keyword.reasons.includes("evidence_basis_without_mention_id"));
+});
+
+test("Signal Pulse synthesis validation blocks connected performance claims without direct overlap", () => {
+  const result = validateSignalPulseSynthesis({
+    title: "Riesgo creativo: La promesa de rapidez choca con quejas sobre trámites",
+    description: "En 2026-05 aparecen quejas de trámites con volumen suficiente y patrón semanal; la lectura pide revisar el claim antes de amplificar.",
+    marketingRead: "El riesgo no es que la gente rechace la marca completa, sino que el claim de rapidez queda expuesto si la experiencia habla de trámites.",
+    actionHint: "Auditar piezas con promesa de rapidez y probar una variante que explique pasos, tiempos y resolución esperada",
+    signalRole: "creative_risk",
+    analysisScope: "mixed",
+    performanceConnection: "connected: coincide con campaña de rapidez en mayo",
+    evidenceBasis: "Sample 22222222-2222-4222-8222-222222222222 y periodo 2026-05 muestran la tensión.",
+    confidenceRationale: "Hay evidencia textual, series mensuales y pico semanal, pero falta overlap directo con creative text.",
+    contextSummary: strongContextSummary({ direct_marketing_matches: 0 })
+  });
+
+  assert.equal(result.publishable, false);
+  assert.ok(result.reasons.includes("connected_without_direct_marketing_overlap"));
 });
 
 test("Signal Pulse marketing moves reuse the signal action hint and define measurement", () => {
@@ -733,6 +787,9 @@ test("Signal Pulse Claude naming prompt uses marketing-first RAG context, not T&
   assert.match(prompt, /match_basis/);
   assert.match(prompt, /matched_terms/);
   assert.match(prompt, /performance_connection debe empezar exactamente/);
+  assert.match(prompt, /Si no puedes escribir una tesis comparable/);
+  assert.match(prompt, /Una fila publish con titulo keyword/);
+  assert.match(prompt, /accion de marketing medible/);
   assert.match(prompt, /connected:/);
   assert.match(prompt, /no_connection:/);
   assert.match(prompt, /respuesta rapida/);
@@ -818,6 +875,27 @@ function row(
   similarity: string
 ): EmbeddingNeighborhoodRow {
   return { anchor_id, mention_id, text_clean, platform, sentiment_score, engagement_score, similarity };
+}
+
+function strongContextSummary(overrides: Record<string, number> = {}) {
+  return {
+    samples: 6,
+    conversation_matches: 2,
+    knowledge_matches: 1,
+    period_series_points: 12,
+    weekly_series_points: 8,
+    strongest_periods: 2,
+    weekly_pulses: 1,
+    marketing_intersections: 1,
+    evidence_sample_ids: 2,
+    semantic_evidence_ids: 1,
+    active_performance_months: 12,
+    direct_marketing_matches: 1,
+    synthesis_questions: 4,
+    active_periods: 3,
+    current_volume: 96,
+    ...overrides
+  };
 }
 
 function cluster(args: {

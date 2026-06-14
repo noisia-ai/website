@@ -173,12 +173,29 @@ El prompt ya no usa Triggers & Barriers como lenguaje. La salida debe usar taxon
 
 Los prefijos `Barrera:` y `Trigger:` quedan tratados como no publicables en Review/gates.
 
+## Contrato de síntesis cualitativa
+
+Claude puede devolver una fila válida de JSON sin haber producido inteligencia suficiente. Por eso el worker ahora valida cada síntesis antes de dejarla como `publish_candidate`.
+
+Una señal publicable debe cumplir:
+
+- título con taxonomía Signal Pulse y tesis accionable, no keyword;
+- `signal_role` coherente con la taxonomía del título;
+- `analysis_scope` consistente con corte actual o ventana completa;
+- `marketing_read`, `action_hint`, `evidence_basis` y `confidence_rationale` sustantivos;
+- `evidence_basis` con `mention_id` real;
+- series mensual y semanal, muestras, RAG de conversación/KB y preguntas de síntesis;
+- `performance_connection` con prefijo `connected:`, `no_connection:` o `insufficient_data:`;
+- `connected:` sólo si hay overlap directo de evidencia, KB/brief o lenguaje repetido de marketing.
+
+Si una fila no cumple, el worker la conserva como `needs_human_review` con `synthesis_validation.reasons`; no entra al Pulse aunque Claude haya dicho `actionability="publish"`. Sólo se archiva cuando Claude marca `exclude` o el copy cae en patrones claramente no accionables. Esto evita volver a tarjetas como `Fricción: Seguro`, `Oportunidad: Excelente` o moves de plantilla.
+
 ## Gates ajustados
 
 - `current_cut_signal_presence` bloquea sólo con 0 señales publicables en el corte actual.
 - El objetivo editorial de 3 señales sigue vivo, pero no es bloqueo técnico automático.
 - `signal_actionability_review` ya no falla por backlog de señales en `needs_human_review`; falla si una señal marcada como `publish_candidate` conserva naming débil/no publicable.
-- `contextual_synthesis_complete` bloquea si una señal publicable no viene de `claude_cluster_naming_v3_signal_pulse_rag` o no trae `marketing_read`, `action_hint`, `evidence_basis`, `confidence_rationale`, `signal_role` y `analysis_scope`.
+- `contextual_synthesis_complete` bloquea si una señal publicable no viene de `claude_cluster_naming_v3_signal_pulse_rag`, no trae `marketing_read`, `action_hint`, `evidence_basis`, `confidence_rationale`, `signal_role` y `analysis_scope`, o no pasó `synthesis_validation`.
 - `semantic_context_used` bloquea si una señal publicable no tiene samples suficientes, RAG semántico de conversación/KB, serie de periodo y performance activa asociada.
 - `signal_intelligence_case` bloquea si una señal publicable no trae `investigation_brief` materializado en `context_summary`: periodos fuertes, serie semanal, pulsos semanales, intersecciones de marketing/performance, evidence ids y preguntas de síntesis.
 - `performance_connection_qualified` bloquea si `performance_connection` no empieza con `connected:`, `no_connection:` o `insufficient_data:`, o si declara `connected:` sin overlap directo (`evidence_overlap`, `knowledge_or_brief_overlap` o `repeated_marketing_language_overlap`) en los matches de marketing.

@@ -38,7 +38,12 @@ import {
   SIGNAL_PULSE_RAG_CONTEXT_COST_USD,
   shouldSkipSignalPulseLlmForBudget
 } from "./signal-pulse-budget";
-import { isActionableSignalPulseTerm, isRawKeywordSignalPhrase, normalizeSignalPhrase } from "./signal-pulse-actionability";
+import {
+  isActionableSignalPulseTerm,
+  isRawKeywordSignalPhrase,
+  normalizeSignalPhrase,
+  validateSignalPulseSynthesis
+} from "./signal-pulse-actionability";
 import { buildSignalPulseDeterministicRead, buildSignalPulseMarketingMove } from "./signal-pulse-copy";
 import {
   buildClaudeSignalNamingPrompt,
@@ -1509,6 +1514,18 @@ async function persistClaudeSignalNamingRows(args: {
     const actionability = normalizeActionability(row.actionability);
     if (!source) continue;
     const contextSummary = buildSignalPulseContextSummary(source);
+    const synthesisValidation = validateSignalPulseSynthesis({
+      title,
+      description,
+      marketingRead,
+      actionHint,
+      signalRole,
+      analysisScope,
+      performanceConnection,
+      evidenceBasis,
+      confidenceRationale,
+      contextSummary
+    });
     const excluded = actionability === "exclude" || isNonActionableSignalCopy({
       title,
       description,
@@ -1516,6 +1533,7 @@ async function persistClaudeSignalNamingRows(args: {
       actionHint,
       term: source.term
     });
+    const storedActionability = excluded ? "exclude" : actionability === "publish" && synthesisValidation.publishable ? "publish" : "review";
     if (!title || !description) continue;
     const result = await pool.query(
       `
@@ -1537,14 +1555,18 @@ async function persistClaudeSignalNamingRows(args: {
         safeJsonStringifyForPostgres({
           marketing_read: marketingRead,
           action_hint: actionHint,
-          actionability,
+          actionability: storedActionability,
           signal_role: signalRole,
           analysis_scope: analysisScope,
           performance_connection: performanceConnection,
           evidence_basis: evidenceBasis,
           confidence_rationale: confidenceRationale,
           context_summary: contextSummary,
-          review_status: excluded ? "excluded_from_signal_pulse" : actionability === "review" ? "needs_human_review" : "publish_candidate",
+          synthesis_validation: {
+            passed: synthesisValidation.publishable,
+            reasons: synthesisValidation.reasons
+          },
+          review_status: excluded ? "excluded_from_signal_pulse" : storedActionability === "review" ? "needs_human_review" : "publish_candidate",
           interpretation_source: "claude_cluster_naming_v3_signal_pulse_rag",
           cluster_first: true,
           per_mention_coding: false
@@ -2184,6 +2206,7 @@ async function buildSignalPulseQualityGates(args: {
               OR lower(cs.canonical_title) LIKE 'cluster pendiente de sintesis:%'
               OR lower(cs.canonical_title) LIKE 'barrera:%'
               OR lower(cs.canonical_title) LIKE 'trigger:%'
+              OR lower(cs.canonical_title) !~ '^(fricción|friccion|oportunidad|riesgo creativo|territorio saturado|claim a testear|señal emergente|senal emergente|gap de pauta|contención|contencion|monitoreo): .{28,}$'
               OR lower(cs.canonical_title) ~ '^(fricción|friccion|oportunidad|territorio): (hasta|siempre|manejar|pinche|velocidad|mejor|nada|seguro|aseguradora|aseguradoras|choque|accidente|vehiculo|vehículo|qualitas|quálitas|sabritas|gobernador|padrino|antojo|groseras|vieja)$'
             )
         ) AS weak_named_signals,
@@ -2202,6 +2225,7 @@ async function buildSignalPulseQualityGates(args: {
               OR NULLIF(btrim(COALESCE(cs.dimensions->>'confidence_rationale', '')), '') IS NULL
               OR NULLIF(btrim(COALESCE(cs.dimensions->>'signal_role', '')), '') IS NULL
               OR NULLIF(btrim(COALESCE(cs.dimensions->>'analysis_scope', '')), '') IS NULL
+              OR COALESCE(cs.dimensions #>> '{synthesis_validation,passed}', '') <> 'true'
             )
         ) AS signals_without_contextual_synthesis,
         (
