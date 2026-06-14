@@ -879,7 +879,7 @@ function buildClusterInvestigationBrief(args: {
     weekly_pulses: weeklyPulses,
     marketing_intersections: marketingIntersections.slice(0, 8),
     evidence_map: {
-      sample_ids: args.cluster.samples.map((sample) => sample.id).filter(Boolean).slice(0, 8),
+      sample_ids: args.cluster.samples.map((sample) => sample.id).filter(Boolean).slice(0, 12),
       semantic_mention_ids: args.semanticMatches.conversation.map((match) => match.mention_id).filter(Boolean).slice(0, 12),
       knowledge_titles: args.semanticMatches.knowledge
         .map((match) => match.title || match.source_kind || null)
@@ -973,11 +973,11 @@ function buildClusterSemanticQuery(cluster: ClusterContextInput, marketingContex
     cluster.currentTitle,
     cluster.platforms.join(" "),
     cluster.discoveryPeriods.join(" "),
-    ...cluster.samples.slice(0, 6).map((sample) => `${sample.published_at ?? "sin_fecha"} ${sample.platform}: ${sample.text}`),
+    ...cluster.samples.slice(0, 12).map((sample) => `${sample.published_at ?? "sin_fecha"} ${sample.platform}: ${sample.text}`),
     JSON.stringify(marketingContext.marketing_brief).slice(0, 1600),
     JSON.stringify(marketingContext.repeated_marketing_language.slice(0, 8)).slice(0, 1600),
     JSON.stringify(marketingContext.marketing_activity_window.slice(-6)).slice(0, 2200)
-  ].filter(Boolean).join("\n").slice(0, 5200);
+  ].filter(Boolean).join("\n").slice(0, 7000);
 }
 
 function summarizeWindowPattern(series: SignalPulseClusterPromptContext["period_series"]): SignalPulseClusterPromptContext["window_pattern"] {

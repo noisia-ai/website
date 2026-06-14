@@ -8,7 +8,7 @@ Signal Pulse dejó de tratar el corte mensual como análisis aislado. El worker 
 
 - knowledge base del estudio/marca (`brand_knowledge_sources`);
 - retrieval semántico sobre knowledge base cuando hay provider disponible (`semantic_embeddings`, Voyage/OpenAI);
-- retrieval semántico sobre menciones del corpus (`scope_type='mention'`) para que Claude vea conversación relacionada más allá de los 6 snippets iniciales;
+- retrieval semántico sobre menciones del corpus (`scope_type='mention'`) para que Claude vea conversación relacionada además de hasta 12 muestras directas del cluster;
 - brief de marketing del wizard (`analysis_plan.marketing_brief`);
 - inventario de fuentes estructuradas (`data_sources`);
 - performance mensual de la ventana (`performance_records`);
@@ -21,7 +21,7 @@ Signal Pulse dejó de tratar el corte mensual como análisis aislado. El worker 
 - contexto de creativos/performance que matchean el territorio del cluster;
 - evidence snippets acotados por cluster, con `mention_id` visible para Claude.
 
-La detección sigue siendo cluster-first. Claude no codifica menciones una por una; recibe clusters acotados y contexto rico para sintetizar.
+La detección sigue siendo cluster-first. Claude no codifica menciones una por una; recibe clusters acotados y contexto rico para sintetizar. El paquete directo de evidencia por cluster se amplió hasta 12 muestras con `mention_id`, más RAG semántico de conversación/KB, series, actividad de marketing y performance. Esto evita depender de 6 snippets aislados sin abrir el camino prohibido de coding por mención.
 
 El pre-run ahora también valida que el RAG esté listo. Al aprobar un corpus, Studio encola `embed_corpus_semantics` en modo `all`; el launch plan y `sp_readiness` bloquean Signal Pulse si hay menciones SP pero todavía no existen embeddings de menciones. Si hay knowledge sources procesadas, también bloquea si faltan embeddings de KB. Esto evita volver al fallback de keywords cuando la cola semántica aún no termina.
 
@@ -168,7 +168,7 @@ Esto deja listo el backend para un dashboard filtrable sin cambiar todavía el U
 - `services/workers/src/workers/signal-pulse-steps.ts`
   - Conecta el contexto al paso `sp_name_signals`, registra costo RAG y persiste `signal_role`, `performance_connection`, `evidence_basis`, `confidence_rationale`.
 - `services/workers/src/workers/signal-pulse-budget.ts`
-  - Agrega reserva de costo para contexto RAG.
+  - Agrega reserva de costo para contexto RAG y estima naming con el paquete ampliado de hasta 12 muestras por cluster.
 - `apps/studio/src/app/studio/corpora/[id]/analysis/[analysisId]/page.tsx`
   - Review ya no bloquea por menos de 3 señales si existe al menos una señal publicable; sigue bloqueando si hay 0.
 - `apps/studio/src/lib/signal-pulse/pulse-api.ts`

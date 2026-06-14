@@ -1,11 +1,12 @@
 const DEFAULT_MAX_SIGNAL_CLUSTERS = 24;
+const SIGNAL_PULSE_NAMING_COST_PER_CLUSTER_USD = 0.022;
 
 export const SIGNAL_PULSE_INTERPRETATION_COST_USD = 0.15;
 export const SIGNAL_PULSE_RAG_CONTEXT_COST_USD = 0.02;
 
 export function estimateSignalPulseNamingCostUsd(clusterCount: number, maxClusters = DEFAULT_MAX_SIGNAL_CLUSTERS) {
   const boundedClusters = Math.max(1, Math.min(maxClusters, Math.ceil(clusterCount)));
-  return roundUsd(boundedClusters * 0.015);
+  return roundUsd(boundedClusters * SIGNAL_PULSE_NAMING_COST_PER_CLUSTER_USD);
 }
 
 export function estimateSignalPulseRunCostUsd(signalPulseMentions: number, maxClusters = DEFAULT_MAX_SIGNAL_CLUSTERS) {

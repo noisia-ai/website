@@ -451,12 +451,12 @@ test("Signal Pulse marketing record matching prefers evidence overlap over raw k
 });
 
 test("Signal Pulse budget estimate stays cluster-first and bounded before running", () => {
-  assert.equal(estimateSignalPulseNamingCostUsd(0), 0.015);
-  assert.equal(estimateSignalPulseNamingCostUsd(100), 0.36);
+  assert.equal(estimateSignalPulseNamingCostUsd(0), 0.022);
+  assert.equal(estimateSignalPulseNamingCostUsd(100), 0.528);
   assert.equal(SIGNAL_PULSE_RAG_CONTEXT_COST_USD, 0.02);
-  assert.equal(estimateSignalPulseRunCostUsd(1), 0.185);
+  assert.equal(estimateSignalPulseRunCostUsd(1), 0.192);
   assert.equal(SIGNAL_PULSE_INTERPRETATION_COST_USD, 0.15);
-  assert.equal(estimateSignalPulseRunCostUsd(6000), 0.53);
+  assert.equal(estimateSignalPulseRunCostUsd(6000), 0.698);
 });
 
 test("Signal Pulse Claude naming prompt uses marketing-first RAG context, not T&B labels", () => {
