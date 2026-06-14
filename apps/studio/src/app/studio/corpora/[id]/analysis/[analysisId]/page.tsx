@@ -2,12 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ApproveAnalysisButton } from "@/components/analysis/ApproveAnalysisButton";
+import { SignalPulseReviewComposer } from "@/components/analysis/SignalPulseReviewComposer";
 import { SignalComposer } from "@/components/analysis/SignalComposer";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { StatusPill, SuccessPill } from "@/components/ui/StatusPill";
 import { requireStudioUser } from "@/lib/auth/guards";
 import { getCorpusForUser, getTbAnalysisForCorpus } from "@/lib/data/corpora";
 import { getDraftSignalOutput } from "@/lib/data/signal";
+import { pool } from "@/lib/db";
 import { buildSignalPayload } from "@/lib/signal/build";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +26,11 @@ export default async function TbAnalysisReviewPage({
   const corpus = await getCorpusForUser(session.appUser, id);
 
   if (!corpus) notFound();
+  if (corpus.methodologySlug === "signal-pulse") {
+    const state = await getSignalPulseReviewState(corpus.id, analysisId);
+    if (!state) notFound();
+    return <SignalPulseAnalysisReview corpus={corpus} state={state} />;
+  }
 
   const state = await getTbAnalysisForCorpus(corpus.id, analysisId, { includeAggregates: true });
   if (!state) notFound();
@@ -303,6 +310,306 @@ export default async function TbAnalysisReviewPage({
   );
 }
 
+type SignalPulseReviewState = Awaited<ReturnType<typeof getSignalPulseReviewState>> extends infer T ? NonNullable<T> : never;
+
+function SignalPulseAnalysisReview({
+  corpus,
+  state
+}: {
+  corpus: NonNullable<Awaited<ReturnType<typeof getCorpusForUser>>>;
+  state: SignalPulseReviewState;
+}) {
+  const meta = asRecord(state.analysis.meta_json);
+  const signalPulseMeta = asRecord(meta.signal_pulse);
+  const readiness = asRecord(signalPulseMeta.readiness);
+  const cluster = asRecord(signalPulseMeta.cluster);
+  const interpretation = asRecord(signalPulseMeta.interpretation);
+  const qualityGates = arrayRecords(meta.quality_gates);
+  const failedGates = qualityGates.filter((gate) => gate.passed === false);
+  const noisySignals = state.signals.filter((signal) => looksNonActionableSignal(signal.title, signal.description, signal.dimensions));
+  const repeatedMoveCount = state.moves.filter((move) => move.action_text.includes("Bajarlo a una serie corta")).length;
+  const reviewIssues = [
+    ...failedGates.map((gate) => `Gate fallido: ${stringValue(gate.id) || "quality_gate"}`),
+    ...noisySignals.slice(0, 6).map((signal) => `Señal requiere curaduría: ${signal.title}`),
+    repeatedMoveCount >= 3 ? `${repeatedMoveCount} marketing moves repiten la misma fórmula.` : null
+  ].filter((issue): issue is string => Boolean(issue));
+  const publishBlocked = state.analysis.status !== "needs_review" && state.analysis.status !== "approved"
+    ? true
+    : reviewIssues.length > 0;
+  const measuredMentions = Number(readiness.conversation_mentions ?? 0);
+  const signalPulseMentions = Number(readiness.signal_pulse_mentions ?? 0);
+  const sampledRows = Number(cluster.mentions_sampled ?? 0);
+  const maxClaudeSamples = Math.min(state.signals.length, 24) * 4;
+  const defaultHeadline = stringValue(interpretation.headline) || `${corpus.brandName ?? corpus.themeName ?? "La marca"} necesita revisión editorial de señales antes de publicar.`;
+  const defaultSummary = stringValue(interpretation.body) || "Revisa señales, evidencia, moves y gates antes de abrir el Pulse al cliente.";
+
+  return (
+    <div className="studio-page analysis-review-page">
+      <section className="analysis-review-hero">
+        <div>
+          <Link prefetch={false} className="analysis-back-link" href={`/studio/corpora/${corpus.id}/engine`}>
+            <Icon name="arrow-right" size={14} />
+            Volver al engine
+          </Link>
+          <p className="vitals-eyebrow">Review Signal Pulse</p>
+          <h1>Revisión táctica antes de publicar</h1>
+          <p>
+            Valida que las señales sean accionables, que los moves no sean genéricos y que el reporte sea honesto
+            sobre qué midió SQL/embeddings y qué interpretó Claude.
+          </p>
+        </div>
+        <div className="analysis-review-actions">
+          <StatusPill tone={publishBlocked ? "warn" : "success"}>
+            <Icon name={publishBlocked ? "alert" : "check"} size={12} />
+            {publishBlocked ? "Requiere curaduría" : "Listo para publicar"}
+          </StatusPill>
+          <Link prefetch={false} className="wizard-cta wizard-cta--secondary" href={`/studio/corpora/${corpus.id}/mentions`}>
+            <Icon name="search" size={15} />
+            Revisar menciones
+          </Link>
+        </div>
+      </section>
+
+      <section className="analysis-review-vitals">
+        <MetricCard label="Menciones medidas" value={measuredMentions} />
+        <MetricCard label="Menciones SP" value={signalPulseMentions} />
+        <MetricCard label="Signals candidatos" value={state.signals.length} />
+        <MetricCard label="Moves" value={state.moves.length} />
+      </section>
+
+      <section className="analysis-review-card">
+        <div className="analysis-section-head">
+          <SectionTitle icon="layers" eyebrow="Truth in analysis" title="Qué se midió vs qué vio Claude" />
+          <span>{state.cost.events} eventos · USD {state.cost.estimated_cost_usd.toFixed(4)}</span>
+        </div>
+        <div className="analysis-readiness-grid signal-pulse-review-grid">
+          <ReadinessTile label="SQL/embeddings midieron" value={measuredMentions} detail="Menciones incluidas dentro del corpus." />
+          <ReadinessTile label="Query pack SP" value={signalPulseMentions} detail="Menciones atribuidas al pack Signal Pulse." />
+          <ReadinessTile label="Cluster global sample" value={sampledRows || "n/d"} detail="Filas usadas para candidatos globales." />
+          <ReadinessTile label="Candidatos por periodo" value={Number(cluster.period_first_candidate_clusters ?? 0)} detail="Clusters detectados mes a mes." />
+          <ReadinessTile label="Claude nombró" value={state.signals.length} detail={`Hasta ${maxClaudeSamples} snippets cortos, no 60K menciones.`} />
+          <ReadinessTile label="Deep read" value="off" detail="Sin lectura cualitativa ampliada en esta corrida." />
+        </div>
+      </section>
+
+      {reviewIssues.length > 0 ? (
+        <section className="analysis-empty-signal signal-pulse-review-warning">
+          <Icon name="alert" size={18} />
+          <div>
+            <h2>No publicar todavía</h2>
+            <ul>
+              {reviewIssues.map((issue) => <li key={issue}>{issue}</li>)}
+            </ul>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="analysis-review-card">
+        <div className="analysis-section-head">
+          <SectionTitle icon="wave" eyebrow="Signal review" title="Señales que entrarían al Pulse" />
+          <span>{noisySignals.length} requieren curaduría</span>
+        </div>
+        <div className="analysis-preview-list analysis-preview-list--two">
+          {state.signals.slice(0, 24).map((signal, index) => {
+            const needsReview = looksNonActionableSignal(signal.title, signal.description, signal.dimensions);
+            return (
+              <PreviewItem
+                key={signal.id}
+                code={needsReview ? "REVIEW" : `${index + 1}`}
+                title={signal.title}
+                body={signal.description || stringValue(signal.dimensions.marketing_read) || "Sin lectura editorial guardada."}
+                meta={`${signal.volume} menciones · impacto ${signal.impact_v1 ?? 0}`}
+              />
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="analysis-review-card">
+        <div className="analysis-section-head">
+          <SectionTitle icon="arrow-up" eyebrow="Marketing moves" title="Acciones propuestas" />
+          <span>{repeatedMoveCount >= 3 ? "revisar copy" : "candidate"}</span>
+        </div>
+        <div className="analysis-preview-list">
+          {state.moves.length > 0 ? state.moves.slice(0, 12).map((move, index) => (
+            <PreviewItem
+              key={move.id}
+              code={move.move_type || `MOVE-${index + 1}`}
+              title={move.owner_suggestion || "Marketing"}
+              body={move.action_text}
+              meta={move.confidence || "sin confianza"}
+            />
+          )) : <EmptyCard text="No hay marketing moves materializados. Signal Pulse no debe publicarse sin acciones." />}
+        </div>
+      </section>
+
+      <section className="analysis-review-card">
+        <div className="analysis-section-head">
+          <SectionTitle icon="check" eyebrow="Quality gates" title="Chequeos automáticos" />
+          <span>{qualityGates.length || "pendiente"}</span>
+        </div>
+        {qualityGates.length > 0 ? (
+          <div className="quality-gate-list">
+            {qualityGates.map((gate) => (
+              <div className="quality-gate-row" key={stringValue(gate.id)}>
+                <span className={`quality-gate-icon ${gate.passed ? "quality-gate-icon--ok" : "quality-gate-icon--warn"}`}>
+                  {gate.passed ? <Icon name="check" size={15} /> : <Icon name="alert" size={15} />}
+                </span>
+                <strong>{stringValue(gate.id).replaceAll("_", " ")}</strong>
+                <span>{stringValue(gate.detail) || "Sin detalle."}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <EmptyCard text="Faltan quality gates de Signal Pulse. Guarda draft o vuelve a correr antes de publicar." />
+        )}
+      </section>
+
+      <SignalPulseReviewComposer
+        analysisId={state.analysis.id}
+        corpusId={corpus.id}
+        defaultHeadline={defaultHeadline}
+        defaultSummary={defaultSummary}
+        defaultTitle={`${corpus.brandName ?? corpus.themeName ?? "Signal Pulse"} · Signal Pulse`}
+        draft={state.draft}
+        publishBlocked={publishBlocked}
+      />
+    </div>
+  );
+}
+
+async function getSignalPulseReviewState(corpusId: string, analysisId: string) {
+  const analysis = (await pool.query<{
+    id: string;
+    status: string;
+    current_step: string;
+    meta_json: Record<string, unknown> | null;
+  }>(
+    `SELECT id::text, status, current_step, meta_json
+     FROM engine_analyses
+     WHERE id = $1
+       AND study_corpus_id = $2
+       AND methodology_slug = 'signal-pulse'
+     LIMIT 1`,
+    [analysisId, corpusId]
+  )).rows[0];
+  if (!analysis) return null;
+
+  const [signals, moves, cost, draft] = await Promise.all([
+    pool.query<{
+      id: string;
+      title: string;
+      description: string | null;
+      signal_type: string | null;
+      dimensions: Record<string, unknown> | null;
+      volume: number;
+      impact_v1: string | null;
+      confidence: string | null;
+    }>(
+      `
+        WITH latest AS (
+          SELECT DISTINCT ON (spm.canonical_signal_id)
+            spm.canonical_signal_id,
+            spm.volume,
+            spm.impact_v1::text AS impact_v1,
+            spm.confidence
+          FROM signal_observations so
+          JOIN report_periods rp
+            ON rp.period_start = so.window_start
+           AND rp.period_end = so.window_end
+           AND rp.study_corpus_id = so.study_corpus_id
+           AND rp.granularity = 'month'
+          JOIN signal_period_metrics spm
+            ON spm.canonical_signal_id = so.canonical_signal_id
+           AND spm.period_id = rp.id
+           AND spm.study_corpus_id = so.study_corpus_id
+          WHERE so.study_corpus_id = $1
+            AND so.engine_analysis_id = $2
+            AND so.methodology_slug = 'signal-pulse'
+          ORDER BY spm.canonical_signal_id, rp.period_start DESC
+        )
+        SELECT
+          cs.id::text AS id,
+          cs.canonical_title AS title,
+          cs.description,
+          cs.signal_type,
+          cs.dimensions,
+          latest.volume,
+          latest.impact_v1,
+          latest.confidence
+        FROM canonical_signals cs
+        JOIN latest ON latest.canonical_signal_id = cs.id
+        WHERE cs.study_corpus_id = $1
+          AND cs.methodology_slug = 'signal-pulse'
+          AND cs.status <> 'archived'
+        ORDER BY COALESCE(latest.impact_v1::numeric, 0) DESC, latest.volume DESC
+        LIMIT 80
+      `,
+      [corpusId, analysisId]
+    ),
+    pool.query<{
+      id: string;
+      move_type: string | null;
+      action_text: string;
+      owner_suggestion: string | null;
+      confidence: string | null;
+    }>(
+      `SELECT id::text, move_type, action_text, owner_suggestion, confidence
+       FROM marketing_moves
+       WHERE study_corpus_id = $1
+         AND engine_analysis_id = $2
+       ORDER BY position NULLS LAST, created_at
+       LIMIT 80`,
+      [corpusId, analysisId]
+    ),
+    pool.query<{
+      events: number;
+      total_tokens: number;
+      estimated_cost_usd: string | null;
+    }>(
+      `SELECT COUNT(*)::int AS events,
+              COALESCE(SUM(total_tokens), 0)::int AS total_tokens,
+              COALESCE(SUM(estimated_cost_usd), 0)::text AS estimated_cost_usd
+       FROM engine_cost_events
+       WHERE engine_analysis_id = $1`,
+      [analysisId]
+    ),
+    pool.query<{
+      id: string;
+      title: string;
+      headline: string | null;
+      summary: string | null;
+      status: string;
+    }>(
+      `SELECT id::text, title, headline, summary, status
+       FROM published_outputs
+       WHERE engine_analysis_id = $1
+         AND output_type = 'signal_pulse_dashboard'
+       ORDER BY updated_at DESC
+       LIMIT 1`,
+      [analysisId]
+    )
+  ]);
+
+  const costRow = cost.rows[0];
+  return {
+    analysis,
+    signals: signals.rows.map((row) => ({
+      ...row,
+      dimensions: row.dimensions ?? {},
+      volume: Number(row.volume ?? 0),
+      impact_v1: numberValue(row.impact_v1)
+    })),
+    moves: moves.rows,
+    cost: {
+      events: Number(costRow?.events ?? 0),
+      total_tokens: Number(costRow?.total_tokens ?? 0),
+      estimated_cost_usd: Number(costRow?.estimated_cost_usd ?? 0)
+    },
+    draft: draft.rows[0] ?? null
+  };
+}
+
 function SectionTitle({ icon, eyebrow, title }: { icon: IconName; eyebrow: string; title: string }) {
   return (
     <div className="analysis-section-title">
@@ -498,11 +805,32 @@ function stringValue(value: unknown): string {
 }
 
 function numberValue(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
 }
 
 function countClientReadyActions(actions: JsonRecord[]) {
   return actions.filter((action) => stringValue(action.action_text).trim().length > 20).length;
+}
+
+function looksNonActionableSignal(title: string, description: string | null, dimensions: JsonRecord) {
+  const source = `${title} ${description ?? ""} ${stringValue(dimensions.marketing_read)} ${stringValue(dimensions.action_hint)}`.toLowerCase();
+  return [
+    "señal débil",
+    "sin relevancia",
+    "sin valor",
+    "sin conexión",
+    "sin conexion",
+    "sin ancla",
+    "no accionable",
+    "ruido",
+    "conversación política",
+    "conversacion politica",
+    "menciones religiosas",
+    "fútbol",
+    "futbol",
+    "links sin contexto"
+  ].some((pattern) => source.includes(pattern));
 }
 
 function recommendationFallback(rec: {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { Icon } from "@/components/ui/Icon";
@@ -459,7 +460,22 @@ export function EngineMethodologyBetaPanel({
         </div>
       ) : null}
 
-      {reviewable && latest ? (
+      {reviewable && latest ? latest.methodologySlug === "signal-pulse" ? (
+        <div className="engine-beta-publish engine-beta-review-redirect">
+          <div>
+            <span>Review requerido</span>
+            <strong>Revisa señales, evidencia y moves antes de publicar</strong>
+            <p>
+              Signal Pulse ya terminó la corrida técnica. La publicación vive en Review para evitar
+              que clusters irrelevantes o moves genéricos salgan directo al cliente.
+            </p>
+          </div>
+          <Link prefetch={false} className="wizard-cta" href={`/studio/corpora/${corpusId}/analysis/${latest.id}`}>
+            <Icon name="check" size={16} />
+            Abrir Review
+          </Link>
+        </div>
+      ) : (
         <div className="engine-beta-publish">
           <label>
             <span>{latest.methodologySlug === "signal-pulse" ? "Nombre del reporte" : "Internal title"}</span>

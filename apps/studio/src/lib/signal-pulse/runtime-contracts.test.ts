@@ -222,7 +222,7 @@ test("Signal Pulse run params are sanitized and match launch-plan precedence", (
       requestParams: { budget_cap_usd: 7, window_months: 3 },
       targetWindowMonths: 12
     }),
-    { budget_cap_usd: 7, window_months: 3 }
+    { budget_cap_usd: 7, window_months: 3, review_mode: "cluster_first" }
   );
 
   assert.deepEqual(
@@ -231,6 +231,15 @@ test("Signal Pulse run params are sanitized and match launch-plan precedence", (
       requestParams: { budget_cap_usd: -1, window_months: "bad" },
       targetWindowMonths: 9
     }),
-    { budget_cap_usd: 4, window_months: 9 }
+    { budget_cap_usd: 4, window_months: 9, review_mode: "cluster_first" }
+  );
+
+  assert.deepEqual(
+    buildSignalPulseRunParams({
+      analysisPlan: { budget_cap_usd: 4 },
+      requestParams: { review_mode: "deep_read" },
+      targetWindowMonths: 9
+    }),
+    { budget_cap_usd: 4, window_months: 9, review_mode: "deep_read" }
   );
 });

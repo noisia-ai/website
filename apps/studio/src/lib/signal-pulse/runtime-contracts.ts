@@ -62,6 +62,7 @@ export type SignalPulseLaunchPlan = {
 export type SignalPulseRunParams = {
   budget_cap_usd: number;
   window_months: number;
+  review_mode: "cluster_first" | "deep_read";
 };
 
 export type SignalPulseLaunchChecklistItem = {
@@ -190,7 +191,8 @@ export function buildSignalPulseRunParams(args: {
   const plannedWindowMonths = positiveInteger(args.targetWindowMonths, 12);
   return {
     budget_cap_usd: positiveNumber(requestParams.budget_cap_usd, plannedBudgetCap),
-    window_months: positiveInteger(requestParams.window_months ?? requestParams.target_window_months, plannedWindowMonths)
+    window_months: positiveInteger(requestParams.window_months ?? requestParams.target_window_months, plannedWindowMonths),
+    review_mode: requestParams.review_mode === "deep_read" ? "deep_read" : "cluster_first"
   };
 }
 

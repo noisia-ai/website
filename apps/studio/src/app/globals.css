@@ -11931,12 +11931,67 @@ body:has(.signal-report)::before { display: none; }
   justify-content: flex-end;
 }
 
+.engine-beta-review-redirect {
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.engine-beta-review-redirect > div {
+  display: grid;
+  gap: 6px;
+  justify-content: start;
+}
+
+.engine-beta-review-redirect span {
+  color: var(--signal-dark);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.engine-beta-review-redirect strong {
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.engine-beta-review-redirect p {
+  color: var(--neutral-10);
+  margin: 0;
+  max-width: 760px;
+}
+
+.signal-pulse-review-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.signal-pulse-review-warning ul {
+  display: grid;
+  gap: 7px;
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: var(--neutral-10);
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.signal-pulse-review-composer {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid rgba(1, 83, 95, 0.16);
+  border-radius: var(--radius-xxl);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: var(--shadow-card);
+}
+
 @media (max-width: 720px) {
   .engine-beta-panel > header,
   .engine-selected-lenses__head,
   .engine-beta-controls,
   .engine-beta-status,
-  .signal-pulse-run-card {
+  .signal-pulse-run-card,
+  .engine-beta-review-redirect {
     grid-template-columns: 1fr;
   }
 
@@ -11955,6 +12010,10 @@ body:has(.signal-report)::before { display: none; }
   }
 
   .signal-pulse-readiness-list {
+    grid-template-columns: 1fr;
+  }
+
+  .signal-pulse-review-grid {
     grid-template-columns: 1fr;
   }
 

@@ -76,7 +76,7 @@ function actionTextFor(moveType: string, actionHint: string, territory: string) 
   if (moveType === "monitor") {
     return `Mantener "${territory}" en monitoreo activo y preparar respuesta solo si sube volumen o negatividad.`;
   }
-  return `${actionHint}. Bajarlo a una serie corta de contenido con un aprendizaje claro por pieza.`;
+  return `Usar "${territory}" como experimento de contenido: ${actionHint.toLowerCase()} y cerrar una pregunta de aprendizaje antes de escalarlo.`;
 }
 
 function measurementFor(input: SignalPulseMoveInput, territory: string) {

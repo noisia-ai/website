@@ -86,6 +86,13 @@ const EMBEDDING_MIN_SIMILARITY = 0.74;
 const GLOBAL_CLUSTER_ROW_LIMIT = 6000;
 const PERIOD_CLUSTER_ROW_LIMIT = 1600;
 const PERIOD_CLUSTERS_PER_PERIOD = 2;
+const NON_ACTIONABLE_CLUSTER_TERMS = new Set([
+  "amen", "dios", "jesus", "gracias", "felicidades", "bendiciones", "saludos",
+  "link", "links", "http", "https", "www", "click", "clic", "viral",
+  "futbol", "partido", "gol", "equipo", "botana",
+  "puto", "puta", "pendejo", "pendeja", "verga", "chingar",
+  "morena", "amlo", "claudia", "elecciones", "diputado", "senador"
+]);
 
 export async function signalPulseReadinessJob(job: Job<SignalPulseStepJobData>) {
   return runSignalPulseStep(job, async ({ engineAnalysisId, pipelineStepId }) => {
@@ -128,6 +135,8 @@ export async function signalPulseReadinessJob(job: Job<SignalPulseStepJobData>) 
       budget_cap_usd: budgetCapUsd,
       estimated_cost_usd: estimatedCostUsd,
       cluster_first: true,
+      review_mode: stringFrom(ctx.params?.review_mode) || "cluster_first",
+      deep_read_enabled: stringFrom(ctx.params?.review_mode) === "deep_read",
       status: readinessReasons.length === 0 ? "ready" : "blocked",
       reasons: readinessReasons
     };
@@ -312,9 +321,11 @@ export async function signalPulseClusterJob(job: Job<SignalPulseStepJobData>) {
       [ctx.study_corpus_id]
     )).rows;
     const embeddingClusters = await loadEmbeddingNeighborhoodClusters(ctx.study_corpus_id);
-    const globalClusters = (embeddingClusters.length > 0 ? embeddingClusters : buildCheapTermClusters(rows))
+    const rawGlobalClusters = (embeddingClusters.length > 0 ? embeddingClusters : buildCheapTermClusters(rows))
       .map((cluster) => ({ ...cluster, discovery_source: "global" as const }));
-    const periodClusters = await loadPeriodFirstClusters(ctx.study_corpus_id);
+    const rawPeriodClusters = await loadPeriodFirstClusters(ctx.study_corpus_id);
+    const globalClusters = rawGlobalClusters.filter(isActionableSignalPulseCluster);
+    const periodClusters = rawPeriodClusters.filter(isActionableSignalPulseCluster);
     const clusters = selectPeriodFirstSignalPulseClusters({
       globalClusters,
       periodClusters,
@@ -322,6 +333,7 @@ export async function signalPulseClusterJob(job: Job<SignalPulseStepJobData>) {
       perPeriod: PERIOD_CLUSTERS_PER_PERIOD
     });
     const signals = await materializeCanonicalSignals({ ctx, engineAnalysisId, clusters });
+    const coverage = await readSignalPulseCoverage(ctx.study_corpus_id);
     await mergeMeta(engineAnalysisId, {
       signal_pulse: {
         cluster: {
@@ -334,7 +346,19 @@ export async function signalPulseClusterJob(job: Job<SignalPulseStepJobData>) {
           clusters,
           global_candidate_clusters: globalClusters.length,
           period_first_candidate_clusters: periodClusters.length,
+          excluded_candidate_clusters: (rawGlobalClusters.length + rawPeriodClusters.length) - (globalClusters.length + periodClusters.length),
           materialized_signals: signals.length
+        },
+        analysis_truth: {
+          measured_mentions: coverage.conversation_mentions,
+          signal_pulse_mentions: coverage.signal_pulse_mentions,
+          global_cluster_row_limit: GLOBAL_CLUSTER_ROW_LIMIT,
+          global_rows_sampled: rows.length,
+          period_cluster_row_limit: PERIOD_CLUSTER_ROW_LIMIT,
+          max_signal_clusters: MAX_SIGNAL_CLUSTERS,
+          max_claude_samples_per_cluster: 4,
+          review_mode: stringFrom(ctx.params?.review_mode) || "cluster_first",
+          claude_did_not_read_all_mentions: true
         }
       }
     });
@@ -345,7 +369,8 @@ export async function signalPulseClusterJob(job: Job<SignalPulseStepJobData>) {
         materialized_signals: signals.length,
         mentions_sampled: rows.length,
         global_candidate_clusters: globalClusters.length,
-        period_first_candidate_clusters: periodClusters.length
+        period_first_candidate_clusters: periodClusters.length,
+        excluded_candidate_clusters: (rawGlobalClusters.length + rawPeriodClusters.length) - (globalClusters.length + periodClusters.length)
       }
     });
     const next = await enqueueEngineStep({ engineAnalysisId, step: "sp_name_signals" });
@@ -356,6 +381,7 @@ export async function signalPulseClusterJob(job: Job<SignalPulseStepJobData>) {
         : embeddingClusters.length > 0 ? "semantic_embedding_neighborhood_v1" : "term_cluster_v2_sql_materialized",
       global_candidate_clusters: globalClusters.length,
       period_first_candidate_clusters: periodClusters.length,
+      excluded_candidate_clusters: (rawGlobalClusters.length + rawPeriodClusters.length) - (globalClusters.length + periodClusters.length),
       materialized_signals: signals.length,
       next_step_job_id: next.jobId
     };
@@ -659,6 +685,34 @@ function numberFrom(value: unknown) {
   return Number.isFinite(number) && number > 0 ? number : null;
 }
 
+async function readSignalPulseCoverage(corpusId: string) {
+  const row = (await pool.query<{
+    conversation_mentions: number;
+    signal_pulse_mentions: number;
+    performance_records: number;
+    query_packs: number;
+  }>(
+    `
+      SELECT
+        COUNT(DISTINCT m.id)::int AS conversation_mentions,
+        COUNT(DISTINCT m.id) FILTER (WHERE mqs.lens_slug = 'signal-pulse')::int AS signal_pulse_mentions,
+        (SELECT COUNT(*)::int FROM performance_records pr WHERE pr.study_corpus_id = $1) AS performance_records,
+        (SELECT COUNT(*)::int FROM query_packs qp WHERE qp.study_corpus_id = $1 AND qp.lens_slug = 'signal-pulse') AS query_packs
+      FROM mentions m
+      LEFT JOIN mention_query_sources mqs ON mqs.mention_id = m.id
+      WHERE m.study_corpus_id = $1
+        AND m.inclusion_status = 'included'
+    `,
+    [corpusId]
+  )).rows[0];
+  return {
+    conversation_mentions: Number(row?.conversation_mentions ?? 0),
+    signal_pulse_mentions: Number(row?.signal_pulse_mentions ?? 0),
+    performance_records: Number(row?.performance_records ?? 0),
+    query_packs: Number(row?.query_packs ?? 0)
+  };
+}
+
 async function mergeMeta(engineAnalysisId: string, meta: Record<string, unknown>) {
   const { signalPulseMeta, rootMeta } = splitSignalPulseMetaForMerge(meta);
   if (signalPulseMeta && typeof signalPulseMeta === "object" && !Array.isArray(signalPulseMeta)) {
@@ -762,6 +816,8 @@ async function materializeCanonicalSignals(args: {
           engagement_sum: cluster.engagement_sum,
           sentiment_avg: cluster.sentiment_avg,
           cluster_first: true,
+          actionability: "review",
+          review_status: "needs_human_review",
           discovery_source: cluster.discovery_source ?? "global",
           discovery_periods: cluster.discovery_periods ?? [],
           max_period_mention_count: cluster.max_period_mention_count ?? cluster.mention_count
@@ -1098,8 +1154,9 @@ async function maybeApplyClaudeSignalNaming(args: {
   const prompt = [
     "Eres editor de Signal Pulse para marketing. Nombra clusters de conversación como señales accionables.",
     "Reglas duras: no hagas coding por mención; no inventes números; usa solo los números del JSON; conserva ids; español MX; copy corto y claro.",
+    "Si un cluster es ruido, política no accionable, insultos, religión, fútbol, links sin contexto o conversación sin vínculo claro con marca/categoría, marca actionability=\"exclude\" y no lo presentes como oportunidad.",
     "Devuelve SOLO JSON válido con forma:",
-    '{"signals":[{"id":"uuid","title":"Oportunidad: ...","description":"...","marketing_read":"...","action_hint":"..."}]}',
+    '{"signals":[{"id":"uuid","title":"Oportunidad: ...","description":"...","marketing_read":"...","action_hint":"...","actionability":"publish|review|exclude"}]}',
     "Clusters:",
     JSON.stringify(payload)
   ].join("\n\n");
@@ -1129,6 +1186,8 @@ async function maybeApplyClaudeSignalNaming(args: {
       const description = stringFrom(row.description).slice(0, 500);
       const marketingRead = stringFrom(row.marketing_read).slice(0, 500);
       const actionHint = stringFrom(row.action_hint).slice(0, 360);
+      const actionability = normalizeActionability(row.actionability);
+      const excluded = actionability === "exclude" || isNonActionableSignalCopy({ title, description, marketingRead, actionHint });
       if (!title || !description) continue;
       const result = await pool.query(
         `
@@ -1137,6 +1196,7 @@ async function maybeApplyClaudeSignalNaming(args: {
             canonical_title = $2,
             description = $3,
             dimensions = dimensions || $4::jsonb,
+            status = $6,
             updated_at = NOW()
           WHERE id = $1
             AND study_corpus_id = $5
@@ -1149,11 +1209,14 @@ async function maybeApplyClaudeSignalNaming(args: {
           safeJsonStringifyForPostgres({
             marketing_read: marketingRead,
             action_hint: actionHint,
+            actionability,
+            review_status: excluded ? "excluded_from_signal_pulse" : actionability === "review" ? "needs_human_review" : "publish_candidate",
             interpretation_source: "claude_cluster_naming_v1",
             cluster_first: true,
             per_mention_coding: false
           }),
-          args.ctx.study_corpus_id
+          args.ctx.study_corpus_id,
+          excluded ? "archived" : "active"
         ]
       );
       updated += result.rowCount ?? 0;
@@ -1387,6 +1450,14 @@ async function materializeMarketingMoves(args: {
       FROM latest
       JOIN canonical_signals cs ON cs.id = latest.canonical_signal_id::uuid
       LEFT JOIN evidence ON evidence.canonical_signal_id = latest.canonical_signal_id
+      WHERE cs.status = 'active'
+        AND COALESCE(cs.dimensions->>'review_status', '') <> 'excluded_from_signal_pulse'
+        AND lower(cs.canonical_title) NOT LIKE '%señal débil%'
+        AND lower(cs.canonical_title) NOT LIKE '%sin relevancia%'
+        AND lower(cs.canonical_title) NOT LIKE '%sin valor%'
+        AND lower(cs.canonical_title) NOT LIKE '%sin conexión%'
+        AND lower(cs.canonical_title) NOT LIKE '%sin conexion%'
+        AND lower(cs.canonical_title) NOT LIKE '%sin ancla%'
       ORDER BY COALESCE(latest.impact::numeric, 0) DESC, latest.volume DESC
       LIMIT 12
     `,
@@ -1621,6 +1692,8 @@ async function buildSignalPulseQualityGates(args: {
     moves_without_signal: number;
     moves_without_evidence: number;
     moves_without_action: number;
+    signals_needing_human_review: number;
+    weak_named_signals: number;
     cost: string | null;
   }>(
     `
@@ -1665,6 +1738,29 @@ async function buildSignalPulseQualityGates(args: {
         ) AS moves_without_action,
         (
           SELECT COUNT(*)::int
+          FROM canonical_signals cs
+          WHERE cs.study_corpus_id = $1
+            AND cs.methodology_slug = 'signal-pulse'
+            AND cs.status = 'active'
+            AND COALESCE(cs.dimensions->>'review_status', '') = 'needs_human_review'
+        ) AS signals_needing_human_review,
+        (
+          SELECT COUNT(*)::int
+          FROM canonical_signals cs
+          WHERE cs.study_corpus_id = $1
+            AND cs.methodology_slug = 'signal-pulse'
+            AND cs.status = 'active'
+            AND (
+              lower(cs.canonical_title) LIKE '%señal débil%'
+              OR lower(cs.canonical_title) LIKE '%sin relevancia%'
+              OR lower(cs.canonical_title) LIKE '%sin valor%'
+              OR lower(cs.canonical_title) LIKE '%sin conexión%'
+              OR lower(cs.canonical_title) LIKE '%sin conexion%'
+              OR lower(cs.canonical_title) LIKE '%sin ancla%'
+            )
+        ) AS weak_named_signals,
+        (
+          SELECT COUNT(*)::int
           FROM signal_observation_evidence soe
           JOIN signal_observations so ON so.id = soe.signal_observation_id
           WHERE so.study_corpus_id = $1
@@ -1697,6 +1793,8 @@ async function buildSignalPulseQualityGates(args: {
     gate("move_has_signal", args.movesCount > 0 && Number(coverage?.moves_without_signal ?? 0) === 0, `${args.movesCount} moves; ${coverage?.moves_without_signal ?? 0} sin señal asociada.`),
     gate("move_has_evidence", args.movesCount > 0 && Number(coverage?.moves_without_evidence ?? 0) === 0, `${coverage?.moves_without_evidence ?? 0} moves sin evidencia.`),
     gate("move_is_marketing_action", args.movesCount > 0 && Number(coverage?.moves_without_action ?? 0) === 0, `${coverage?.moves_without_action ?? 0} moves sin acción clara de marketing.`),
+    gate("signal_actionability_review", Number(coverage?.weak_named_signals ?? 0) === 0, `${coverage?.weak_named_signals ?? 0} señales se nombraron como débiles o no relevantes.`),
+    gate("human_review_surface", true, `${coverage?.signals_needing_human_review ?? 0} señales requieren validación editorial en Review antes de publicar.`),
     gate("cost_within_budget", cost <= budgetCap, `Costo estimado USD ${round(cost, 4)} de ${budgetCap}.`),
     gate("no_invented_numbers", args.metricsCount > 0, "Los números visibles salen de tablas calculadas; la interpretación no inventa cifras."),
     gate("limitations_visible", true, "Los gates fallidos se copian como limitaciones visibles del corte publicado."),
@@ -2025,6 +2123,16 @@ function signalTypeForCluster(cluster: TermCluster) {
   return "marketing_signal";
 }
 
+function isActionableSignalPulseCluster(cluster: TermCluster) {
+  const term = cluster.term.trim().toLowerCase();
+  if (!term || term.length < 4 || /^\d+$/.test(term)) return false;
+  if (NON_ACTIONABLE_CLUSTER_TERMS.has(term)) return false;
+  if (term.includes("http") || term.includes("www")) return false;
+  const periodPeak = cluster.max_period_mention_count ?? cluster.mention_count;
+  if (cluster.discovery_source === "period_first") return periodPeak >= 4;
+  return cluster.mention_count >= 8;
+}
+
 function polarityBucket(sentiment: number | null) {
   if (sentiment === null) return "unknown";
   if (sentiment > 0.18) return "positive";
@@ -2076,6 +2184,36 @@ function moveTypeFor(lifecycle: string | null, impact: number) {
 
 function gate(id: string, passed: boolean, detail: string) {
   return { id, passed, detail };
+}
+
+function normalizeActionability(value: unknown) {
+  if (value === "exclude" || value === "review" || value === "publish") return value;
+  return "review";
+}
+
+function isNonActionableSignalCopy(input: {
+  title: string;
+  description: string;
+  marketingRead: string;
+  actionHint: string;
+}) {
+  const source = `${input.title} ${input.description} ${input.marketingRead} ${input.actionHint}`.toLowerCase();
+  return [
+    "señal débil",
+    "sin relevancia",
+    "sin valor",
+    "sin conexión",
+    "sin conexion",
+    "sin ancla",
+    "no accionable",
+    "ruido",
+    "política local",
+    "politica local",
+    "menciones religiosas",
+    "fútbol",
+    "futbol",
+    "links sin contexto"
+  ].some((pattern) => source.includes(pattern));
 }
 
 function stringFrom(value: unknown) {

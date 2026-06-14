@@ -159,7 +159,8 @@ test("Signal Pulse marketing moves keep weak signals as bounded experiments", ()
     actionHint: ""
   });
 
-  assert.match(move.actionText, /Bajarlo a una serie corta de contenido/);
+  assert.match(move.actionText, /experimento de contenido/);
+  assert.doesNotMatch(move.actionText, /Bajarlo a una serie corta de contenido/);
   assert.equal(move.ownerSuggestion, "Social + Content");
   assert.equal(move.timing, "siguiente sprint");
   assert.match(move.measurementSuggestion, /7 menciones/);
