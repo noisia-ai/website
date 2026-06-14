@@ -2358,6 +2358,29 @@ async function buildSignalPulseQualityGates(args: {
               OR COALESCE(cs.dimensions->>'window_read', '') !~* '(ventana|meses|periodos|hist[oó]ric|serie|trayectoria|desde|regresa|reactiv|repite|satura|acelera|ca[ií]da|anomal|nuevo|emergente|persistente|sin patr[oó]n|aislado)'
               OR COALESCE(cs.dimensions->>'marketing_hypothesis', '') !~* '(campa[nñ]a|pauta|paid|org[aá]nico|brief|claim|promesa|creativ|pieza|performance|search|ecomm|venta|review|google business|fuente|knowledge|no_connection|sin evidencia|sin conexi[oó]n)'
               OR COALESCE(cs.dimensions->>'next_month_decision', '') !~* '(probar|testear|medir|auditar|pausar|mover|monitorear|comparar|ajustar|revisar|contener|activar|desactivar|validar|publicar|no escalar|priorizar)'
+              OR (
+                COALESCE(cs.dimensions->>'performance_connection', '') ~* '^connected:'
+                AND COALESCE(cs.dimensions->>'marketing_hypothesis', '') !~* '(conecta|conexi[oó]n|cruza|overlap|comparte|match|matched|evidencia|campa[nñ]a|claim|promesa|pieza|creative|creativo|pauta|performance)'
+              )
+              OR (
+                COALESCE(cs.dimensions->>'performance_connection', '') ~* '^no_connection:'
+                AND COALESCE(cs.dimensions->>'marketing_hypothesis', '') !~* '(no_connection|sin evidencia|no hay evidencia|sin conexi[oó]n|no hay conexi[oó]n|no se puede conectar|no atribuir|no vender causalidad|no hay overlap)'
+              )
+              OR (
+                COALESCE(cs.dimensions->>'performance_connection', '') ~* '^insufficient_data:'
+                AND COALESCE(cs.dimensions->>'marketing_hypothesis', '') !~* '(insufficient_data|insuficient|faltan datos|no hay datos|cobertura|fuente incompleta|data incompleta)'
+              )
+              OR (
+                COALESCE(cs.dimensions->>'analysis_scope', '') = 'current_cut'
+                AND COALESCE(cs.dimensions #> '{context_summary,pattern_flag_types}', '[]'::jsonb) ?| ARRAY[
+                  'repeated_window',
+                  'saturation_candidate',
+                  'reactivated',
+                  'declining',
+                  'inactive_in_cut',
+                  'temporal_marketing_context'
+                ]
+              )
             )
         ) AS signals_without_marketing_intelligence_read,
         (

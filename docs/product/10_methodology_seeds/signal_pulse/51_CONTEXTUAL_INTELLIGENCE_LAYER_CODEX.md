@@ -221,6 +221,8 @@ Una señal publicable debe cumplir:
 - series mensual y semanal, muestras, RAG de conversación/KB y preguntas de síntesis;
 - `performance_connection` con prefijo `connected:`, `no_connection:` o `insufficient_data:`;
 - `connected:` sólo si hay overlap directo de evidencia, KB/brief o lenguaje repetido de marketing.
+- `marketing_hypothesis` coherente con `performance_connection`: si no hay conexión, debe decir explícitamente que no hay evidencia/overlap y que no se debe atribuir; si faltan datos, debe nombrar la cobertura insuficiente; si hay conexión, debe nombrar el overlap concreto.
+- `analysis_scope` coherente con `pattern_flags`: una señal con patrón de ventana (`repeated_window`, `saturation_candidate`, `reactivated`, `declining`, `inactive_in_cut`, `temporal_marketing_context`) no puede publicarse como si sólo fuera `current_cut`.
 
 Si una fila no cumple, el worker la conserva como `needs_human_review` con `synthesis_validation.reasons`; no entra al Pulse aunque Claude haya dicho `actionability="publish"`. Sólo se archiva cuando Claude marca `exclude` o el copy cae en patrones claramente no accionables. Esto evita volver a tarjetas como `Fricción: Seguro`, `Oportunidad: Excelente` o moves de plantilla.
 
@@ -230,7 +232,7 @@ Si una fila no cumple, el worker la conserva como `needs_human_review` con `synt
 - El objetivo editorial de 3 señales sigue vivo, pero no es bloqueo técnico automático.
 - `signal_actionability_review` ya no falla por backlog de señales en `needs_human_review`; falla si una señal marcada como `publish_candidate` conserva naming débil/no publicable.
 - `contextual_synthesis_complete` bloquea si una señal publicable no viene de `claude_cluster_naming_v3_signal_pulse_rag`, no trae `marketing_read`, `action_hint`, `evidence_basis`, `confidence_rationale`, `signal_role` y `analysis_scope`, o no pasó `synthesis_validation`.
-- `marketing_intelligence_read` bloquea si una señal publicable no trae lectura separada de corte, ventana, hipótesis marketing y decisión medible para el siguiente mes.
+- `marketing_intelligence_read` bloquea publicación si una señal publicable no trae lectura separada de corte, ventana, hipótesis marketing y decisión medible para el siguiente mes. También bloquea si `marketing_hypothesis` contradice `performance_connection` o si una señal con flags de ventana se marca sólo como `current_cut`.
 - `semantic_context_used` bloquea si una señal publicable no tiene samples suficientes, RAG semántico de conversación/KB, serie de periodo y performance activa asociada.
 - `signal_intelligence_case` bloquea si una señal publicable no trae `investigation_brief` materializado en `context_summary`: periodos fuertes, serie semanal, pulsos semanales, intersecciones de marketing/performance, `pattern_flags`, evidence ids y preguntas de síntesis.
 - `performance_connection_qualified` bloquea si `performance_connection` no empieza con `connected:`, `no_connection:` o `insufficient_data:`, o si declara `connected:` sin overlap directo (`evidence_overlap`, `knowledge_or_brief_overlap` o `repeated_marketing_language_overlap`) en los matches de marketing.

@@ -212,6 +212,53 @@ test("Signal Pulse synthesis validation blocks connected performance claims with
   assert.ok(result.reasons.includes("connected_without_direct_marketing_overlap"));
 });
 
+test("Signal Pulse synthesis validation requires marketing hypothesis to match connection status", () => {
+  const result = validateSignalPulseSynthesis({
+    title: "Oportunidad: Educación práctica sobre choques en cadena reduce confusión operativa",
+    description: "En 2026-05 aparecen preguntas sobre choques en cadena con suficiente evidencia y una lectura útil para contenido educativo.",
+    marketingRead: "La oportunidad movible es convertir dudas operativas en contenido de servicio sin prometer resolución total.",
+    actionHint: "Probar un carrusel educativo y medir dudas, comentarios útiles y menciones de claridad frente al baseline",
+    signalRole: "content_opportunity",
+    analysisScope: "mixed",
+    periodRead: "En el corte 2026-05 las preguntas sobre choques en cadena crecen con evidencia trazable en el mes.",
+    windowRead: "En la ventana de 12 meses el tema aparece como señal emergente repetida y vuelve a concentrarse en mayo.",
+    marketingHypothesis: "La campaña de confianza explica la recepción y debería amplificarse como contenido de resolución.",
+    nextMonthDecision: "Probar contenido educativo y medir dudas, comentarios útiles, CTR y menciones de claridad contra control.",
+    performanceConnection: "no_connection: no hay overlap directo con campaña, brief o creative text.",
+    evidenceBasis: "Sample 33333333-3333-4333-8333-333333333333 y periodo 2026-05 sostienen la lectura.",
+    confidenceRationale: "Hay evidencia textual, RAG de conversación y serie mensual, pero no hay conexión de marketing demostrada.",
+    contextSummary: strongContextSummary({ direct_marketing_matches: 0 })
+  });
+
+  assert.equal(result.publishable, false);
+  assert.ok(result.reasons.includes("marketing_hypothesis_connection_mismatch"));
+});
+
+test("Signal Pulse synthesis validation forces window scope for window pattern flags", () => {
+  const result = validateSignalPulseSynthesis({
+    title: "Territorio saturado: Seguro auto como claim genérico ya no diferencia la conversación",
+    description: "En 2026-05 el claim de seguro auto conserva volumen, pero la lectura importante es que perdió filo frente a la conversación acumulada.",
+    marketingRead: "Marketing debe leerlo como saturación de claim antes de seguir empujando el mismo territorio creativo.",
+    actionHint: "Auditar piezas del claim seguro auto y comparar comentarios útiles, CTR y menciones diferenciales contra un ángulo alterno",
+    signalRole: "saturation",
+    analysisScope: "current_cut",
+    periodRead: "En el corte 2026-05 el volumen sigue activo y conserva menciones trazables dentro del mes.",
+    windowRead: "En la ventana de 12 meses el territorio se repite, se satura y muestra desgaste de diferenciación.",
+    marketingHypothesis: "La campaña y el claim de seguro auto conectan con el patrón repetido por overlap de evidencia y creative text.",
+    nextMonthDecision: "Pausar el claim genérico, probar un ángulo alterno y medir CTR, dudas y menciones diferenciales.",
+    performanceConnection: "connected: creative text y evidencia comparten el claim seguro auto.",
+    evidenceBasis: "Sample 44444444-4444-4444-8444-444444444444 y periodo 2026-05 sostienen la lectura.",
+    confidenceRationale: "Hay serie mensual, pico semanal, overlap con creative text y patrón repetido de ventana.",
+    contextSummary: strongContextSummary({
+      direct_marketing_matches: 1,
+      pattern_flag_types: ["repeated_window", "saturation_candidate"]
+    })
+  });
+
+  assert.equal(result.publishable, false);
+  assert.ok(result.reasons.includes("window_pattern_flag_without_window_scope"));
+});
+
 test("Signal Pulse pattern flags classify window intelligence before Claude writes", () => {
   const periodSeries: SignalPulsePatternSeriesPoint[] = [
     periodPoint("2026-01", 12, null),
@@ -896,6 +943,8 @@ test("Signal Pulse Claude naming prompt uses marketing-first RAG context, not T&
   assert.match(prompt, /match_basis/);
   assert.match(prompt, /matched_terms/);
   assert.match(prompt, /performance_connection debe empezar exactamente/);
+  assert.match(prompt, /marketing_hypothesis debe ser coherente/);
+  assert.match(prompt, /no se debe atribuir/);
   assert.match(prompt, /period_read/);
   assert.match(prompt, /window_read/);
   assert.match(prompt, /marketing_hypothesis/);
@@ -992,7 +1041,7 @@ function row(
   return { anchor_id, mention_id, text_clean, platform, sentiment_score, engagement_score, similarity };
 }
 
-function strongContextSummary(overrides: Record<string, number> = {}) {
+function strongContextSummary(overrides: Record<string, unknown> = {}) {
   return {
     samples: 6,
     conversation_matches: 2,
@@ -1010,6 +1059,7 @@ function strongContextSummary(overrides: Record<string, number> = {}) {
     synthesis_questions: 4,
     active_periods: 3,
     current_volume: 96,
+    pattern_flag_types: ["accelerating", "marketing_overlap"],
     ...overrides
   };
 }

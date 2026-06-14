@@ -20,6 +20,7 @@ export const SIGNAL_PULSE_PUBLISH_BLOCKER_GATES = new Set([
   "signal_actionability_review",
   "contextual_synthesis_complete",
   "semantic_context_used",
+  "marketing_intelligence_read",
   "signal_intelligence_case",
   "performance_connection_qualified",
   "traceable_evidence_basis",

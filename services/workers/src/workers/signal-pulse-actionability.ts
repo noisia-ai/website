@@ -82,6 +82,7 @@ export type SignalPulseSynthesisValidationInput = {
     direct_marketing_matches: number;
     synthesis_questions: number;
     pattern_flags: number;
+    pattern_flag_types: string[];
     active_periods: number;
     current_volume: number;
   }>;
@@ -135,6 +136,7 @@ export function validateSignalPulseSynthesis(input: SignalPulseSynthesisValidati
   const reasons: string[] = [];
   const titleParts = parseSignalPulseTaxonomyTitle(input.title);
   const context = input.contextSummary ?? {};
+  const connection = input.performanceConnection.trim().toLowerCase();
 
   if (!titleParts) {
     reasons.push("title_missing_signal_pulse_taxonomy");
@@ -156,6 +158,9 @@ export function validateSignalPulseSynthesis(input: SignalPulseSynthesisValidati
   if (input.analysisScope === "current_cut" && numberFromContext(context.current_volume) <= 0) {
     reasons.push("current_cut_without_current_volume");
   }
+  if (input.analysisScope === "current_cut" && hasWindowPatternFlag(context.pattern_flag_types)) {
+    reasons.push("window_pattern_flag_without_window_scope");
+  }
 
   if (substantiveLength(input.description) < 70) reasons.push("description_too_thin");
   if (substantiveLength(input.marketingRead) < 70) reasons.push("marketing_read_too_thin");
@@ -173,12 +178,14 @@ export function validateSignalPulseSynthesis(input: SignalPulseSynthesisValidati
   if (!hasMarketingSourceLanguage(input.marketingHypothesis ?? "")) {
     reasons.push("marketing_hypothesis_missing_marketing_source");
   }
+  if (!connectionMatchesMarketingHypothesis(input.marketingHypothesis ?? "", connection)) {
+    reasons.push("marketing_hypothesis_connection_mismatch");
+  }
   if (!hasDecisionLanguage(input.nextMonthDecision ?? "") || !hasMeasurementLanguage(`${input.nextMonthDecision ?? ""} ${input.actionHint}`)) {
     reasons.push("next_month_decision_not_measurable");
   }
   if (!hasMeasurementLanguage(input.actionHint)) reasons.push("action_hint_not_measurable");
 
-  const connection = input.performanceConnection.trim().toLowerCase();
   if (!/^(connected|no_connection|insufficient_data):/.test(connection)) reasons.push("performance_connection_unqualified");
   if (connection.startsWith("connected:") && numberFromContext(context.direct_marketing_matches) < 1) {
     reasons.push("connected_without_direct_marketing_overlap");
@@ -240,6 +247,31 @@ function hasWindowPatternLanguage(value: string, activePeriods: number) {
 
 function hasMarketingSourceLanguage(value: string) {
   return /\b(campa[nñ]a|pauta|paid|org[aá]nico|brief|claim|promesa|creativ[oa]|pieza|performance|search|ecomm|venta|ventas|review|reviews|google business|fuente|fuentes|kb|knowledge|no_connection|sin evidencia|no hay evidencia|sin conexi[oó]n)\b/i.test(value);
+}
+
+function connectionMatchesMarketingHypothesis(marketingHypothesis: string, performanceConnection: string) {
+  if (performanceConnection.startsWith("connected:")) {
+    return /\b(conecta|conexi[oó]n|cruza|overlap|comparte|match|matched|evidencia|campaña|campa[nñ]a|claim|promesa|pieza|creative|creativo|pauta|performance)\b/i.test(marketingHypothesis);
+  }
+  if (performanceConnection.startsWith("no_connection:")) {
+    return /\b(no_connection|sin evidencia|no hay evidencia|sin conexi[oó]n|no hay conexi[oó]n|no se puede conectar|no atribuir|no vender causalidad|no hay overlap)\b/i.test(marketingHypothesis);
+  }
+  if (performanceConnection.startsWith("insufficient_data:")) {
+    return /\b(insufficient_data|insuficient|faltan datos|no hay datos|cobertura|fuente incompleta|data incompleta)\b/i.test(marketingHypothesis);
+  }
+  return false;
+}
+
+function hasWindowPatternFlag(value: unknown) {
+  const flags = Array.isArray(value) ? value.map((item) => String(item)) : [];
+  return flags.some((flag) => [
+    "repeated_window",
+    "saturation_candidate",
+    "reactivated",
+    "declining",
+    "inactive_in_cut",
+    "temporal_marketing_context"
+  ].includes(flag));
 }
 
 function hasDecisionLanguage(value: string) {
