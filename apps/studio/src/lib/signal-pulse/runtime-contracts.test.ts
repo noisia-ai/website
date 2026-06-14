@@ -122,7 +122,7 @@ test("Signal Pulse launch plan exposes pre-run cost, budget cap and structured c
   });
 
   assert.equal(plan.budgetCapUsd, 7.5);
-  assert.equal(plan.estimatedCostUsd, 0.315);
+  assert.equal(plan.estimatedCostUsd, 0.335);
   assert.equal(plan.clusterFirst, true);
   assert.equal(plan.windowMonths, 12);
   assert.equal(plan.status, "ready");
@@ -189,7 +189,7 @@ test("Signal Pulse launch plan blocks runs that exceed the visible budget cap", 
   });
 
   assert.equal(plan.status, "blocked");
-  assert.equal(plan.estimatedCostUsd, 0.315);
+  assert.equal(plan.estimatedCostUsd, 0.335);
   assert.match(plan.warnings.join(" "), /rebasa el tope/);
 
   const checklist = buildSignalPulseLaunchChecklist(plan);

@@ -19,6 +19,17 @@ export type PulseOutputLike = {
   themeName?: string | null;
 };
 
+export type PulseApiFilters = {
+  period?: string;
+  platform?: string;
+  signalId?: string;
+  signalType?: string;
+  lifecycle?: string;
+  moveType?: string;
+  status?: string;
+  q?: string;
+};
+
 export function isSignalPulseOutput(output: PulseOutputLike | null | undefined): output is PulseOutputLike & {
   methodologySlug: "signal-pulse";
   kind: "signal_pulse";
@@ -44,15 +55,17 @@ export function buildPulseOverviewResponse(args: {
   output: PulseOutputLike;
   payload: JsonRecord;
   visibility: SignalPulseResolvedVisibility;
+  filters?: PulseApiFilters;
 }) {
   const report = asRecord(args.payload.report);
   const executiveRead = asRecord(args.payload.executive_read);
   const periods = sanitizePulsePeriodsForVisibility(arrayOfRecords(args.payload.periods), args.visibility);
-  const signals = arrayOfRecords(args.payload.signals);
-  const moves = arrayOfRecords(args.payload.marketing_moves);
+  const filters = withDefaultPulsePeriod(normalizePulseFilters(args.filters), periods);
+  const signals = filterSignals(arrayOfRecords(args.payload.signals), filters);
+  const moves = filterMoves(arrayOfRecords(args.payload.marketing_moves), signals, filters);
   const qualityGates = arrayOfRecords(args.payload.quality_gates);
   const cost = asRecord(args.payload.cost);
-  const activePeriod = periods.at(-1) ?? null;
+  const activePeriod = findPeriod(periods, filters.period) ?? periods.at(-1) ?? null;
   const topSignals = signals.slice(0, 8).map(compactSignal);
   const topMoves = moves.slice(0, 6).map(compactMove);
 
@@ -82,6 +95,7 @@ export function buildPulseOverviewResponse(args: {
     charts: chartInventory(args.payload, args.visibility),
     top_signals: topSignals,
     top_moves: topMoves,
+    filters: filtersForResponse(filters),
     quality: {
       gates_passed: qualityGates.filter((gate) => gate.passed === true).length,
       gates_total: qualityGates.length,
@@ -103,20 +117,24 @@ export function buildPulseSignalsResponse(args: {
   payload: JsonRecord;
   visibility: SignalPulseResolvedVisibility;
   signalId?: string;
+  filters?: PulseApiFilters;
 }) {
   const periods = arrayOfRecords(args.payload.periods);
   const evidence = args.visibility.showEvidence ? arrayOfRecords(args.payload.evidence) : [];
+  const normalizedFilters = normalizePulseFilters({ ...args.filters, signalId: args.signalId ?? args.filters?.signalId });
+  const filters = args.signalId ? normalizedFilters : withDefaultPulsePeriod(normalizedFilters, periods);
   const moves = arrayOfRecords(args.payload.marketing_moves);
-  const signals: JsonRecord[] = arrayOfRecords(args.payload.signals).map((signal) => enrichSignal(signal, { periods, evidence, moves }));
+  const signals: JsonRecord[] = filterSignals(arrayOfRecords(args.payload.signals), filters).map((signal) => enrichSignal(signal, { periods, evidence, moves }));
 
-  if (args.signalId) {
-    const signal = signals.find((item) => stringValue(item.id) === args.signalId);
+  if (filters.signalId) {
+    const signal = signals.find((item) => stringValue(item.id) === filters.signalId);
     return signal ? { signal } : null;
   }
 
   return {
     signals,
     count: signals.length,
+    filters: filtersForResponse(filters),
     periods: periods.map((period) => ({
       id: stringValue(period.id),
       label: stringValue(period.label),
@@ -129,10 +147,13 @@ export function buildPulseSignalsResponse(args: {
 export function buildPulseMovesResponse(args: {
   payload: JsonRecord;
   visibility: SignalPulseResolvedVisibility;
+  filters?: PulseApiFilters;
 }) {
-  const signals = new Map(arrayOfRecords(args.payload.signals).map((signal) => [stringValue(signal.id), compactSignal(signal)]));
+  const filters = withDefaultPulsePeriod(normalizePulseFilters(args.filters), arrayOfRecords(args.payload.periods));
+  const filteredSignals = filterSignals(arrayOfRecords(args.payload.signals), filters);
+  const signals = new Map(filteredSignals.map((signal) => [stringValue(signal.id), compactSignal(signal)]));
   const evidence = args.visibility.showEvidence ? arrayOfRecords(args.payload.evidence) : [];
-  const moves: JsonRecord[] = arrayOfRecords(args.payload.marketing_moves).map((move) => {
+  const moves: JsonRecord[] = filterMoves(arrayOfRecords(args.payload.marketing_moves), filteredSignals, filters).map((move) => {
     const refs = stringArray(move.signal_refs);
     return {
       ...move,
@@ -150,7 +171,8 @@ export function buildPulseMovesResponse(args: {
   return {
     moves,
     board,
-    count: moves.length
+    count: moves.length,
+    filters: filtersForResponse(filters)
   };
 }
 
@@ -158,8 +180,10 @@ export function buildPulseChartResponse(args: {
   payload: JsonRecord;
   dataRef: string;
   visibility?: SignalPulseResolvedVisibility;
+  filters?: PulseApiFilters;
 }) {
   const charts = chartRefs(args.payload, args.visibility);
+  const filters = normalizePulseFilters(args.filters);
   const key = chartAlias(args.dataRef);
   if (isPaidChartKey(key) && args.visibility && !args.visibility.showPaidOrganic) return null;
   const chart = charts[args.dataRef] ?? charts[key];
@@ -167,8 +191,22 @@ export function buildPulseChartResponse(args: {
   return {
     data_ref: args.dataRef,
     chart_key: key,
-    payload: chart
+    payload: filterChartPayload(asRecord(chart), filters),
+    filters: filtersForResponse(filters)
   };
+}
+
+export function pulseApiFiltersFromSearchParams(searchParams: URLSearchParams): PulseApiFilters {
+  return normalizePulseFilters({
+    period: queryValue(searchParams, "period", "period_id", "period_label"),
+    platform: queryValue(searchParams, "platform", "source"),
+    signalId: queryValue(searchParams, "signal_id", "signal"),
+    signalType: queryValue(searchParams, "signal_type", "type"),
+    lifecycle: queryValue(searchParams, "lifecycle", "lifecycle_state"),
+    moveType: queryValue(searchParams, "move_type"),
+    status: queryValue(searchParams, "status"),
+    q: queryValue(searchParams, "q")
+  });
 }
 
 export function sanitizePulsePeriodsForVisibility(periods: JsonRecord[], visibility: SignalPulseResolvedVisibility): JsonRecord[] {
@@ -201,29 +239,187 @@ export function sanitizePulseChartRefsForVisibility(chartRefsInput: JsonRecord, 
   return output;
 }
 
+function normalizePulseFilters(filters: PulseApiFilters | null | undefined): PulseApiFilters {
+  return {
+    period: normalizeRawFilterValue(filters?.period),
+    platform: normalizeFilterValue(filters?.platform),
+    signalId: normalizeRawFilterValue(filters?.signalId),
+    signalType: normalizeFilterValue(filters?.signalType),
+    lifecycle: normalizeFilterValue(filters?.lifecycle),
+    moveType: normalizeFilterValue(filters?.moveType),
+    status: normalizeFilterValue(filters?.status),
+    q: normalizeFilterValue(filters?.q)
+  };
+}
+
+function withDefaultPulsePeriod(filters: PulseApiFilters, periods: JsonRecord[]): PulseApiFilters {
+  if (filters.period) return filters;
+  const latest = periods.at(-1);
+  return latest ? { ...filters, period: stringValue(latest.id) || stringValue(latest.label) } : filters;
+}
+
+function hasActivePulseFilters(filters: PulseApiFilters) {
+  return Boolean(
+    filters.period ||
+    filters.platform ||
+    filters.signalId ||
+    filters.signalType ||
+    filters.lifecycle ||
+    filters.moveType ||
+    filters.status ||
+    filters.q
+  );
+}
+
+function filtersForResponse(filters: PulseApiFilters) {
+  return {
+    active: hasActivePulseFilters(filters),
+    period: filters.period || null,
+    platform: filters.platform || null,
+    signal_id: filters.signalId || null,
+    signal_type: filters.signalType || null,
+    lifecycle: filters.lifecycle || null,
+    move_type: filters.moveType || null,
+    status: filters.status || null,
+    q: filters.q || null
+  };
+}
+
+function findPeriod(periods: JsonRecord[], periodFilter?: string) {
+  if (!periodFilter) return null;
+  return periods.find((period) => {
+    return stringValue(period.id) === periodFilter || stringValue(period.label) === periodFilter;
+  }) ?? null;
+}
+
 function enrichSignal(signal: JsonRecord, args: { periods: JsonRecord[]; evidence: JsonRecord[]; moves: JsonRecord[] }): JsonRecord {
   const signalId = stringValue(signal.id);
   return {
     ...signal,
     evidence: args.evidence.filter((item) => stringValue(item.signal_id) === signalId),
     moves: args.moves.filter((move) => stringArray(move.signal_refs).includes(signalId)),
-    period_summary: args.periods.map((period) => ({
-      period_id: stringValue(period.id),
-      label: stringValue(period.label),
-      comparable: period.comparable !== false
-    }))
+    period_summary: args.periods.map((period) => {
+      const metric = metricForPeriod(signal, stringValue(period.id), stringValue(period.label));
+      return {
+        period_id: stringValue(period.id),
+        label: stringValue(period.label),
+        comparable: period.comparable !== false,
+        volume: metric ? numberValue(metric.volume) : null,
+        lifecycle_state: metric ? stringValue(metric.lifecycle_state) : ""
+      };
+    })
   };
 }
 
+function filterSignals(signals: JsonRecord[], filters: PulseApiFilters): JsonRecord[] {
+  return signals.filter((signal) => {
+    if (filters.signalId && stringValue(signal.id) !== filters.signalId) return false;
+    if (filters.signalType && normalizeFilterValue(signal.signal_type) !== filters.signalType) return false;
+    if (filters.lifecycle && !signalMatchesLifecycle(signal, filters.lifecycle, filters.period)) return false;
+    if (filters.period && !signalMatchesPeriod(signal, filters.period)) return false;
+    if (filters.platform && !signalMatchesPlatform(signal, filters.platform, filters.period)) return false;
+    if (filters.q && !signalMatchesQuery(signal, filters.q)) return false;
+    return true;
+  });
+}
+
+function filterMoves(moves: JsonRecord[], filteredSignals: JsonRecord[], filters: PulseApiFilters): JsonRecord[] {
+  const allowedSignalIds = new Set(filteredSignals.map((signal) => stringValue(signal.id)).filter(Boolean));
+  const hasSignalScopedFilter = Boolean(filters.period || filters.platform || filters.signalId || filters.signalType || filters.lifecycle || filters.q);
+  return moves.filter((move) => {
+    if (filters.moveType && normalizeFilterValue(move.move_type) !== filters.moveType) return false;
+    if (filters.status && normalizeFilterValue(move.status) !== filters.status) return false;
+    const refs = stringArray(move.signal_refs);
+    if (hasSignalScopedFilter && !refs.some((id) => allowedSignalIds.has(id))) return false;
+    return true;
+  });
+}
+
+function filterChartPayload(chart: JsonRecord, filters: PulseApiFilters): JsonRecord {
+  if (!hasActivePulseFilters(filters)) return chart;
+  const rows = arrayOfRecords(chart.rows);
+  if (rows.length === 0) return chart;
+  return {
+    ...chart,
+    rows: rows.filter((row) => {
+      if (filters.signalId && stringValue(row.signal_id || row.id) !== filters.signalId) return false;
+      if (filters.period && !rowMatchesPeriod(row, filters.period)) return false;
+      if (filters.platform && !rowMatchesPlatform(row, filters.platform)) return false;
+      if (filters.lifecycle && normalizeFilterValue(row.lifecycle_state) !== filters.lifecycle) return false;
+      if (filters.signalType && normalizeFilterValue(row.signal_type) !== filters.signalType) return false;
+      return true;
+    })
+  };
+}
+
+function signalMatchesPeriod(signal: JsonRecord, period: string) {
+  if (period === "all") return true;
+  const metric = metricForPeriod(signal, period, period);
+  if (metric) return numberValue(metric.volume) > 0;
+  return stringValue(signal.cut_period_label) === period || stringValue(signal.period_id) === period;
+}
+
+function signalMatchesLifecycle(signal: JsonRecord, lifecycle: string, period?: string) {
+  const metric = period && period !== "all" ? metricForPeriod(signal, period, period) : null;
+  return normalizeFilterValue(metric?.lifecycle_state ?? signal.lifecycle_state) === lifecycle;
+}
+
+function signalMatchesPlatform(signal: JsonRecord, platform: string, period?: string) {
+  const metric = period && period !== "all" ? metricForPeriod(signal, period, period) : null;
+  const sourceMix = asRecord(metric?.source_mix ?? signal.source_mix);
+  if (numberValue(sourceMix[platform]) > 0) return true;
+  const dimensions = asRecord(signal.dimensions);
+  return stringArray(dimensions.platforms).map(normalizeFilterValue).includes(platform);
+}
+
+function signalMatchesQuery(signal: JsonRecord, query: string) {
+  const dimensions = asRecord(signal.dimensions);
+  const haystack = [
+    signal.title,
+    signal.description,
+    signal.signal_type,
+    dimensions.signal_role,
+    dimensions.marketing_read,
+    dimensions.action_hint,
+    dimensions.performance_connection,
+    dimensions.evidence_basis
+  ].map(stringValue).join(" ").toLowerCase();
+  return haystack.includes(query);
+}
+
+function metricForPeriod(signal: JsonRecord, periodId: string, periodLabel: string) {
+  return arrayOfRecords(signal.period_metrics).find((metric) => {
+    const id = stringValue(metric.period_id);
+    const label = stringValue(metric.label);
+    return Boolean((periodId && id === periodId) || (periodLabel && label === periodLabel));
+  }) ?? null;
+}
+
+function rowMatchesPeriod(row: JsonRecord, period: string) {
+  if (period === "all") return true;
+  return [row.period_id, row.label, row.period_label, row.month].map(stringValue).includes(period);
+}
+
+function rowMatchesPlatform(row: JsonRecord, platform: string) {
+  if (normalizeFilterValue(row.platform) === platform || normalizeFilterValue(row.source) === platform) return true;
+  const sourceMix = asRecord(row.source_mix);
+  if (numberValue(sourceMix[platform]) > 0) return true;
+  const coverage = asRecord(row.coverage);
+  return numberValue(coverage[platform]) > 0;
+}
+
 function compactSignal(signal: JsonRecord) {
+  const dimensions = asRecord(signal.dimensions);
   return {
     id: stringValue(signal.id),
     title: stringValue(signal.title),
     signal_type: stringValue(signal.signal_type),
+    signal_role: stringValue(dimensions.signal_role),
     lifecycle_state: stringValue(signal.lifecycle_state),
     impact_v1: numberValue(signal.impact_v1),
     volume: numberValue(signal.volume),
     delta_prev: numberOrNull(signal.delta_prev),
+    source_mix: asRecord(signal.source_mix),
     polarity_bucket: stringValue(signal.polarity_bucket),
     dominant_emotion: stringValue(signal.dominant_emotion),
     confidence: stringValue(signal.confidence),
@@ -325,4 +521,20 @@ function numberValue(value: unknown) {
 function numberOrNull(value: unknown) {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function queryValue(searchParams: URLSearchParams, ...keys: string[]) {
+  for (const key of keys) {
+    const value = searchParams.get(key);
+    if (value != null) return value;
+  }
+  return undefined;
+}
+
+function normalizeRawFilterValue(value: unknown) {
+  return stringValue(value).trim();
+}
+
+function normalizeFilterValue(value: unknown) {
+  return normalizeRawFilterValue(value).toLowerCase();
 }

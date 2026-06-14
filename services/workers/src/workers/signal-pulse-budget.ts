@@ -1,6 +1,7 @@
 const DEFAULT_MAX_SIGNAL_CLUSTERS = 24;
 
 export const SIGNAL_PULSE_INTERPRETATION_COST_USD = 0.15;
+export const SIGNAL_PULSE_RAG_CONTEXT_COST_USD = 0.02;
 
 export function estimateSignalPulseNamingCostUsd(clusterCount: number, maxClusters = DEFAULT_MAX_SIGNAL_CLUSTERS) {
   const boundedClusters = Math.max(1, Math.min(maxClusters, Math.ceil(clusterCount)));
@@ -9,7 +10,7 @@ export function estimateSignalPulseNamingCostUsd(clusterCount: number, maxCluste
 
 export function estimateSignalPulseRunCostUsd(signalPulseMentions: number, maxClusters = DEFAULT_MAX_SIGNAL_CLUSTERS) {
   const estimatedClusters = Math.max(1, Math.min(maxClusters, Math.ceil(signalPulseMentions / 80)));
-  return roundUsd(SIGNAL_PULSE_INTERPRETATION_COST_USD + estimateSignalPulseNamingCostUsd(estimatedClusters, maxClusters));
+  return roundUsd(SIGNAL_PULSE_RAG_CONTEXT_COST_USD + SIGNAL_PULSE_INTERPRETATION_COST_USD + estimateSignalPulseNamingCostUsd(estimatedClusters, maxClusters));
 }
 
 export function shouldSkipSignalPulseLlmForBudget(args: {

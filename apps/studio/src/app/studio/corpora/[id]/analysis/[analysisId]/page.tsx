@@ -328,14 +328,12 @@ function SignalPulseAnalysisReview({
   const failedGates = qualityGates.filter((gate) => gate.passed === false);
   const noisySignals = state.signals.filter((signal) => looksNonActionableSignal(signal.title, signal.description, signal.dimensions));
   const publishableSignals = state.signals.filter((signal) => isPublishableSignal(signal.title, signal.description, signal.dimensions, Number(signal.current_volume ?? signal.volume ?? 0)));
-  const inactiveCutSignals = state.signals.filter((signal) => isPublishCandidate(signal.dimensions) && Number(signal.current_volume ?? signal.volume ?? 0) <= 0);
   const hiddenSignalCount = Math.max(0, state.signals.length - publishableSignals.length);
   const repeatedMoveCount = state.moves.filter((move) => move.action_text.includes("Bajarlo a una serie corta")).length;
   const reviewIssues = [
     ...failedGates.map((gate) => `Gate fallido: ${stringValue(gate.id) || "quality_gate"}`),
     ...noisySignals.slice(0, 6).map((signal) => `Señal requiere curaduría: ${signal.title}`),
-    publishableSignals.length < 3 ? `${publishableSignals.length} señales publicables en el corte actual; mínimo 3 para publicar.` : null,
-    inactiveCutSignals.length > 0 ? `${inactiveCutSignals.length} señales no tienen volumen en el corte actual.` : null,
+    publishableSignals.length === 0 ? "0 señales publicables en el corte actual; hay que regenerar síntesis o revisar clustering antes de publicar." : null,
     repeatedMoveCount >= 3 ? `${repeatedMoveCount} marketing moves repiten la misma fórmula.` : null
   ].filter((issue): issue is string => Boolean(issue));
   const publishBlocked = state.analysis.status !== "needs_review" && state.analysis.status !== "approved"
@@ -931,7 +929,8 @@ function looksNonActionableSignal(title: string, description: string | null, dim
     .replace(/[\u0300-\u036f]/g, "");
   if (
     /^cluster pendiente de sintesis:/.test(normalizedTitle)
-    || /^(friccion|oportunidad|territorio): (hasta|siempre|manejar|pinche|velocidad|mejor|nada)$/.test(normalizedTitle)
+    || /^(barrera|trigger):/.test(normalizedTitle)
+    || /^(friccion|oportunidad|territorio|riesgo creativo|claim a testear|senal emergente|gap de pauta|contencion|monitoreo): (hasta|siempre|manejar|pinche|velocidad|mejor|nada|seguro|aseguradora|aseguradoras|choque|accidente|vehiculo|qualitas|sabritas|gobernador|padrino|antojo|groseras|vieja)$/.test(normalizedTitle)
   ) {
     return true;
   }
@@ -956,7 +955,7 @@ function looksNonActionableSignal(title: string, description: string | null, dim
 }
 
 function looksRawKeywordSignal(title: string) {
-  const titleTerm = normalizeReviewSignalPhrase(title.replace(/^(fricción|friccion|oportunidad|territorio|prioridad|cluster pendiente de síntesis|cluster pendiente de sintesis):\s*/i, ""));
+  const titleTerm = normalizeReviewSignalPhrase(title.replace(/^(fricción|friccion|oportunidad|territorio|prioridad|riesgo creativo|claim a testear|señal emergente|senal emergente|gap de pauta|contención|contencion|monitoreo|cluster pendiente de síntesis|cluster pendiente de sintesis):\s*/i, ""));
   return isRawReviewPhrase(titleTerm);
 }
 

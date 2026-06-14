@@ -198,7 +198,7 @@ export function buildSignalPulseRunParams(args: {
 
 function estimateSignalPulseRunCostUsd(signalPulseMentions: number) {
   const estimatedClusters = Math.max(1, Math.min(24, Math.ceil(signalPulseMentions / 80)));
-  const namingAndInterpretation = 0.15 + estimatedClusters * 0.015;
+  const namingAndInterpretation = 0.02 + 0.15 + estimatedClusters * 0.015;
   return Math.round(namingAndInterpretation * 10_000) / 10_000;
 }
 

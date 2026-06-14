@@ -11,8 +11,10 @@ import {
   estimateSignalPulseNamingCostUsd,
   estimateSignalPulseRunCostUsd,
   SIGNAL_PULSE_INTERPRETATION_COST_USD,
+  SIGNAL_PULSE_RAG_CONTEXT_COST_USD,
   shouldSkipSignalPulseLlmForBudget
 } from "./signal-pulse-budget";
+import { buildClaudeSignalNamingPrompt } from "./signal-pulse-prompts";
 import { buildSignalPulseDeterministicRead, buildSignalPulseMarketingMove } from "./signal-pulse-copy";
 import { splitSignalPulseMetaForMerge } from "./signal-pulse-meta";
 import { isActionableSignalPulseTerm, isRawKeywordSignalPhrase } from "./signal-pulse-actionability";
@@ -183,9 +185,147 @@ test("Signal Pulse marketing moves keep weak signals as bounded experiments", ()
 test("Signal Pulse budget estimate stays cluster-first and bounded before running", () => {
   assert.equal(estimateSignalPulseNamingCostUsd(0), 0.015);
   assert.equal(estimateSignalPulseNamingCostUsd(100), 0.36);
-  assert.equal(estimateSignalPulseRunCostUsd(1), 0.165);
+  assert.equal(SIGNAL_PULSE_RAG_CONTEXT_COST_USD, 0.02);
+  assert.equal(estimateSignalPulseRunCostUsd(1), 0.185);
   assert.equal(SIGNAL_PULSE_INTERPRETATION_COST_USD, 0.15);
-  assert.equal(estimateSignalPulseRunCostUsd(6000), 0.51);
+  assert.equal(estimateSignalPulseRunCostUsd(6000), 0.53);
+});
+
+test("Signal Pulse Claude naming prompt uses marketing-first RAG context, not T&B labels", () => {
+  const prompt = buildClaudeSignalNamingPrompt([
+    {
+      id: "00000000-0000-4000-8000-000000000001",
+      current_title: "Territorio seguro",
+      signal_type: "risk",
+      term: "seguro",
+      rank: 1,
+      mention_count: 134,
+      sentiment_avg: -0.22,
+      platforms: ["facebook", "tiktok"],
+      discovery_periods: ["2026-05"],
+      max_period_mention_count: 134,
+      samples: [
+        { text: "No queda claro quien responde en un choque en cadena.", platform: "facebook", published_at: "2026-05-18" }
+      ],
+      context: {
+        period_series: [
+          {
+            label: "2026-04",
+            period_start: "2026-04-01",
+            period_end: "2026-04-30",
+            volume: 44,
+            delta_prev: null,
+            engagement: 20,
+            sentiment_avg: -0.12,
+            source_mix: { facebook: 44 },
+            lifecycle_state: "stable"
+          },
+          {
+            label: "2026-05",
+            period_start: "2026-05-01",
+            period_end: "2026-05-31",
+            volume: 134,
+            delta_prev: 90,
+            engagement: 72,
+            sentiment_avg: -0.22,
+            source_mix: { facebook: 90, tiktok: 44 },
+            lifecycle_state: "rising"
+          }
+        ],
+        window_pattern: {
+          current_period: "2026-05",
+          current_volume: 134,
+          previous_volume: 44,
+          delta_prev: 90,
+          active_periods: 2,
+          first_active_period: "2026-04",
+          last_active_period: "2026-05",
+          peak_period: "2026-05",
+          peak_volume: 134,
+          lifecycle_state: "rising"
+        },
+        performance_context: {
+          active_months: [
+            {
+              month: "2026-05",
+              records: 42,
+              spend: 1200,
+              impressions: 88000,
+              clicks: 940,
+              engagement: 1800,
+              avg_ctr: 0.012,
+              platforms: ["meta"],
+              channels: ["paid"]
+            }
+          ],
+          matching_creatives: [
+            {
+              record_date: "2026-05-10",
+              platform: "meta",
+              channel: "paid",
+              entity_kind: "ad",
+              entity_name: "Confianza auto",
+              objective: "traffic",
+              spend: 300,
+              impressions: 18000,
+              clicks: 210,
+              engagement: 330,
+              creative_text: "Seguro de auto con respuesta rapida"
+            }
+          ]
+        },
+        knowledge_matches: [
+          {
+            title: "Brief mayo",
+            source_kind: "brand_document",
+            text: "La campaña de mayo empuja confianza y respuesta rapida.",
+            similarity: 0.82
+          }
+        ]
+      }
+    }
+  ], {
+    marketing_brief: {
+      active_campaigns: ["Confianza auto"],
+      allowed_claims: ["respuesta clara"],
+      prohibited_claims: ["resolver todo al instante"]
+    },
+    knowledge_sources: [
+      { type: "brand_document", content: { summary: "Marca regional de seguros con foco en cercania." } }
+    ],
+    source_inventory: [
+      { source_type: "performance", provider: "meta", name: "Meta 12m", status: "active", visibility: "internal" }
+    ],
+    performance_window: [
+      {
+        month: "2026-05",
+        records: 42,
+        spend: 1200,
+        impressions: 88000,
+        clicks: 940,
+        engagement: 1800,
+        avg_ctr: 0.012,
+        platforms: ["meta"],
+        channels: ["paid"]
+      }
+    ],
+    rag: {
+      semantic_available: true,
+      embedding_model: "voyage-4-large",
+      retrieval_scope: "brand_knowledge_sources + structured performance_records"
+    }
+  });
+
+  assert.match(prompt, /12 meses/);
+  assert.match(prompt, /performance_records/);
+  assert.match(prompt, /Riesgo creativo/);
+  assert.match(prompt, /Gap de pauta/);
+  assert.match(prompt, /Brief mayo/);
+  assert.match(prompt, /2026-05/);
+  assert.match(prompt, /no_connection/);
+  assert.doesNotMatch(prompt, /Triggers & Barriers/);
+  assert.doesNotMatch(prompt, /"Barrera:/);
+  assert.doesNotMatch(prompt, /"Trigger:/);
 });
 
 test("Signal Pulse LLM budget guard reserves the next cluster-level call", () => {

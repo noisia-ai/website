@@ -8,6 +8,7 @@ import {
   buildPulseOverviewResponse,
   buildPulseSignalsResponse,
   isSignalPulseOutput,
+  pulseApiFiltersFromSearchParams,
   type PulseOutputLike
 } from "./pulse-api";
 
@@ -46,8 +47,18 @@ const output: PulseOutputLike = {
         impact_v1: "82",
         volume: 140,
         delta_prev: "12",
+        source_mix: { facebook: 60, tiktok: 80 },
+        period_metrics: [
+          { period_id: "rp_1", label: "2026-05", volume: 44, lifecycle_state: "emerging", source_mix: { facebook: 44 } },
+          { period_id: "rp_2", label: "2026-06", volume: 140, lifecycle_state: "new", source_mix: { facebook: 60, tiktok: 80 } }
+        ],
         polarity_bucket: "positiva",
         dominant_emotion: "afinidad",
+        dimensions: {
+          signal_role: "claim a testear",
+          platforms: ["facebook", "tiktok"],
+          performance_connection: "El engagement sube en el corte de junio."
+        },
         confidence: "alta",
         evidence_count: 2
       },
@@ -58,8 +69,36 @@ const output: PulseOutputLike = {
         lifecycle_state: "accelerating",
         impact_v1: "61",
         volume: 70,
+        source_mix: { facebook: 70 },
+        period_metrics: [
+          { period_id: "rp_2", label: "2026-06", volume: 70, lifecycle_state: "accelerating", source_mix: { facebook: 70 } }
+        ],
+        dimensions: {
+          signal_role: "riesgo creativo",
+          platforms: ["facebook"],
+          performance_connection: "CTR cae mientras suben quejas por precio."
+        },
         confidence: "media",
         evidence_count: 1
+      },
+      {
+        id: "s_3",
+        title: "Educación para carretera",
+        signal_type: "opportunity",
+        lifecycle_state: "inactive_in_cut",
+        impact_v1: null,
+        volume: 0,
+        source_mix: {},
+        period_metrics: [
+          { period_id: "rp_1", label: "2026-05", volume: 36, lifecycle_state: "emerging", source_mix: { youtube: 36 } }
+        ],
+        dimensions: {
+          signal_role: "senal emergente",
+          platforms: ["youtube"],
+          performance_connection: "Sin conexión suficiente con performance."
+        },
+        confidence: "baja",
+        evidence_count: 0
       }
     ],
     marketing_moves: [
@@ -73,6 +112,17 @@ const output: PulseOutputLike = {
         measurement_suggestion: "CTR",
         confidence: "alta",
         status: "candidate"
+      },
+      {
+        id: "m_2",
+        move_type: "monitor",
+        action_text: "Vigilar precio alto en pauta.",
+        signal_refs: ["s_2"],
+        owner_suggestion: "Media",
+        timing: "this_month",
+        measurement_suggestion: "Sentimiento por creatividad",
+        confidence: "media",
+        status: "approved"
       }
     ],
     evidence: [
@@ -80,9 +130,15 @@ const output: PulseOutputLike = {
       { evidence_id: "e_2", signal_id: "s_1", quote: "Me gusta lo crujiente.", evidence_role: "support" }
     ],
     chart_refs: {
-      impact_polarity_map: { rows: [{ signal_id: "s_1", impact: 82 }] },
-      signal_momentum_stream: { rows: [{ signal_id: "s_1", label: "2026-06", volume: 140 }] },
-      source_coverage_strip: { rows: [{ label: "2026-06", coverage: { conversation: 140, performance: 30, spend: 1200 } }] },
+      impact_polarity_map: { rows: [{ signal_id: "s_1", impact: 82, signal_type: "opportunity" }] },
+      signal_momentum_stream: {
+        rows: [
+          { signal_id: "s_1", period_id: "rp_1", label: "2026-05", volume: 44, platform: "facebook" },
+          { signal_id: "s_1", period_id: "rp_2", label: "2026-06", volume: 140, platform: "tiktok" },
+          { signal_id: "s_2", period_id: "rp_2", label: "2026-06", volume: 70, platform: "facebook" }
+        ]
+      },
+      source_coverage_strip: { rows: [{ period_id: "rp_2", label: "2026-06", coverage: { conversation: 140, performance: 30, spend: 1200 } }] },
       paid_campaign_alignment: { rows: [{ campaign: "always on", spend: 1200 }] }
     },
     quality_gates: [
@@ -147,8 +203,9 @@ test("Pulse signals expose evidence internally and moves group by status", () =>
   const detailSignal = detail.signal as Record<string, unknown>;
   assert.equal((detailSignal.evidence as unknown[]).length, 2);
   assert.equal((detailSignal.moves as unknown[]).length, 1);
-  assert.equal(moves.count, 1);
+  assert.equal(moves.count, 2);
   assert.equal(moves.board.candidate?.length, 1);
+  assert.equal(moves.board.approved?.length, 1);
   assert.equal(((moves.moves[0] as Record<string, unknown>).evidence as unknown[]).length, 2);
 });
 
@@ -157,7 +214,7 @@ test("Pulse chart endpoint resolves aliases for internal users", () => {
   const chart = buildPulseChartResponse({ payload: context.payload, dataRef: "impact_polarity", visibility: context.visibility });
 
   assert.equal(chart?.chart_key, "impact_polarity_map");
-  assert.deepEqual(chart?.payload, { rows: [{ signal_id: "s_1", impact: 82 }] });
+  assert.deepEqual(chart?.payload, { rows: [{ signal_id: "s_1", impact: 82, signal_type: "opportunity" }] });
   assert.equal(buildPulseChartResponse({ payload: context.payload, dataRef: "nope", visibility: context.visibility }), null);
 });
 
@@ -176,6 +233,61 @@ test("Pulse API strips paid coverage and paid charts for clients without paid pe
   });
   assert.equal(paidChart, null);
   assert.deepEqual(coverageChart?.payload, {
-    rows: [{ label: "2026-06", coverage: { conversation: 140 } }]
+    rows: [{ period_id: "rp_2", label: "2026-06", coverage: { conversation: 140 } }]
+  });
+});
+
+test("Pulse endpoints can filter the 12-month intelligence by period and platform", () => {
+  const context = buildPulseApiContext({ output, isInternalUser: true });
+  const maySignals = buildPulseSignalsResponse({ ...context, filters: { period: "rp_1", platform: "facebook" } });
+  const allSignals = buildPulseSignalsResponse({ ...context, filters: { period: "all" } });
+  const historicalDetail = buildPulseSignalsResponse({ ...context, signalId: "s_3" });
+  const tiktokOverview = buildPulseOverviewResponse({ output, ...context, filters: { platform: "TikTok" } });
+  const tiktokMoves = buildPulseMovesResponse({ ...context, filters: { platform: "tiktok" } });
+
+  assert.ok(maySignals && "signals" in maySignals);
+  assert.ok(allSignals && "signals" in allSignals);
+  assert.ok(historicalDetail && "signal" in historicalDetail);
+  const historicalSignal = historicalDetail.signal as Record<string, unknown>;
+  assert.equal(maySignals.count, 1);
+  assert.equal((maySignals.signals[0] as Record<string, unknown>).id, "s_1");
+  assert.equal(allSignals.count, 3);
+  assert.equal(historicalSignal.id, "s_3");
+  assert.equal(tiktokOverview.kpis.signals_active, 1);
+  assert.equal(tiktokOverview.top_signals[0]?.id, "s_1");
+  assert.equal(tiktokOverview.filters.platform, "tiktok");
+  assert.equal(tiktokMoves.count, 1);
+  assert.equal(tiktokMoves.moves[0]?.id, "m_1");
+});
+
+test("Pulse moves and charts respect tactical filters", () => {
+  const context = buildPulseApiContext({ output, isInternalUser: true });
+  const approvedMoves = buildPulseMovesResponse({ ...context, filters: { moveType: "monitor", status: "approved" } });
+  const momentum = buildPulseChartResponse({
+    payload: context.payload,
+    dataRef: "momentum",
+    visibility: context.visibility,
+    filters: { period: "rp_2", platform: "facebook" }
+  });
+
+  assert.equal(approvedMoves.count, 1);
+  assert.equal(approvedMoves.moves[0]?.id, "m_2");
+  assert.deepEqual(momentum?.payload, {
+    rows: [{ signal_id: "s_2", period_id: "rp_2", label: "2026-06", volume: 70, platform: "facebook" }]
+  });
+});
+
+test("Pulse API parses dashboard filter query params", () => {
+  const filters = pulseApiFiltersFromSearchParams(new URLSearchParams("period=2026-06&platform=TikTok&move_type=test_claim&q=Crujiente"));
+
+  assert.deepEqual(filters, {
+    period: "2026-06",
+    platform: "tiktok",
+    signalId: "",
+    signalType: "",
+    lifecycle: "",
+    moveType: "test_claim",
+    status: "",
+    q: "crujiente"
   });
 });

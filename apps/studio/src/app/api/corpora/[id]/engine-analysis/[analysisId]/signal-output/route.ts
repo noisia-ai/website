@@ -486,6 +486,33 @@ async function buildSignalPulsePublishedPayload(
           WHERE spm.study_corpus_id = $1
             AND rp.granularity = 'month'
           GROUP BY spm.canonical_signal_id
+        ),
+        period_metrics AS (
+          SELECT
+            spm.canonical_signal_id,
+            jsonb_agg(
+              jsonb_build_object(
+                'period_id', rp.id::text,
+                'label', rp.label,
+                'period_start', rp.period_start::text,
+                'period_end', rp.period_end::text,
+                'volume', spm.volume,
+                'impact_v1', spm.impact_v1::float,
+                'sentiment_score', spm.sentiment_score::float,
+                'polarity_bucket', spm.polarity_bucket,
+                'dominant_emotion', spm.dominant_emotion,
+                'source_mix', spm.source_mix,
+                'confidence', spm.confidence,
+                'delta_prev', spm.delta_prev::float,
+                'lifecycle_state', spm.lifecycle_state
+              )
+              ORDER BY rp.period_start
+            ) AS metrics
+          FROM signal_period_metrics spm
+          JOIN report_periods rp ON rp.id = spm.period_id
+          WHERE spm.study_corpus_id = $1
+            AND rp.granularity = 'month'
+          GROUP BY spm.canonical_signal_id
         )
         SELECT
           cs.id::text AS id,
@@ -493,29 +520,32 @@ async function buildSignalPulsePublishedPayload(
           cs.description,
           cs.signal_type,
           cs.dimensions,
-          current_metrics.volume,
+          COALESCE(current_metrics.volume, 0) AS volume,
           window_metrics.window_volume,
           window_metrics.active_periods,
           window_metrics.last_seen_period,
-          current_metrics.cut_period_label,
-          current_metrics.period_start::text AS cut_period_start,
-          current_metrics.period_end::text AS cut_period_end,
+          COALESCE(current_metrics.cut_period_label, cp.label) AS cut_period_label,
+          COALESCE(current_metrics.period_start, cp.period_start)::text AS cut_period_start,
+          COALESCE(current_metrics.period_end, cp.period_end)::text AS cut_period_end,
           current_metrics.impact_v1::text AS impact_v1,
           current_metrics.sentiment_score::text AS sentiment_score,
           current_metrics.polarity_bucket,
           current_metrics.dominant_emotion,
-          current_metrics.source_mix,
-          current_metrics.evidence_count,
+          COALESCE(current_metrics.source_mix, '{}'::jsonb) AS source_mix,
+          COALESCE(current_metrics.evidence_count, 0) AS evidence_count,
           current_metrics.confidence,
           current_metrics.delta_prev::text AS delta_prev,
-          current_metrics.lifecycle_state
+          COALESCE(current_metrics.lifecycle_state, 'inactive_in_cut') AS lifecycle_state,
+          COALESCE(period_metrics.metrics, '[]'::jsonb) AS period_metrics
         FROM canonical_signals cs
-        JOIN current_metrics ON current_metrics.canonical_signal_id = cs.id
+        LEFT JOIN current_metrics ON current_metrics.canonical_signal_id = cs.id
         LEFT JOIN window_metrics ON window_metrics.canonical_signal_id = cs.id
+        LEFT JOIN period_metrics ON period_metrics.canonical_signal_id = cs.id
+        CROSS JOIN cut_period cp
         WHERE cs.study_corpus_id = $1
           AND cs.methodology_slug = 'signal-pulse'
           AND cs.status = 'active'
-          AND current_metrics.volume > 0
+          AND COALESCE(window_metrics.active_periods, 0) > 0
           AND COALESCE(cs.dimensions->>'review_status', '') <> 'excluded_from_signal_pulse'
           AND lower(cs.canonical_title) NOT LIKE '%señal débil%'
           AND lower(cs.canonical_title) NOT LIKE '%sin relevancia%'
@@ -524,7 +554,7 @@ async function buildSignalPulsePublishedPayload(
           AND lower(cs.canonical_title) NOT LIKE '%sin conexion%'
           AND lower(cs.canonical_title) NOT LIKE '%sin ancla%'
           AND lower(cs.canonical_title) !~ '^(fricción|friccion|oportunidad|territorio): (hasta|siempre|manejar|pinche|velocidad|mejor|nada)$'
-        ORDER BY COALESCE(current_metrics.impact_v1, 0) DESC, current_metrics.volume DESC
+        ORDER BY COALESCE(current_metrics.impact_v1, 0) DESC, COALESCE(current_metrics.volume, 0) DESC, window_metrics.window_volume DESC
         LIMIT 80
       `,
       [corpus.id]
