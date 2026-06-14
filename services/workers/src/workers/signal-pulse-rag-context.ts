@@ -20,6 +20,7 @@ import {
   type SignalPulseMarketingRecordMatch
 } from "./signal-pulse-marketing-record-match";
 import { buildSignalPulsePatternFlags, type SignalPulsePatternFlag } from "./signal-pulse-pattern-flags";
+import { loadSignalPulseSemanticPeriodSeriesRows } from "./signal-pulse-semantic-periods";
 
 type SignalPulseContextScope = {
   study_corpus_id: string;
@@ -421,6 +422,23 @@ async function loadClusterPeriodSeries(args: {
   memberMentionIds: string[];
   granularity: "month" | "week";
 }): Promise<SignalPulseClusterPromptContext["period_series"]> {
+  const semanticRows = await loadSignalPulseSemanticPeriodSeriesRows({
+    corpusId: args.corpusId,
+    memberMentionIds: args.memberMentionIds,
+    granularity: args.granularity
+  });
+  if (semanticRows) {
+    return buildPeriodSeries(semanticRows.map((row) => ({
+      label: row.label,
+      period_start: row.period_start,
+      period_end: row.period_end,
+      volume: row.volume,
+      engagement: row.engagement,
+      sentiment_avg: row.sentiment_avg,
+      source_mix: row.source_mix
+    })), args.granularity);
+  }
+
   const pattern = `%${escapeLike(args.term)}%`;
   const rows = (await pool.query<{
     label: string;
@@ -490,21 +508,44 @@ async function loadClusterPeriodSeries(args: {
     [args.corpusId, pattern, args.memberMentionIds, args.granularity]
   )).rows;
 
+  return buildPeriodSeries(rows.map((row) => ({
+    label: row.label,
+    period_start: row.period_start,
+    period_end: row.period_end,
+    volume: Number(row.volume ?? 0),
+    engagement: Number(row.engagement ?? 0),
+    sentiment_avg: numberOrNull(row.sentiment_avg),
+    source_mix: row.source_mix ?? {}
+  })), args.granularity);
+}
+
+function buildPeriodSeries(
+  rows: Array<{
+    label: string;
+    period_start: string;
+    period_end: string;
+    volume: number;
+    engagement: number;
+    sentiment_avg: number | null;
+    source_mix: Record<string, number>;
+  }>,
+  granularity: "month" | "week"
+): SignalPulseClusterPromptContext["period_series"] {
   const volumes: number[] = [];
   return rows.map((row) => {
     const previous = volumes.at(-1) ?? 0;
     const volume = Number(row.volume ?? 0);
     volumes.push(volume);
     return {
-      granularity: args.granularity,
+      granularity,
       label: row.label,
       period_start: row.period_start,
       period_end: row.period_end,
       volume,
       delta_prev: volumes.length > 1 ? volume - previous : null,
       engagement: Number(row.engagement ?? 0),
-      sentiment_avg: numberOrNull(row.sentiment_avg),
-      source_mix: row.source_mix ?? {},
+      sentiment_avg: row.sentiment_avg,
+      source_mix: row.source_mix,
       lifecycle_state: classifySignalPulseLifecycle({
         currentVolume: volume,
         previousVolume: previous,

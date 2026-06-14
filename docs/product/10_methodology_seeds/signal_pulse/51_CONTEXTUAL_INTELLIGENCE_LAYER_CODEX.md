@@ -63,6 +63,10 @@ La detección period-first también usa clustering semántico cuando existen emb
 
 La metadata de cluster también conserva `semantic_mention_embeddings`, `global_semantic_candidate_clusters`, `global_term_candidate_clusters`, `period_first_semantic_candidate_clusters` y `period_first_term_candidate_clusters`. Esto permite revisar cuántas menciones tenían cobertura semántica, cuántos candidatos nacieron por embeddings y si el worker tuvo que tocar el fallback legacy.
 
+Las métricas por periodo y el contexto que recibe Claude también dejaron de depender del set fijo de `member_mention_ids` o de `LIKE '%keyword%'` cuando la señal tiene embeddings. Para cada señal, el worker toma hasta 8 menciones semilla del cluster y, por mes/semana, recupera vecinos semánticos acotados en Postgres/pgvector (`semantic_neighborhood_v1`). Esos vecinos son los que alimentan `signal_period_metrics`, `signal_observations`, evidencia por periodo, `period_series`, `weekly_series`, `window_pattern` y `weekly_pattern`. Si una señal tiene seeds semánticas pero un mes no tiene vecinos suficientes, ese mes queda en 0; no cae a keyword. Sólo los corpus/señales sin embeddings usan el fallback legacy.
+
+Para auditarlo, `canonical_signals.dimensions.monthly_series[*].match_strategy`, `canonical_signals.dimensions.period_metric_match_strategy`, `signal_observations.metrics.match_strategy` y `signal_observation_evidence.metadata.match_strategy` indican si el número salió de `semantic_neighborhood_v1`, `cluster_member_ids` o `term_like_fallback`.
+
 Para evitar que el cruce dependa sólo de keywords, cada cluster recibe también:
 
 - `period_campaigns`: campañas, ads o piezas con pauta/performance en los meses donde el cluster estuvo activo.

@@ -55,6 +55,10 @@ import {
   loadSignalPulseMarketingContext,
   type SignalPulseMarketingContext
 } from "./signal-pulse-rag-context";
+import {
+  hasSignalPulseSemanticSeeds,
+  loadSignalPulseSemanticPeriodMentions
+} from "./signal-pulse-semantic-periods";
 
 type SignalPulseStepJobData = {
   engineAnalysisId: string;
@@ -1177,6 +1181,10 @@ async function materializePeriodMetrics(args: {
   for (const signal of signalRows) {
     const term = stringFrom(signal.dimensions?.term) || signal.canonical_title;
     const memberMentionIds = stringArrayFrom(signal.dimensions?.member_mention_ids);
+    const semanticPeriodMatching = await hasSignalPulseSemanticSeeds({
+      corpusId: args.ctx.study_corpus_id,
+      memberMentionIds
+    });
     const previousVolumes: number[] = [];
     const periodSeries: Array<{
       period_id: string;
@@ -1187,6 +1195,7 @@ async function materializePeriodMetrics(args: {
       impact_v1: number;
       confidence: string;
       lifecycle_state: string;
+      match_strategy: string;
     }> = [];
     for (const period of periods) {
       const periodMentions = await loadSignalPeriodMentions({
@@ -1194,7 +1203,8 @@ async function materializePeriodMetrics(args: {
         term,
         memberMentionIds,
         periodStart: period.period_start,
-        periodEnd: period.period_end
+        periodEnd: period.period_end,
+        semanticSeedsAvailable: semanticPeriodMatching
       });
       const volume = periodMentions.count;
       const periodTotal = totalByPeriod.get(period.id) ?? 0;
@@ -1223,7 +1233,8 @@ async function materializePeriodMetrics(args: {
         volume,
         impact_v1: impact,
         confidence,
-        lifecycle_state: lifecycle
+        lifecycle_state: lifecycle,
+        match_strategy: periodMentions.match_strategy
       });
       await pool.query(
         `
@@ -1289,11 +1300,17 @@ async function materializePeriodMetrics(args: {
         deltaPrev,
         lifecycle,
         term,
-        sourceMix: periodMentions.source_mix
+        sourceMix: periodMentions.source_mix,
+        matchStrategy: periodMentions.match_strategy
       });
       if (observationId) {
         observationCount += 1;
-        evidenceCount += await refreshSignalEvidence({ observationId, mentions: periodMentions.samples, term });
+        evidenceCount += await refreshSignalEvidence({
+          observationId,
+          mentions: periodMentions.samples,
+          term,
+          matchStrategy: periodMentions.match_strategy
+        });
       }
     }
     const currentPeriod = periodSeries.at(-1) ?? null;
@@ -1325,6 +1342,7 @@ async function materializePeriodMetrics(args: {
           best_period_label: bestPeriod?.label ?? null,
           best_period_volume: bestPeriod?.volume ?? 0,
           data_through: currentPeriod?.period_end ?? null,
+          period_metric_match_strategy: semanticPeriodMatching ? "semantic_neighborhood_v1" : "legacy_member_or_term_match",
           monthly_series: periodSeries.slice(-12)
         })
       ]
@@ -2611,6 +2629,7 @@ async function upsertSignalObservation(args: {
   lifecycle: string;
   term: string;
   sourceMix: Record<string, number>;
+  matchStrategy: string;
 }) {
   const result = await pool.query<{ id: string }>(
     `
@@ -2658,6 +2677,7 @@ async function upsertSignalObservation(args: {
         term: args.term,
         lifecycle_state: args.lifecycle,
         source_mix: args.sourceMix,
+        match_strategy: args.matchStrategy,
         calculated_by: "signal_pulse_sql_v1"
       })
     ]
@@ -2669,6 +2689,7 @@ async function refreshSignalEvidence(args: {
   observationId: string;
   mentions: Array<{ id: string; quote: string | null; platform: string | null; published_at: string | null }>;
   term: string;
+  matchStrategy: string;
 }) {
   await pool.query(`DELETE FROM signal_observation_evidence WHERE signal_observation_id = $1`, [args.observationId]);
   let inserted = 0;
@@ -2690,6 +2711,7 @@ async function refreshSignalEvidence(args: {
         JSON.stringify({
           source: "signal_pulse_cluster",
           matched_term: args.term,
+          match_strategy: args.matchStrategy,
           platform: mention.platform,
           published_at: mention.published_at
         })
@@ -2706,7 +2728,19 @@ async function loadSignalPeriodMentions(args: {
   memberMentionIds?: string[];
   periodStart: string;
   periodEnd: string;
+  semanticSeedsAvailable?: boolean;
 }) {
+  const semanticMentions = await loadSignalPulseSemanticPeriodMentions({
+    corpusId: args.corpusId,
+    memberMentionIds: args.memberMentionIds ?? [],
+    periodStart: args.periodStart,
+    periodEnd: args.periodEnd,
+    semanticSeedsAvailable: args.semanticSeedsAvailable
+  });
+  if (semanticMentions) {
+    return semanticMentions;
+  }
+
   const pattern = `%${escapeLike(args.term)}%`;
   const result = await pool.query<{
     count: number;
@@ -2766,7 +2800,8 @@ async function loadSignalPeriodMentions(args: {
     sentiment_avg: numberOrNull(row?.sentiment_avg),
     engagement_sum: Number(row?.engagement_sum ?? 0),
     source_mix: row?.source_mix ?? {},
-    samples: Array.isArray(row?.samples) ? row.samples : []
+    samples: Array.isArray(row?.samples) ? row.samples : [],
+    match_strategy: (args.memberMentionIds?.length ?? 0) > 0 ? "cluster_member_ids" : "term_like_fallback"
   };
 }
 

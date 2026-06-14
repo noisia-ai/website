@@ -969,6 +969,8 @@ test("Signal Pulse Claude naming prompt uses marketing-first RAG context, not T&
 
   assert.match(prompt, /12 meses/);
   assert.match(prompt, /serie semanal/);
+  assert.match(prompt, /vecindarios semánticos por mes\/semana/);
+  assert.match(prompt, /no conteo por keyword/);
   assert.match(prompt, /analysis_scope/);
   assert.match(prompt, /ventana completa/);
   assert.match(prompt, /performance_records/);
