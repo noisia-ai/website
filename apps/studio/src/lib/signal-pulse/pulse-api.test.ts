@@ -61,6 +61,7 @@ const output: PulseOutputLike = {
           performance_event: "engagement spike",
           source_types: ["organic"],
           platforms: ["facebook", "tiktok"],
+          analysis_scope: "mixed",
           performance_connection: "El engagement sube en el corte de junio."
         },
         confidence: "alta",
@@ -84,6 +85,7 @@ const output: PulseOutputLike = {
           performance_event: "ctr drop",
           source_types: ["paid"],
           platforms: ["facebook"],
+          analysis_scope: "current_cut",
           performance_connection: "CTR cae mientras suben quejas por precio."
         },
         confidence: "media",
@@ -105,6 +107,7 @@ const output: PulseOutputLike = {
           scope: "category",
           source_types: ["reviews"],
           platforms: ["youtube"],
+          analysis_scope: "window_pattern",
           performance_connection: "Sin conexión suficiente con performance."
         },
         confidence: "baja",
@@ -144,8 +147,8 @@ const output: PulseOutputLike = {
       signal_momentum_stream: {
         rows: [
           { signal_id: "s_1", period_id: "rp_1", label: "2026-05", volume: 44, platform: "facebook" },
-          { signal_id: "s_1", period_id: "rp_2", label: "2026-06", volume: 140, platform: "tiktok", campaign: "Back to school", source_type: "organic", scope: "brand", performance_event: "engagement spike" },
-          { signal_id: "s_2", period_id: "rp_2", label: "2026-06", volume: 70, platform: "facebook", campaign: "Promo precio", source_type: "paid", scope: "category", performance_event: "ctr drop" }
+          { signal_id: "s_1", period_id: "rp_2", label: "2026-06", volume: 140, platform: "tiktok", campaign: "Back to school", source_type: "organic", scope: "brand", analysis_scope: "mixed", performance_event: "engagement spike" },
+          { signal_id: "s_2", period_id: "rp_2", label: "2026-06", volume: 70, platform: "facebook", campaign: "Promo precio", source_type: "paid", scope: "category", analysis_scope: "current_cut", performance_event: "ctr drop" }
         ]
       },
       source_coverage_strip: { rows: [{ period_id: "rp_2", label: "2026-06", coverage: { conversation: 140, performance: 30, spend: 1200 } }] },
@@ -270,6 +273,19 @@ test("Pulse endpoints can filter the 12-month intelligence by period and platfor
   assert.equal(tiktokMoves.moves[0]?.id, "m_1");
 });
 
+test("Pulse endpoints can filter window-pattern signals separately from the monthly cut", () => {
+  const context = buildPulseApiContext({ output, isInternalUser: true });
+  const windowSignals = buildPulseSignalsResponse({ ...context, filters: { period: "all", analysisScope: "window_pattern" } });
+  const currentSignals = buildPulseSignalsResponse({ ...context, filters: { period: "all", analysisScope: "current_cut" } });
+
+  assert.ok(windowSignals && "signals" in windowSignals);
+  assert.ok(currentSignals && "signals" in currentSignals);
+  assert.equal(windowSignals.count, 1);
+  assert.equal((windowSignals.signals[0] as Record<string, unknown>).id, "s_3");
+  assert.equal(currentSignals.count, 1);
+  assert.equal((currentSignals.signals[0] as Record<string, unknown>).id, "s_2");
+});
+
 test("Pulse moves and charts respect tactical filters", () => {
   const context = buildPulseApiContext({ output, isInternalUser: true });
   const approvedMoves = buildPulseMovesResponse({ ...context, filters: { moveType: "monitor", status: "approved" } });
@@ -283,7 +299,7 @@ test("Pulse moves and charts respect tactical filters", () => {
   assert.equal(approvedMoves.count, 1);
   assert.equal(approvedMoves.moves[0]?.id, "m_2");
   assert.deepEqual(momentum?.payload, {
-    rows: [{ signal_id: "s_2", period_id: "rp_2", label: "2026-06", volume: 70, platform: "facebook", campaign: "Promo precio", source_type: "paid", scope: "category", performance_event: "ctr drop" }]
+    rows: [{ signal_id: "s_2", period_id: "rp_2", label: "2026-06", volume: 70, platform: "facebook", campaign: "Promo precio", source_type: "paid", scope: "category", analysis_scope: "current_cut", performance_event: "ctr drop" }]
   });
 });
 
@@ -304,12 +320,12 @@ test("Pulse filters cover campaigns, source type, scope and performance events",
   assert.equal(scopedMoves.count, 1);
   assert.equal(scopedMoves.moves[0]?.id, "m_2");
   assert.deepEqual(campaignChart?.payload, {
-    rows: [{ signal_id: "s_2", period_id: "rp_2", label: "2026-06", volume: 70, platform: "facebook", campaign: "Promo precio", source_type: "paid", scope: "category", performance_event: "ctr drop" }]
+    rows: [{ signal_id: "s_2", period_id: "rp_2", label: "2026-06", volume: 70, platform: "facebook", campaign: "Promo precio", source_type: "paid", scope: "category", analysis_scope: "current_cut", performance_event: "ctr drop" }]
   });
 });
 
 test("Pulse API parses dashboard filter query params", () => {
-  const filters = pulseApiFiltersFromSearchParams(new URLSearchParams("period=2026-06&platform=TikTok&campaign=Back%20to%20school&source_type=Organic&scope=Brand&performance_event=Spike&move_type=test_claim&q=Crujiente"));
+  const filters = pulseApiFiltersFromSearchParams(new URLSearchParams("period=2026-06&platform=TikTok&campaign=Back%20to%20school&source_type=Organic&scope=Brand&analysis_scope=Window%20Pattern&performance_event=Spike&move_type=test_claim&q=Crujiente"));
 
   assert.deepEqual(filters, {
     period: "2026-06",
@@ -321,6 +337,7 @@ test("Pulse API parses dashboard filter query params", () => {
     moveType: "test_claim",
     sourceType: "organic",
     scope: "brand",
+    analysisScope: "window_pattern",
     performanceEvent: "spike",
     status: "",
     q: "crujiente"

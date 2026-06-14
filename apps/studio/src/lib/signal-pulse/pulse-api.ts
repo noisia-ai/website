@@ -29,6 +29,7 @@ export type PulseApiFilters = {
   moveType?: string;
   sourceType?: string;
   scope?: string;
+  analysisScope?: string;
   performanceEvent?: string;
   status?: string;
   q?: string;
@@ -211,6 +212,7 @@ export function pulseApiFiltersFromSearchParams(searchParams: URLSearchParams): 
     moveType: queryValue(searchParams, "move_type"),
     sourceType: queryValue(searchParams, "source_type", "source_kind", "data_source"),
     scope: queryValue(searchParams, "scope", "entity_scope"),
+    analysisScope: queryValue(searchParams, "analysis_scope"),
     performanceEvent: queryValue(searchParams, "performance_event", "event"),
     status: queryValue(searchParams, "status"),
     q: queryValue(searchParams, "q")
@@ -258,6 +260,7 @@ function normalizePulseFilters(filters: PulseApiFilters | null | undefined): Pul
     moveType: normalizeFilterValue(filters?.moveType),
     sourceType: normalizeFilterValue(filters?.sourceType),
     scope: normalizeFilterValue(filters?.scope),
+    analysisScope: normalizeAnalysisScopeFilter(filters?.analysisScope),
     performanceEvent: normalizeFilterValue(filters?.performanceEvent),
     status: normalizeFilterValue(filters?.status),
     q: normalizeFilterValue(filters?.q)
@@ -281,6 +284,7 @@ function hasActivePulseFilters(filters: PulseApiFilters) {
     filters.moveType ||
     filters.sourceType ||
     filters.scope ||
+    filters.analysisScope ||
     filters.performanceEvent ||
     filters.status ||
     filters.q
@@ -299,6 +303,7 @@ function filtersForResponse(filters: PulseApiFilters) {
     move_type: filters.moveType || null,
     source_type: filters.sourceType || null,
     scope: filters.scope || null,
+    analysis_scope: filters.analysisScope || null,
     performance_event: filters.performanceEvent || null,
     status: filters.status || null,
     q: filters.q || null
@@ -340,6 +345,7 @@ function filterSignals(signals: JsonRecord[], filters: PulseApiFilters): JsonRec
     if (filters.platform && !signalMatchesPlatform(signal, filters.platform, filters.period)) return false;
     if (filters.sourceType && !signalMatchesSourceType(signal, filters.sourceType)) return false;
     if (filters.scope && !signalMatchesScope(signal, filters.scope)) return false;
+    if (filters.analysisScope && normalizeAnalysisScopeFilter(asRecord(signal.dimensions).analysis_scope) !== filters.analysisScope) return false;
     if (filters.campaign && !signalMatchesQuery(signal, filters.campaign)) return false;
     if (filters.performanceEvent && !signalMatchesQuery(signal, filters.performanceEvent)) return false;
     if (filters.q && !signalMatchesQuery(signal, filters.q)) return false;
@@ -358,6 +364,7 @@ function filterMoves(moves: JsonRecord[], filteredSignals: JsonRecord[], filters
     filters.campaign ||
     filters.sourceType ||
     filters.scope ||
+    filters.analysisScope ||
     filters.performanceEvent ||
     filters.q
   );
@@ -385,6 +392,7 @@ function filterChartPayload(chart: JsonRecord, filters: PulseApiFilters): JsonRe
       if (filters.campaign && !rowMatchesText(row, filters.campaign, ["campaign", "campaign_id", "campaign_name", "entity_name", "creative_text"])) return false;
       if (filters.sourceType && !rowMatchesText(row, filters.sourceType, ["source_type", "source_kind", "data_source", "provider", "channel"])) return false;
       if (filters.scope && !rowMatchesText(row, filters.scope, ["scope", "entity_scope", "query_scope", "brand_scope"])) return false;
+      if (filters.analysisScope && normalizeAnalysisScopeFilter(row.analysis_scope) !== filters.analysisScope) return false;
       if (filters.performanceEvent && !rowMatchesText(row, filters.performanceEvent, ["performance_event", "event", "metric", "metric_name", "event_name"])) return false;
       return true;
     })
@@ -451,6 +459,7 @@ function signalMatchesQuery(signal: JsonRecord, query: string) {
     dimensions.action_hint,
     dimensions.performance_connection,
     dimensions.evidence_basis,
+    dimensions.analysis_scope,
     dimensions.campaign,
     dimensions.campaign_name,
     dimensions.performance_event,
@@ -491,6 +500,7 @@ function compactSignal(signal: JsonRecord) {
     title: stringValue(signal.title),
     signal_type: stringValue(signal.signal_type),
     signal_role: stringValue(dimensions.signal_role),
+    analysis_scope: stringValue(dimensions.analysis_scope),
     scope: stringValue(dimensions.scope || dimensions.entity_scope || signal.scope || signal.entity_scope),
     lifecycle_state: stringValue(signal.lifecycle_state),
     impact_v1: numberValue(signal.impact_v1),
@@ -614,4 +624,8 @@ function normalizeRawFilterValue(value: unknown) {
 
 function normalizeFilterValue(value: unknown) {
   return normalizeRawFilterValue(value).toLowerCase();
+}
+
+function normalizeAnalysisScopeFilter(value: unknown) {
+  return normalizeFilterValue(value).replace(/[\s-]+/g, "_");
 }

@@ -1468,6 +1468,7 @@ async function persistClaudeSignalNamingRows(args: {
     const marketingRead = stringFrom(row.marketing_read).slice(0, 500);
     const actionHint = stringFrom(row.action_hint).slice(0, 360);
     const signalRole = normalizeSignalRole(row.signal_role);
+    const analysisScope = normalizeAnalysisScope(row.analysis_scope);
     const performanceConnection = stringFrom(row.performance_connection).slice(0, 360);
     const evidenceBasis = stringFrom(row.evidence_basis).slice(0, 420);
     const confidenceRationale = stringFrom(row.confidence_rationale).slice(0, 360);
@@ -1502,6 +1503,7 @@ async function persistClaudeSignalNamingRows(args: {
           action_hint: actionHint,
           actionability,
           signal_role: signalRole,
+          analysis_scope: analysisScope,
           performance_connection: performanceConnection,
           evidence_basis: evidenceBasis,
           confidence_rationale: confidenceRationale,
@@ -1787,8 +1789,9 @@ async function materializeMarketingMoves(args: {
   await pool.query(`DELETE FROM marketing_moves WHERE engine_analysis_id = $1`, [args.engineAnalysisId]);
   let inserted = 0;
   for (const [index, row] of rows.entries()) {
-    const moveType = moveTypeFor(row.lifecycle_state, Number(row.impact ?? 0));
     const dimensions = row.dimensions ?? {};
+    const signalRole = normalizeSignalRole(dimensions.signal_role);
+    const moveType = moveTypeFor(row.lifecycle_state, Number(row.impact ?? 0), signalRole);
     const move = buildSignalPulseMarketingMove({
       title: row.title,
       moveType,
@@ -1797,7 +1800,11 @@ async function materializeMarketingMoves(args: {
       impact: Number(row.impact ?? 0),
       volume: Number(row.volume ?? 0),
       marketingRead: stringFrom(dimensions.marketing_read),
-      actionHint: stringFrom(dimensions.action_hint)
+      actionHint: stringFrom(dimensions.action_hint),
+      signalRole,
+      performanceConnection: stringFrom(dimensions.performance_connection),
+      evidenceBasis: stringFrom(dimensions.evidence_basis),
+      confidenceRationale: stringFrom(dimensions.confidence_rationale)
     });
     await pool.query(
       `
@@ -2556,7 +2563,12 @@ function averageDelta(current: number, values: number[]) {
   return round(current - average, 3);
 }
 
-function moveTypeFor(lifecycle: string | null, impact: number) {
+function moveTypeFor(lifecycle: string | null, impact: number, signalRole = "monitor") {
+  if (signalRole === "paid_gap" || signalRole === "claim_test") return "test_claim";
+  if (signalRole === "creative_risk" || signalRole === "saturation") return "create_content";
+  if (signalRole === "containment" || signalRole === "monitor") return "monitor";
+  if (signalRole === "content_opportunity" && (lifecycle === "rising" || impact >= 65)) return "amplify";
+  if (signalRole === "emerging_signal") return "test_claim";
   if (lifecycle === "emerging" || lifecycle === "reappeared") return "test_claim";
   if (lifecycle === "rising" || impact >= 65) return "amplify";
   if (lifecycle === "declining") return "monitor";
@@ -2585,6 +2597,15 @@ function normalizeSignalRole(value: unknown) {
     "containment",
     "monitor"
   ].includes(role) ? role : "monitor";
+}
+
+function normalizeAnalysisScope(value: unknown) {
+  const scope = typeof value === "string" ? value : "";
+  return [
+    "current_cut",
+    "window_pattern",
+    "mixed"
+  ].includes(scope) ? scope : "mixed";
 }
 
 function isNonActionableSignalCopy(input: {

@@ -182,6 +182,47 @@ test("Signal Pulse marketing moves keep weak signals as bounded experiments", ()
   assert.match(move.noGoNotes ?? "", /No convertirlo en promesa fuerte/);
 });
 
+test("Signal Pulse marketing moves use role and performance connection, not only lifecycle", () => {
+  const move = buildSignalPulseMarketingMove({
+    title: "Gap de pauta: La campaña habla de confianza pero la conversación pide claridad",
+    moveType: "test_claim",
+    lifecycle: "rising",
+    confidence: "alta",
+    impact: 58,
+    volume: 134,
+    marketingRead: "La pauta empuja confianza y la conversación del mes pide claridad sobre resolución.",
+    actionHint: "Cruzar la promesa de confianza con una pieza de claridad sobre tiempos de respuesta",
+    signalRole: "paid_gap",
+    performanceConnection: "connected: en mayo suben engagement y menciones sobre claridad"
+  });
+
+  assert.match(move.actionText, /Auditar piezas, inversión y promesa activa/);
+  assert.match(move.measurementSuggestion, /CTR/);
+  assert.match(move.measurementSuggestion, /campaña/);
+  assert.equal(move.ownerSuggestion, "Paid media + Creative");
+  assert.equal(move.noGoNotes, null);
+});
+
+test("Signal Pulse marketing moves prevent campaign causality when connection is missing", () => {
+  const move = buildSignalPulseMarketingMove({
+    title: "Señal emergente: Choques en cadena aparece fuera de la campaña",
+    moveType: "test_claim",
+    lifecycle: "emerging",
+    confidence: "media",
+    impact: 42,
+    volume: 48,
+    marketingRead: "La conversación sube sin campaña o creativo vinculado.",
+    actionHint: "Validar si educación sobre choques en cadena merece contenido propio",
+    signalRole: "emerging_signal",
+    performanceConnection: "no_connection: no hay campaña o creative text relacionado"
+  });
+
+  assert.match(move.actionText, /aprendizaje de conversación independiente/);
+  assert.match(move.measurementSuggestion, /mantener KPIs de campaña separados/);
+  assert.match(move.noGoNotes ?? "", /No venderlo como efecto de campaña/);
+  assert.equal(move.ownerSuggestion, "Insights + Social");
+});
+
 test("Signal Pulse budget estimate stays cluster-first and bounded before running", () => {
   assert.equal(estimateSignalPulseNamingCostUsd(0), 0.015);
   assert.equal(estimateSignalPulseNamingCostUsd(100), 0.36);
@@ -387,6 +428,8 @@ test("Signal Pulse Claude naming prompt uses marketing-first RAG context, not T&
 
   assert.match(prompt, /12 meses/);
   assert.match(prompt, /serie semanal/);
+  assert.match(prompt, /analysis_scope/);
+  assert.match(prompt, /ventana completa/);
   assert.match(prompt, /performance_records/);
   assert.match(prompt, /Riesgo creativo/);
   assert.match(prompt, /Gap de pauta/);

@@ -20,6 +20,8 @@ Signal Pulse dejó de tratar el corte mensual como análisis aislado. El worker 
 
 La detección sigue siendo cluster-first. Claude no codifica menciones una por una; recibe clusters acotados y contexto rico para sintetizar.
 
+El contrato mental queda explícito: Signal Pulse es una capa de inteligencia sobre 12 meses de actividad de marketing, performance y conversación; el reporte mensual es sólo una vista publicable. Si se cargan 12 meses, el sistema debe explotarlos para detectar repetición, saturación, reactivaciones, anomalías, ausencia de recepción, señales emergentes y conexiones/no-conexiones con acciones de marketing.
+
 ## Corte actual vs ventana completa
 
 Signal Pulse ahora separa dos planos:
@@ -39,6 +41,14 @@ Para evitar que el cruce dependa sólo de keywords, cada cluster recibe también
 
 Claude debe usar estos datos para interpretar o descartar conexión; no puede declarar causalidad si la evidencia no lo sostiene.
 
+Cada señal sintetizada guarda ahora `analysis_scope` en `canonical_signals.dimensions`:
+
+- `current_cut`: la señal vive principalmente en el corte mensual publicable.
+- `window_pattern`: la señal nace de un patrón de varios meses, aunque el corte actual sea sólo una parte.
+- `mixed`: la señal importa por el corte actual y por cómo se comporta en la ventana.
+
+Esto deja un ancla para el dashboard filtrable y evita que el sistema trate todo como lectura de "último mes".
+
 Para exploración/dashboard, los endpoints publicados aceptan filtros:
 
 - `period=YYYY-MM`, `period=<report_period_id>` o `period=all`
@@ -48,6 +58,7 @@ Para exploración/dashboard, los endpoints publicados aceptan filtros:
 - `campaign=...`
 - `source_type=organic|paid|reviews|search|...`
 - `scope=brand|competitor|category|...`
+- `analysis_scope=current_cut|window_pattern|mixed`
 - `performance_event=...`
 - `move_type=...`
 - `status=...`
@@ -95,6 +106,17 @@ Los prefijos `Barrera:` y `Trigger:` quedan tratados como no publicables en Revi
 - `signal_actionability_review` ya no falla por backlog de señales en `needs_human_review`; falla si una señal marcada como `publish_candidate` conserva naming débil/no publicable.
 - Las señales históricas sin volumen en el corte sirven para patrones de ventana, pero no bloquean publicación por sí mismas.
 
+## Marketing moves
+
+Los `marketing_moves` ya no se derivan sólo de lifecycle/impact. El materializador pasa a `buildSignalPulseMarketingMove` las dimensiones que salen del naming:
+
+- `signal_role`
+- `performance_connection`
+- `evidence_basis`
+- `confidence_rationale`
+
+Con eso, una señal de `paid_gap` produce una acción para Paid media + Creative, una de `creative_risk` no se amplifica automáticamente aunque tenga impacto alto, una de `saturation` pide ángulo alterno y una con `performance_connection=no_connection` bloquea vender causalidad de campaña. El move debe decir qué medir y qué no hacer con base en la evidencia, no con base en la keyword.
+
 ## Qué NO se cambió todavía
 
 - No se rediseñó el dashboard ni el reporte visual.
@@ -109,4 +131,5 @@ Los prefijos `Barrera:` y `Trigger:` quedan tratados como no publicables en Revi
 3. Revisar que las señales publicables no sean keywords crudas como `Seguro`, `Choque`, `Aseguradora`.
 4. Revisar que cada señal mencione periodo actual o patrón de ventana cuando sea relevante.
 5. Revisar que `performance_connection` no fuerce causalidad.
-6. Revisar que los moves salgan del `action_hint` sintetizado, no de plantilla genérica.
+6. Revisar que `analysis_scope` distinga corte actual vs patrón de ventana.
+7. Revisar que los moves salgan del `action_hint`, `signal_role` y `performance_connection`, no de plantilla genérica.
