@@ -419,13 +419,24 @@ async function loadSignalPulseLaunchPlan(args: {
       signal_pulse_mentions: number;
       performance_records: number;
       query_packs: number;
+      semantic_mention_embeddings: number;
+      semantic_knowledge_embeddings: number;
+      knowledge_sources: number;
     }>(
       `
         SELECT
           COUNT(DISTINCT m.id)::int AS conversation_mentions,
           COUNT(DISTINCT m.id) FILTER (WHERE mqs.lens_slug = 'signal-pulse')::int AS signal_pulse_mentions,
           (SELECT COUNT(*)::int FROM performance_records pr WHERE pr.study_corpus_id = $1) AS performance_records,
-          (SELECT COUNT(*)::int FROM query_packs qp WHERE qp.study_corpus_id = $1 AND qp.lens_slug = 'signal-pulse') AS query_packs
+          (SELECT COUNT(*)::int FROM query_packs qp WHERE qp.study_corpus_id = $1 AND qp.lens_slug = 'signal-pulse') AS query_packs,
+          (SELECT COUNT(DISTINCT se.mention_id)::int FROM semantic_embeddings se WHERE se.study_corpus_id = $1 AND se.scope_type = 'mention') AS semantic_mention_embeddings,
+          (SELECT COUNT(*)::int FROM semantic_embeddings se WHERE se.study_corpus_id = $1 AND se.scope_type = 'knowledge_source') AS semantic_knowledge_embeddings,
+          (
+            SELECT COUNT(*)::int
+            FROM brand_knowledge_sources bks
+            WHERE bks.study_corpus_id = $1
+              AND bks.status IN ('processed', 'processed_truncated')
+          ) AS knowledge_sources
         FROM mentions m
         LEFT JOIN mention_query_sources mqs ON mqs.mention_id = m.id
         WHERE m.study_corpus_id = $1
@@ -443,7 +454,10 @@ async function loadSignalPulseLaunchPlan(args: {
         conversationMentions: coverage?.conversation_mentions,
         signalPulseMentions: coverage?.signal_pulse_mentions,
         performanceRecords: coverage?.performance_records,
-        queryPacks: coverage?.query_packs
+        queryPacks: coverage?.query_packs,
+        semanticMentionEmbeddings: coverage?.semantic_mention_embeddings,
+        semanticKnowledgeEmbeddings: coverage?.semantic_knowledge_embeddings,
+        knowledgeSources: coverage?.knowledge_sources
       }
     });
   } catch (error) {

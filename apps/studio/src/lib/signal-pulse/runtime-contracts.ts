@@ -42,6 +42,9 @@ export type SignalPulseLaunchCoverage = {
   signalPulseMentions?: unknown;
   performanceRecords?: unknown;
   queryPacks?: unknown;
+  semanticMentionEmbeddings?: unknown;
+  semanticKnowledgeEmbeddings?: unknown;
+  knowledgeSources?: unknown;
 };
 
 export type SignalPulseLaunchPlan = {
@@ -55,6 +58,9 @@ export type SignalPulseLaunchPlan = {
     signalPulseMentions: number;
     performanceRecords: number;
     queryPacks: number;
+    semanticMentionEmbeddings: number;
+    semanticKnowledgeEmbeddings: number;
+    knowledgeSources: number;
   };
   warnings: string[];
 };
@@ -62,7 +68,7 @@ export type SignalPulseLaunchPlan = {
 export type SignalPulseRunParams = {
   budget_cap_usd: number;
   window_months: number;
-  review_mode: "cluster_first" | "deep_read";
+  review_mode: "cluster_first";
 };
 
 export type SignalPulseLaunchChecklistItem = {
@@ -159,13 +165,22 @@ export function buildSignalPulseLaunchPlan(args: {
     conversationMentions: wholeNumber(coverage.conversationMentions),
     signalPulseMentions: wholeNumber(coverage.signalPulseMentions),
     performanceRecords: wholeNumber(coverage.performanceRecords),
-    queryPacks: wholeNumber(coverage.queryPacks)
+    queryPacks: wholeNumber(coverage.queryPacks),
+    semanticMentionEmbeddings: wholeNumber(coverage.semanticMentionEmbeddings),
+    semanticKnowledgeEmbeddings: wholeNumber(coverage.semanticKnowledgeEmbeddings),
+    knowledgeSources: wholeNumber(coverage.knowledgeSources)
   };
   const warnings: string[] = [];
   if (normalizedCoverage.conversationMentions === 0) warnings.push("No hay menciones incluidas para clusterizar.");
   if (normalizedCoverage.signalPulseMentions === 0) warnings.push("Falta cobertura atribuida al query pack de Signal Pulse.");
   if (normalizedCoverage.performanceRecords === 0) warnings.push("Sube performance estructurada de 12 meses antes de leer paid/organic.");
   if (normalizedCoverage.queryPacks === 0) warnings.push("Materializa el query pack Signal Pulse antes de correr.");
+  if (normalizedCoverage.signalPulseMentions > 0 && normalizedCoverage.semanticMentionEmbeddings === 0) {
+    warnings.push("Faltan embeddings semánticos de menciones; espera a que termine el RAG antes de correr Signal Pulse.");
+  }
+  if (normalizedCoverage.knowledgeSources > 0 && normalizedCoverage.semanticKnowledgeEmbeddings === 0) {
+    warnings.push("Faltan embeddings semánticos de la knowledge base; procesa fuentes antes de correr Signal Pulse.");
+  }
   const estimatedCostUsd = estimateSignalPulseRunCostUsd(normalizedCoverage.signalPulseMentions);
   if (estimatedCostUsd > budgetCapUsd) warnings.push(`El costo estimado USD ${formatMoney(estimatedCostUsd)} rebasa el tope USD ${formatMoney(budgetCapUsd)}.`);
 
@@ -192,7 +207,7 @@ export function buildSignalPulseRunParams(args: {
   return {
     budget_cap_usd: positiveNumber(requestParams.budget_cap_usd, plannedBudgetCap),
     window_months: positiveInteger(requestParams.window_months ?? requestParams.target_window_months, plannedWindowMonths),
-    review_mode: requestParams.review_mode === "deep_read" ? "deep_read" : "cluster_first"
+    review_mode: "cluster_first"
   };
 }
 

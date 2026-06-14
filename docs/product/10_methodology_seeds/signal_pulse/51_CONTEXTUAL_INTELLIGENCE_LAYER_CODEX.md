@@ -23,6 +23,10 @@ Signal Pulse dejó de tratar el corte mensual como análisis aislado. El worker 
 
 La detección sigue siendo cluster-first. Claude no codifica menciones una por una; recibe clusters acotados y contexto rico para sintetizar.
 
+El pre-run ahora también valida que el RAG esté listo. Al aprobar un corpus, Studio encola `embed_corpus_semantics` en modo `all`; el launch plan y `sp_readiness` bloquean Signal Pulse si hay menciones SP pero todavía no existen embeddings de menciones. Si hay knowledge sources procesadas, también bloquea si faltan embeddings de KB. Esto evita volver al fallback de keywords cuando la cola semántica aún no termina.
+
+`review_mode=deep_read` ya no abre un camino alterno: se normaliza a `cluster_first`. La lectura profunda debe venir del flujo normal con KB + embeddings + ventana completa, no de un parche opcional.
+
 El contrato mental queda explícito: Signal Pulse es una capa de inteligencia sobre 12 meses de actividad de marketing, performance y conversación; el reporte mensual es sólo una vista publicable. Si se cargan 12 meses, el sistema debe explotarlos para detectar repetición, saturación, reactivaciones, anomalías, ausencia de recepción, señales emergentes y conexiones/no-conexiones con acciones de marketing.
 
 ## Corte actual vs ventana completa
@@ -157,17 +161,20 @@ Con eso, una señal de `paid_gap` produce una acción para Paid media + Creative
 - No se agregó todavía UI de filtros por campaña/fuente/plataforma/señal/performance event; sólo quedó listo el contrato API.
 - No se cambió la arquitectura de clustering ni se reabrió la decisión cluster-first.
 - No se migró a un modelo de causalidad; el prompt exige `no_connection` cuando no hay evidencia para conectar campaña/performance y conversación.
+- No se agregó un modo "deep read"; el producto debe ser profundo por default cuando la cobertura semántica está lista.
 
 ## Validación recomendada
 
 1. Correr Signal Pulse con workers activos y 12 meses de performance estructurada.
-2. Confirmar en el ledger evento `sp_rag_context` y eventos `sp_name_signals`.
-3. Revisar que las señales publicables no sean keywords crudas como `Seguro`, `Choque`, `Aseguradora`.
-4. Revisar que cada señal mencione periodo actual o patrón de ventana cuando sea relevante.
-5. Revisar que `performance_connection` no fuerce causalidad.
-6. Revisar que `analysis_scope` distinga corte actual vs patrón de ventana.
-7. Revisar que `sp_rag_context` registre `marketing_activity_months` y `repeated_marketing_language` > 0 cuando haya performance/creativos.
-8. Revisar que los eventos `sp_name_signals` registren `knowledge_matches` y/o `conversation_matches` > 0 cuando haya embeddings.
-9. Revisar que `context_summary` esté persistido en cada señal publicable.
-10. Revisar que `evidence_basis` cite sample ids reales cuando Claude haya aplicado naming.
-11. Revisar que los moves salgan del `action_hint`, `signal_role` y `performance_connection`, no de plantilla genérica.
+2. Confirmar antes de correr que el launch plan trae `semanticMentionEmbeddings > 0` y, si hay KB procesada, `semanticKnowledgeEmbeddings > 0`.
+3. Confirmar en `sp_readiness` que no aparecen `missing_semantic_mention_embeddings`, `missing_semantic_knowledge_embeddings` ni `missing_embedding_provider`.
+4. Confirmar en el ledger evento `sp_rag_context` y eventos `sp_name_signals`.
+5. Revisar que las señales publicables no sean keywords crudas como `Seguro`, `Choque`, `Aseguradora`.
+6. Revisar que cada señal mencione periodo actual o patrón de ventana cuando sea relevante.
+7. Revisar que `performance_connection` no fuerce causalidad.
+8. Revisar que `analysis_scope` distinga corte actual vs patrón de ventana.
+9. Revisar que `sp_rag_context` registre `marketing_activity_months` y `repeated_marketing_language` > 0 cuando haya performance/creativos.
+10. Revisar que los eventos `sp_name_signals` registren `knowledge_matches` y/o `conversation_matches` > 0 cuando haya embeddings.
+11. Revisar que `context_summary` esté persistido en cada señal publicable.
+12. Revisar que `evidence_basis` cite sample ids reales cuando Claude haya aplicado naming.
+13. Revisar que los moves salgan del `action_hint`, `signal_role` y `performance_connection`, no de plantilla genérica.

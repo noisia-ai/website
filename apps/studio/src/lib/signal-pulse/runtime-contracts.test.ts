@@ -117,7 +117,10 @@ test("Signal Pulse launch plan exposes pre-run cost, budget cap and structured c
       conversationMentions: 1300,
       signalPulseMentions: 820,
       performanceRecords: 144,
-      queryPacks: 3
+      queryPacks: 3,
+      semanticMentionEmbeddings: 1300,
+      semanticKnowledgeEmbeddings: 24,
+      knowledgeSources: 4
     }
   });
 
@@ -127,6 +130,8 @@ test("Signal Pulse launch plan exposes pre-run cost, budget cap and structured c
   assert.equal(plan.windowMonths, 12);
   assert.equal(plan.status, "ready");
   assert.equal(plan.coverage.performanceRecords, 144);
+  assert.equal(plan.coverage.semanticMentionEmbeddings, 1300);
+  assert.equal(plan.coverage.semanticKnowledgeEmbeddings, 24);
   assert.deepEqual(plan.warnings, []);
 
   const checklist = buildSignalPulseLaunchChecklist(plan);
@@ -168,12 +173,35 @@ test("Signal Pulse launch plan blocks incomplete paid organic coverage", () => {
       conversationMentions: 1200,
       signalPulseMentions: 900,
       performanceRecords: 0,
-      queryPacks: 3
+      queryPacks: 3,
+      semanticMentionEmbeddings: 1200,
+      semanticKnowledgeEmbeddings: 12,
+      knowledgeSources: 2
     }
   });
 
   assert.equal(plan.status, "blocked");
   assert.match(plan.warnings.join(" "), /performance estructurada/);
+});
+
+test("Signal Pulse launch plan blocks runs before semantic RAG is ready", () => {
+  const plan = buildSignalPulseLaunchPlan({
+    analysisPlan: { budget_cap_usd: 5 },
+    targetWindowMonths: 12,
+    coverage: {
+      conversationMentions: 1200,
+      signalPulseMentions: 900,
+      performanceRecords: 144,
+      queryPacks: 3,
+      semanticMentionEmbeddings: 0,
+      semanticKnowledgeEmbeddings: 0,
+      knowledgeSources: 2
+    }
+  });
+
+  assert.equal(plan.status, "blocked");
+  assert.match(plan.warnings.join(" "), /embeddings semánticos de menciones/);
+  assert.match(plan.warnings.join(" "), /knowledge base/);
 });
 
 test("Signal Pulse launch plan blocks runs that exceed the visible budget cap", () => {
@@ -184,7 +212,10 @@ test("Signal Pulse launch plan blocks runs that exceed the visible budget cap", 
       conversationMentions: 1300,
       signalPulseMentions: 820,
       performanceRecords: 144,
-      queryPacks: 3
+      queryPacks: 3,
+      semanticMentionEmbeddings: 1300,
+      semanticKnowledgeEmbeddings: 24,
+      knowledgeSources: 4
     }
   });
 
@@ -205,7 +236,10 @@ test("Signal Pulse launch plan honors request run params before queueing", () =>
       conversationMentions: 1300,
       signalPulseMentions: 820,
       performanceRecords: 144,
-      queryPacks: 3
+      queryPacks: 3,
+      semanticMentionEmbeddings: 1300,
+      semanticKnowledgeEmbeddings: 24,
+      knowledgeSources: 4
     }
   });
 
@@ -240,6 +274,6 @@ test("Signal Pulse run params are sanitized and match launch-plan precedence", (
       requestParams: { review_mode: "deep_read" },
       targetWindowMonths: 9
     }),
-    { budget_cap_usd: 4, window_months: 9, review_mode: "deep_read" }
+    { budget_cap_usd: 4, window_months: 9, review_mode: "cluster_first" }
   );
 });

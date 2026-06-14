@@ -8,6 +8,7 @@ import {
   buildWeeklyReportPeriods,
   calculateImpactV1,
   classifySignalPulseLifecycle,
+  hasEmbeddingProvider,
   isEngineLlmEnabled,
   isEngineModelAllowed
 } from "@noisia/query-engine";
@@ -127,13 +128,24 @@ export async function signalPulseReadinessJob(job: Job<SignalPulseStepJobData>) 
       signal_pulse_mentions: number;
       performance_records: number;
       query_packs: number;
+      semantic_mention_embeddings: number;
+      semantic_knowledge_embeddings: number;
+      knowledge_sources: number;
     }>(
       `
         SELECT
           COUNT(DISTINCT m.id)::int AS conversation_mentions,
           COUNT(DISTINCT m.id) FILTER (WHERE mqs.lens_slug = 'signal-pulse')::int AS signal_pulse_mentions,
           (SELECT COUNT(*)::int FROM performance_records pr WHERE pr.study_corpus_id = $1) AS performance_records,
-          (SELECT COUNT(*)::int FROM query_packs qp WHERE qp.study_corpus_id = $1 AND qp.lens_slug = 'signal-pulse') AS query_packs
+          (SELECT COUNT(*)::int FROM query_packs qp WHERE qp.study_corpus_id = $1 AND qp.lens_slug = 'signal-pulse') AS query_packs,
+          (SELECT COUNT(DISTINCT se.mention_id)::int FROM semantic_embeddings se WHERE se.study_corpus_id = $1 AND se.scope_type = 'mention') AS semantic_mention_embeddings,
+          (SELECT COUNT(*)::int FROM semantic_embeddings se WHERE se.study_corpus_id = $1 AND se.scope_type = 'knowledge_source') AS semantic_knowledge_embeddings,
+          (
+            SELECT COUNT(*)::int
+            FROM brand_knowledge_sources bks
+            WHERE bks.study_corpus_id = $1
+              AND bks.status IN ('processed', 'processed_truncated')
+          ) AS knowledge_sources
         FROM mentions m
         LEFT JOIN mention_query_sources mqs ON mqs.mention_id = m.id
         WHERE m.study_corpus_id = $1
@@ -146,7 +158,10 @@ export async function signalPulseReadinessJob(job: Job<SignalPulseStepJobData>) 
       Number(coverage?.conversation_mentions ?? 0) <= 0 ? "missing_conversation" : null,
       Number(coverage?.signal_pulse_mentions ?? 0) <= 0 ? "missing_signal_pulse_query_pack_coverage" : null,
       Number(coverage?.performance_records ?? 0) <= 0 ? "missing_structured_performance" : null,
-      Number(coverage?.query_packs ?? 0) <= 0 ? "missing_signal_pulse_query_pack" : null
+      Number(coverage?.query_packs ?? 0) <= 0 ? "missing_signal_pulse_query_pack" : null,
+      hasEmbeddingProvider() ? null : "missing_embedding_provider",
+      Number(coverage?.signal_pulse_mentions ?? 0) > 0 && Number(coverage?.semantic_mention_embeddings ?? 0) <= 0 ? "missing_semantic_mention_embeddings" : null,
+      Number(coverage?.knowledge_sources ?? 0) > 0 && Number(coverage?.semantic_knowledge_embeddings ?? 0) <= 0 ? "missing_semantic_knowledge_embeddings" : null
     ].filter(Boolean);
     const estimatedCostUsd = estimateSignalPulseRunCostUsd(Number(coverage?.signal_pulse_mentions ?? 0));
     if (estimatedCostUsd > budgetCapUsd) readinessReasons.push("estimated_cost_exceeds_budget_cap");
@@ -155,11 +170,14 @@ export async function signalPulseReadinessJob(job: Job<SignalPulseStepJobData>) 
       signal_pulse_mentions: Number(coverage?.signal_pulse_mentions ?? 0),
       performance_records: Number(coverage?.performance_records ?? 0),
       query_packs: Number(coverage?.query_packs ?? 0),
+      semantic_mention_embeddings: Number(coverage?.semantic_mention_embeddings ?? 0),
+      semantic_knowledge_embeddings: Number(coverage?.semantic_knowledge_embeddings ?? 0),
+      knowledge_sources: Number(coverage?.knowledge_sources ?? 0),
       budget_cap_usd: budgetCapUsd,
       estimated_cost_usd: estimatedCostUsd,
       cluster_first: true,
-      review_mode: stringFrom(ctx.params?.review_mode) || "cluster_first",
-      deep_read_enabled: stringFrom(ctx.params?.review_mode) === "deep_read",
+      review_mode: "cluster_first",
+      semantic_rag_required: true,
       status: readinessReasons.length === 0 ? "ready" : "blocked",
       reasons: readinessReasons
     };
