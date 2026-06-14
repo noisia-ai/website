@@ -297,7 +297,12 @@ test("Signal Pulse Claude naming prompt uses marketing-first RAG context, not T&
       discovery_periods: ["2026-05"],
       max_period_mention_count: 134,
       samples: [
-        { text: "No queda claro quien responde en un choque en cadena.", platform: "facebook", published_at: "2026-05-18" }
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          text: "No queda claro quien responde en un choque en cadena.",
+          platform: "facebook",
+          published_at: "2026-05-18"
+        }
       ],
       context: {
         period_series: [
@@ -526,6 +531,8 @@ test("Signal Pulse Claude naming prompt uses marketing-first RAG context, not T&
   assert.match(prompt, /performance_records/);
   assert.match(prompt, /repeated_marketing_language/);
   assert.match(prompt, /respuesta rapida/);
+  assert.match(prompt, /sample ids/);
+  assert.match(prompt, /11111111-1111-4111-8111-111111111111/);
   assert.match(prompt, /Riesgo creativo/);
   assert.match(prompt, /Gap de pauta/);
   assert.match(prompt, /Confianza auto/);

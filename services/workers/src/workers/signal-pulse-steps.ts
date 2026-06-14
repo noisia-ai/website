@@ -1640,8 +1640,8 @@ async function readEngineCostTotal(engineAnalysisId: string) {
 
 async function loadMentionSamples(mentionIds: string[]) {
   if (mentionIds.length === 0) return [];
-  const rows = (await pool.query<{ text_clean: string; platform: string | null; published_at: string | null }>(
-    `SELECT text_clean, resolved_platform AS platform, published_at::date::text AS published_at
+  const rows = (await pool.query<{ id: string; text_clean: string; platform: string | null; published_at: string | null }>(
+    `SELECT id::text, text_clean, resolved_platform AS platform, published_at::date::text AS published_at
      FROM mentions
      WHERE id = ANY($1::uuid[])
      ORDER BY published_at DESC NULLS LAST
@@ -1649,6 +1649,7 @@ async function loadMentionSamples(mentionIds: string[]) {
     [mentionIds]
   )).rows;
   return rows.map((row) => ({
+    id: row.id,
     text: stringFrom(row.text_clean).slice(0, 240),
     platform: stringFrom(row.platform),
     published_at: row.published_at

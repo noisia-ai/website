@@ -11,7 +11,7 @@ export type SignalPulseClusterNamingPromptPayload = {
   platforms: string[];
   discovery_periods: string[];
   max_period_mention_count: number;
-  samples: Array<{ text: string; platform: string; published_at: string | null }>;
+  samples: Array<{ id: string; text: string; platform: string; published_at: string | null }>;
   context: SignalPulseClusterPromptContext;
 };
 
@@ -24,6 +24,7 @@ export function buildClaudeSignalNamingPrompt(
     "Tu trabajo NO es nombrar keywords ni copiar metodologias estrategicas. Convierte clusters en senales tacticas para Marketing: que significo, que provoco, que se desaprovecho, que riesgo se repite y que deberia moverse el siguiente mes.",
     "Usa la misma disciplina cualitativa de Noisia: lee evidencia, knowledge base, brief, calendario/campanas si existe, performance estructurada y serie mensual. Pero el lenguaje frontstage es de Marketing, no de metodologias estrategicas pausadas.",
     "Reglas duras: no hagas coding por mencion; no inventes numeros; usa solo numeros del JSON; conserva ids; espanol MX; copy corto y client-safe; SQL calcula y tu interpretas.",
+    "Evidencia trazable: los samples incluyen id de mention. En evidence_basis cita los sample ids y periodos que sostienen la lectura; no cites evidencia que no este en el JSON.",
     "Mira por separado: (1) el corte mensual actual, (2) el patron de la ventana completa, (3) la serie semanal si existe para detectar picos, reactivaciones o caidas dentro del mes, (4) campanas/creativos/acciones de marketing activos en los periodos donde vive el cluster, (5) el mapa de actividad mensual de marketing y lenguaje repetido en la ventana, (6) si hay relacion o no con campanas/performance/brief. Si no hay relacion comprobable, dilo como no_connection; no fuerces causalidad.",
     "Si el aprendizaje importante viene de varios meses, repeticiones, saturacion, ausencia de recepcion, reactivacion o anomalia historica, marca analysis_scope=\"window_pattern\" o \"mixed\" y explícalo. El corte mensual es la vista publicable, no el unico analisis.",
     "Para detectar riesgo creativo, saturacion o gap de pauta, cruza knowledge base/brief/campanas/performance con la serie mensual y repeated_marketing_language: que prometio la marca, que pauta/organico empujo, que se repitio, que paso alrededor y que evidencia sostiene o descarta la conexion.",
@@ -32,7 +33,7 @@ export function buildClaudeSignalNamingPrompt(
     "Malos titulos: \"Friccion: Seguro\", \"Choque\", \"Aseguradora\", \"Oportunidad: Excelente\", o cualquier prefijo de metodologias estrategicas que no sea Signal Pulse.",
     "Marca actionability=\"publish\" solo si hay una lectura humana clara, evidencia suficiente y una implicacion movible por Marketing en 1-4 semanas. Usa \"review\" si hay pista cualitativa pero falta sintesis o conexion. Usa \"exclude\" si es ruido, politica, insulto sin aprendizaje, entidad suelta o conversacion sin vinculo claro.",
     "Devuelve SOLO JSON válido con forma:",
-    '{"signals":[{"id":"uuid","title":"Friccion/Oportunidad/Riesgo creativo/...: tesis accionable","signal_role":"friction|content_opportunity|creative_risk|saturation|claim_test|emerging_signal|paid_gap|containment|monitor","analysis_scope":"current_cut|window_pattern|mixed","description":"Lectura cualitativa con numeros del JSON y periodo.","marketing_read":"Implicacion para Marketing conectada a brief/performance si existe.","performance_connection":"connected|no_connection|insufficient_data + explicacion corta.","evidence_basis":"Que evidencia del JSON usaste, sin inventar.","action_hint":"Siguiente accion concreta de Marketing.","confidence_rationale":"Por que publish/review/exclude.","actionability":"publish|review|exclude"}]}',
+    '{"signals":[{"id":"uuid","title":"Friccion/Oportunidad/Riesgo creativo/...: tesis accionable","signal_role":"friction|content_opportunity|creative_risk|saturation|claim_test|emerging_signal|paid_gap|containment|monitor","analysis_scope":"current_cut|window_pattern|mixed","description":"Lectura cualitativa con numeros del JSON y periodo.","marketing_read":"Implicacion para Marketing conectada a brief/performance si existe.","performance_connection":"connected|no_connection|insufficient_data + explicacion corta.","evidence_basis":"Sample ids/periodos y datos del JSON usados; sin inventar.","action_hint":"Siguiente accion concreta de Marketing.","confidence_rationale":"Por que publish/review/exclude.","actionability":"publish|review|exclude"}]}',
     "Contexto de marca, brief, fuentes y performance 12 meses:",
     JSON.stringify(marketingContext),
     "Clusters:",

@@ -142,7 +142,7 @@ type ClusterContextInput = {
   platforms: string[];
   discoveryPeriods: string[];
   memberMentionIds: string[];
-  samples: Array<{ text: string; platform: string; published_at: string | null }>;
+  samples: Array<{ id: string; text: string; platform: string; published_at: string | null }>;
 };
 
 export async function loadSignalPulseMarketingContext(ctx: SignalPulseContextScope): Promise<SignalPulseMarketingContext> {
