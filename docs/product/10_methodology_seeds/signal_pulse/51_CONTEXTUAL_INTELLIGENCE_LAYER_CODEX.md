@@ -32,6 +32,10 @@ Para exploración/dashboard, los endpoints publicados aceptan filtros:
 - `platform=facebook|instagram|tiktok|x|youtube|...`
 - `signal_type=risk|opportunity|...`
 - `lifecycle=new|accelerating|emerging|inactive_in_cut|...`
+- `campaign=...`
+- `source_type=organic|paid|reviews|search|...`
+- `scope=brand|competitor|category|...`
+- `performance_event=...`
 - `move_type=...`
 - `status=...`
 - `q=...`

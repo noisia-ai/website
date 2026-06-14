@@ -56,6 +56,10 @@ const output: PulseOutputLike = {
         dominant_emotion: "afinidad",
         dimensions: {
           signal_role: "claim a testear",
+          scope: "brand",
+          campaign_name: "Back to school",
+          performance_event: "engagement spike",
+          source_types: ["organic"],
           platforms: ["facebook", "tiktok"],
           performance_connection: "El engagement sube en el corte de junio."
         },
@@ -75,6 +79,10 @@ const output: PulseOutputLike = {
         ],
         dimensions: {
           signal_role: "riesgo creativo",
+          scope: "category",
+          campaign_name: "Promo precio",
+          performance_event: "ctr drop",
+          source_types: ["paid"],
           platforms: ["facebook"],
           performance_connection: "CTR cae mientras suben quejas por precio."
         },
@@ -94,6 +102,8 @@ const output: PulseOutputLike = {
         ],
         dimensions: {
           signal_role: "senal emergente",
+          scope: "category",
+          source_types: ["reviews"],
           platforms: ["youtube"],
           performance_connection: "Sin conexión suficiente con performance."
         },
@@ -134,8 +144,8 @@ const output: PulseOutputLike = {
       signal_momentum_stream: {
         rows: [
           { signal_id: "s_1", period_id: "rp_1", label: "2026-05", volume: 44, platform: "facebook" },
-          { signal_id: "s_1", period_id: "rp_2", label: "2026-06", volume: 140, platform: "tiktok" },
-          { signal_id: "s_2", period_id: "rp_2", label: "2026-06", volume: 70, platform: "facebook" }
+          { signal_id: "s_1", period_id: "rp_2", label: "2026-06", volume: 140, platform: "tiktok", campaign: "Back to school", source_type: "organic", scope: "brand", performance_event: "engagement spike" },
+          { signal_id: "s_2", period_id: "rp_2", label: "2026-06", volume: 70, platform: "facebook", campaign: "Promo precio", source_type: "paid", scope: "category", performance_event: "ctr drop" }
         ]
       },
       source_coverage_strip: { rows: [{ period_id: "rp_2", label: "2026-06", coverage: { conversation: 140, performance: 30, spend: 1200 } }] },
@@ -273,12 +283,33 @@ test("Pulse moves and charts respect tactical filters", () => {
   assert.equal(approvedMoves.count, 1);
   assert.equal(approvedMoves.moves[0]?.id, "m_2");
   assert.deepEqual(momentum?.payload, {
-    rows: [{ signal_id: "s_2", period_id: "rp_2", label: "2026-06", volume: 70, platform: "facebook" }]
+    rows: [{ signal_id: "s_2", period_id: "rp_2", label: "2026-06", volume: 70, platform: "facebook", campaign: "Promo precio", source_type: "paid", scope: "category", performance_event: "ctr drop" }]
+  });
+});
+
+test("Pulse filters cover campaigns, source type, scope and performance events", () => {
+  const context = buildPulseApiContext({ output, isInternalUser: true });
+  const campaignSignals = buildPulseSignalsResponse({ ...context, filters: { campaign: "back to school" } });
+  const scopedMoves = buildPulseMovesResponse({ ...context, filters: { sourceType: "paid", scope: "category", performanceEvent: "ctr drop" } });
+  const campaignChart = buildPulseChartResponse({
+    payload: context.payload,
+    dataRef: "momentum",
+    visibility: context.visibility,
+    filters: { campaign: "promo precio", sourceType: "paid", scope: "category" }
+  });
+
+  assert.ok(campaignSignals && "signals" in campaignSignals);
+  assert.equal(campaignSignals.count, 1);
+  assert.equal((campaignSignals.signals[0] as Record<string, unknown>).id, "s_1");
+  assert.equal(scopedMoves.count, 1);
+  assert.equal(scopedMoves.moves[0]?.id, "m_2");
+  assert.deepEqual(campaignChart?.payload, {
+    rows: [{ signal_id: "s_2", period_id: "rp_2", label: "2026-06", volume: 70, platform: "facebook", campaign: "Promo precio", source_type: "paid", scope: "category", performance_event: "ctr drop" }]
   });
 });
 
 test("Pulse API parses dashboard filter query params", () => {
-  const filters = pulseApiFiltersFromSearchParams(new URLSearchParams("period=2026-06&platform=TikTok&move_type=test_claim&q=Crujiente"));
+  const filters = pulseApiFiltersFromSearchParams(new URLSearchParams("period=2026-06&platform=TikTok&campaign=Back%20to%20school&source_type=Organic&scope=Brand&performance_event=Spike&move_type=test_claim&q=Crujiente"));
 
   assert.deepEqual(filters, {
     period: "2026-06",
@@ -286,7 +317,11 @@ test("Pulse API parses dashboard filter query params", () => {
     signalId: "",
     signalType: "",
     lifecycle: "",
+    campaign: "back to school",
     moveType: "test_claim",
+    sourceType: "organic",
+    scope: "brand",
+    performanceEvent: "spike",
     status: "",
     q: "crujiente"
   });

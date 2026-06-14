@@ -25,7 +25,11 @@ export type PulseApiFilters = {
   signalId?: string;
   signalType?: string;
   lifecycle?: string;
+  campaign?: string;
   moveType?: string;
+  sourceType?: string;
+  scope?: string;
+  performanceEvent?: string;
   status?: string;
   q?: string;
 };
@@ -203,7 +207,11 @@ export function pulseApiFiltersFromSearchParams(searchParams: URLSearchParams): 
     signalId: queryValue(searchParams, "signal_id", "signal"),
     signalType: queryValue(searchParams, "signal_type", "type"),
     lifecycle: queryValue(searchParams, "lifecycle", "lifecycle_state"),
+    campaign: queryValue(searchParams, "campaign", "campaign_id", "campaign_name", "entity_name"),
     moveType: queryValue(searchParams, "move_type"),
+    sourceType: queryValue(searchParams, "source_type", "source_kind", "data_source"),
+    scope: queryValue(searchParams, "scope", "entity_scope"),
+    performanceEvent: queryValue(searchParams, "performance_event", "event"),
     status: queryValue(searchParams, "status"),
     q: queryValue(searchParams, "q")
   });
@@ -246,7 +254,11 @@ function normalizePulseFilters(filters: PulseApiFilters | null | undefined): Pul
     signalId: normalizeRawFilterValue(filters?.signalId),
     signalType: normalizeFilterValue(filters?.signalType),
     lifecycle: normalizeFilterValue(filters?.lifecycle),
+    campaign: normalizeFilterValue(filters?.campaign),
     moveType: normalizeFilterValue(filters?.moveType),
+    sourceType: normalizeFilterValue(filters?.sourceType),
+    scope: normalizeFilterValue(filters?.scope),
+    performanceEvent: normalizeFilterValue(filters?.performanceEvent),
     status: normalizeFilterValue(filters?.status),
     q: normalizeFilterValue(filters?.q)
   };
@@ -265,7 +277,11 @@ function hasActivePulseFilters(filters: PulseApiFilters) {
     filters.signalId ||
     filters.signalType ||
     filters.lifecycle ||
+    filters.campaign ||
     filters.moveType ||
+    filters.sourceType ||
+    filters.scope ||
+    filters.performanceEvent ||
     filters.status ||
     filters.q
   );
@@ -279,7 +295,11 @@ function filtersForResponse(filters: PulseApiFilters) {
     signal_id: filters.signalId || null,
     signal_type: filters.signalType || null,
     lifecycle: filters.lifecycle || null,
+    campaign: filters.campaign || null,
     move_type: filters.moveType || null,
+    source_type: filters.sourceType || null,
+    scope: filters.scope || null,
+    performance_event: filters.performanceEvent || null,
     status: filters.status || null,
     q: filters.q || null
   };
@@ -318,6 +338,10 @@ function filterSignals(signals: JsonRecord[], filters: PulseApiFilters): JsonRec
     if (filters.lifecycle && !signalMatchesLifecycle(signal, filters.lifecycle, filters.period)) return false;
     if (filters.period && !signalMatchesPeriod(signal, filters.period)) return false;
     if (filters.platform && !signalMatchesPlatform(signal, filters.platform, filters.period)) return false;
+    if (filters.sourceType && !signalMatchesSourceType(signal, filters.sourceType)) return false;
+    if (filters.scope && !signalMatchesScope(signal, filters.scope)) return false;
+    if (filters.campaign && !signalMatchesQuery(signal, filters.campaign)) return false;
+    if (filters.performanceEvent && !signalMatchesQuery(signal, filters.performanceEvent)) return false;
     if (filters.q && !signalMatchesQuery(signal, filters.q)) return false;
     return true;
   });
@@ -325,7 +349,18 @@ function filterSignals(signals: JsonRecord[], filters: PulseApiFilters): JsonRec
 
 function filterMoves(moves: JsonRecord[], filteredSignals: JsonRecord[], filters: PulseApiFilters): JsonRecord[] {
   const allowedSignalIds = new Set(filteredSignals.map((signal) => stringValue(signal.id)).filter(Boolean));
-  const hasSignalScopedFilter = Boolean(filters.period || filters.platform || filters.signalId || filters.signalType || filters.lifecycle || filters.q);
+  const hasSignalScopedFilter = Boolean(
+    filters.period ||
+    filters.platform ||
+    filters.signalId ||
+    filters.signalType ||
+    filters.lifecycle ||
+    filters.campaign ||
+    filters.sourceType ||
+    filters.scope ||
+    filters.performanceEvent ||
+    filters.q
+  );
   return moves.filter((move) => {
     if (filters.moveType && normalizeFilterValue(move.move_type) !== filters.moveType) return false;
     if (filters.status && normalizeFilterValue(move.status) !== filters.status) return false;
@@ -347,6 +382,10 @@ function filterChartPayload(chart: JsonRecord, filters: PulseApiFilters): JsonRe
       if (filters.platform && !rowMatchesPlatform(row, filters.platform)) return false;
       if (filters.lifecycle && normalizeFilterValue(row.lifecycle_state) !== filters.lifecycle) return false;
       if (filters.signalType && normalizeFilterValue(row.signal_type) !== filters.signalType) return false;
+      if (filters.campaign && !rowMatchesText(row, filters.campaign, ["campaign", "campaign_id", "campaign_name", "entity_name", "creative_text"])) return false;
+      if (filters.sourceType && !rowMatchesText(row, filters.sourceType, ["source_type", "source_kind", "data_source", "provider", "channel"])) return false;
+      if (filters.scope && !rowMatchesText(row, filters.scope, ["scope", "entity_scope", "query_scope", "brand_scope"])) return false;
+      if (filters.performanceEvent && !rowMatchesText(row, filters.performanceEvent, ["performance_event", "event", "metric", "metric_name", "event_name"])) return false;
       return true;
     })
   };
@@ -372,6 +411,35 @@ function signalMatchesPlatform(signal: JsonRecord, platform: string, period?: st
   return stringArray(dimensions.platforms).map(normalizeFilterValue).includes(platform);
 }
 
+function signalMatchesSourceType(signal: JsonRecord, sourceType: string) {
+  const dimensions = asRecord(signal.dimensions);
+  return [
+    signal.source_type,
+    signal.source_kind,
+    signal.data_source,
+    dimensions.source_type,
+    dimensions.source_kind,
+    dimensions.data_source,
+    ...stringArray(dimensions.source_types),
+    ...stringArray(dimensions.sources)
+  ].map(normalizeFilterValue).includes(sourceType);
+}
+
+function signalMatchesScope(signal: JsonRecord, scope: string) {
+  const dimensions = asRecord(signal.dimensions);
+  return [
+    signal.scope,
+    signal.entity_scope,
+    signal.query_scope,
+    signal.brand_scope,
+    dimensions.scope,
+    dimensions.entity_scope,
+    dimensions.query_scope,
+    dimensions.brand_scope,
+    ...stringArray(dimensions.scopes)
+  ].map(normalizeFilterValue).includes(scope);
+}
+
 function signalMatchesQuery(signal: JsonRecord, query: string) {
   const dimensions = asRecord(signal.dimensions);
   const haystack = [
@@ -382,7 +450,11 @@ function signalMatchesQuery(signal: JsonRecord, query: string) {
     dimensions.marketing_read,
     dimensions.action_hint,
     dimensions.performance_connection,
-    dimensions.evidence_basis
+    dimensions.evidence_basis,
+    dimensions.campaign,
+    dimensions.campaign_name,
+    dimensions.performance_event,
+    dimensions.event
   ].map(stringValue).join(" ").toLowerCase();
   return haystack.includes(query);
 }
@@ -408,6 +480,10 @@ function rowMatchesPlatform(row: JsonRecord, platform: string) {
   return numberValue(coverage[platform]) > 0;
 }
 
+function rowMatchesText(row: JsonRecord, query: string, fields: string[]) {
+  return fields.some((field) => normalizeFilterValue(row[field]).includes(query));
+}
+
 function compactSignal(signal: JsonRecord) {
   const dimensions = asRecord(signal.dimensions);
   return {
@@ -415,6 +491,7 @@ function compactSignal(signal: JsonRecord) {
     title: stringValue(signal.title),
     signal_type: stringValue(signal.signal_type),
     signal_role: stringValue(dimensions.signal_role),
+    scope: stringValue(dimensions.scope || dimensions.entity_scope || signal.scope || signal.entity_scope),
     lifecycle_state: stringValue(signal.lifecycle_state),
     impact_v1: numberValue(signal.impact_v1),
     volume: numberValue(signal.volume),
