@@ -151,6 +151,10 @@ test("Signal Pulse synthesis validation requires marketing-first qualitative rea
     actionHint: "Probar una pieza de claridad sobre tiempos de respuesta y medir dudas, comentarios útiles y CTR contra el claim de confianza",
     signalRole: "paid_gap",
     analysisScope: "mixed",
+    periodRead: "En el corte 2026-05 suben las dudas sobre claridad de respuesta y el pico semanal concentra menciones trazables.",
+    windowRead: "En la ventana de 12 meses el tema pasa de ruido estable a patrón emergente repetido, con mayo como reactivación frente a abril.",
+    marketingHypothesis: "La hipótesis marketing es un gap de pauta: la campaña y el brief empujan confianza, pero la conversación pide claridad operativa.",
+    nextMonthDecision: "El próximo mes hay que probar una pieza de claridad, medir dudas, comentarios útiles y CTR contra el claim de confianza.",
     performanceConnection: "connected: creative y brief comparten lenguaje de confianza con evidencia de dudas en mayo",
     evidenceBasis: "Samples 11111111-1111-4111-8111-111111111111 y periodo 2026-05 sostienen la lectura.",
     confidenceRationale: "Publicable porque cruza serie mensual, pico semanal, overlap de creative text y evidencia semántica trazable.",
@@ -167,6 +171,10 @@ test("Signal Pulse synthesis validation requires marketing-first qualitative rea
     actionHint: "Usar \"seguro\" como experimento de contenido",
     signalRole: "friction",
     analysisScope: "current_cut",
+    periodRead: "Se ve seguro este mes.",
+    windowRead: "No hay lectura de ventana.",
+    marketingHypothesis: "Usar seguro como contenido.",
+    nextMonthDecision: "Publicar algo.",
     performanceConnection: "no_connection: sólo comparte periodo",
     evidenceBasis: "No hay evidencia trazable.",
     confidenceRationale: "Se ve volumen.",
@@ -177,6 +185,8 @@ test("Signal Pulse synthesis validation requires marketing-first qualitative rea
   assert.ok(keyword.reasons.includes("title_keyword_or_non_synthetic"));
   assert.ok(keyword.reasons.includes("generic_keyword_template_copy"));
   assert.ok(keyword.reasons.includes("evidence_basis_without_mention_id"));
+  assert.ok(keyword.reasons.includes("window_read_too_thin"));
+  assert.ok(keyword.reasons.includes("next_month_decision_not_measurable"));
 });
 
 test("Signal Pulse synthesis validation blocks connected performance claims without direct overlap", () => {
@@ -187,6 +197,10 @@ test("Signal Pulse synthesis validation blocks connected performance claims with
     actionHint: "Auditar piezas con promesa de rapidez y probar una variante que explique pasos, tiempos y resolución esperada",
     signalRole: "creative_risk",
     analysisScope: "mixed",
+    periodRead: "En el corte 2026-05 las quejas de trámites crecen con evidencia trazable en el pico semanal.",
+    windowRead: "En la ventana de 12 meses la fricción se repite y se reactiva cuando aparece lenguaje de rapidez en campaña.",
+    marketingHypothesis: "La hipótesis marketing conecta el claim creativo de rapidez con conversación sobre trámites, pero falta overlap directo.",
+    nextMonthDecision: "Auditar las piezas de rapidez y medir dudas, quejas y comentarios útiles antes de volver a escalar el claim.",
     performanceConnection: "connected: coincide con campaña de rapidez en mayo",
     evidenceBasis: "Sample 22222222-2222-4222-8222-222222222222 y periodo 2026-05 muestran la tensión.",
     confidenceRationale: "Hay evidencia textual, series mensuales y pico semanal, pero falta overlap directo con creative text.",
@@ -787,6 +801,12 @@ test("Signal Pulse Claude naming prompt uses marketing-first RAG context, not T&
   assert.match(prompt, /match_basis/);
   assert.match(prompt, /matched_terms/);
   assert.match(prompt, /performance_connection debe empezar exactamente/);
+  assert.match(prompt, /period_read/);
+  assert.match(prompt, /window_read/);
+  assert.match(prompt, /marketing_hypothesis/);
+  assert.match(prompt, /next_month_decision/);
+  assert.match(prompt, /cuatro lecturas separadas/);
+  assert.match(prompt, /El corte mensual es la vista publicable/);
   assert.match(prompt, /Si no puedes escribir una tesis comparable/);
   assert.match(prompt, /Una fila publish con titulo keyword/);
   assert.match(prompt, /accion de marketing medible/);

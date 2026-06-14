@@ -1544,6 +1544,10 @@ async function persistClaudeSignalNamingRows(args: {
     const actionHint = stringFrom(row.action_hint).slice(0, 360);
     const signalRole = normalizeSignalRole(row.signal_role);
     const analysisScope = normalizeAnalysisScope(row.analysis_scope);
+    const periodRead = stringFrom(row.period_read).slice(0, 420);
+    const windowRead = stringFrom(row.window_read).slice(0, 520);
+    const marketingHypothesis = stringFrom(row.marketing_hypothesis).slice(0, 520);
+    const nextMonthDecision = stringFrom(row.next_month_decision).slice(0, 420);
     const performanceConnection = stringFrom(row.performance_connection).slice(0, 360);
     const evidenceBasis = stringFrom(row.evidence_basis).slice(0, 420);
     const confidenceRationale = stringFrom(row.confidence_rationale).slice(0, 360);
@@ -1557,6 +1561,10 @@ async function persistClaudeSignalNamingRows(args: {
       actionHint,
       signalRole,
       analysisScope,
+      periodRead,
+      windowRead,
+      marketingHypothesis,
+      nextMonthDecision,
       performanceConnection,
       evidenceBasis,
       confidenceRationale,
@@ -1594,6 +1602,10 @@ async function persistClaudeSignalNamingRows(args: {
           actionability: storedActionability,
           signal_role: signalRole,
           analysis_scope: analysisScope,
+          period_read: periodRead,
+          window_read: windowRead,
+          marketing_hypothesis: marketingHypothesis,
+          next_month_decision: nextMonthDecision,
           performance_connection: performanceConnection,
           evidence_basis: evidenceBasis,
           confidence_rationale: confidenceRationale,
@@ -2167,6 +2179,7 @@ async function buildSignalPulseQualityGates(args: {
     signals_needing_human_review: number;
     weak_named_signals: number;
     signals_without_contextual_synthesis: number;
+    signals_without_marketing_intelligence_read: number;
     signals_without_semantic_context: number;
     signals_without_intelligence_case: number;
     signals_with_unqualified_performance_connection: number;
@@ -2261,9 +2274,27 @@ async function buildSignalPulseQualityGates(args: {
               OR NULLIF(btrim(COALESCE(cs.dimensions->>'confidence_rationale', '')), '') IS NULL
               OR NULLIF(btrim(COALESCE(cs.dimensions->>'signal_role', '')), '') IS NULL
               OR NULLIF(btrim(COALESCE(cs.dimensions->>'analysis_scope', '')), '') IS NULL
+              OR NULLIF(btrim(COALESCE(cs.dimensions->>'period_read', '')), '') IS NULL
+              OR NULLIF(btrim(COALESCE(cs.dimensions->>'window_read', '')), '') IS NULL
+              OR NULLIF(btrim(COALESCE(cs.dimensions->>'marketing_hypothesis', '')), '') IS NULL
+              OR NULLIF(btrim(COALESCE(cs.dimensions->>'next_month_decision', '')), '') IS NULL
               OR COALESCE(cs.dimensions #>> '{synthesis_validation,passed}', '') <> 'true'
             )
         ) AS signals_without_contextual_synthesis,
+        (
+          SELECT COUNT(*)::int
+          FROM canonical_signals cs
+          WHERE cs.study_corpus_id = $1
+            AND cs.methodology_slug = 'signal-pulse'
+            AND cs.status = 'active'
+            AND COALESCE(cs.dimensions->>'review_status', '') = 'publish_candidate'
+            AND (
+              COALESCE(cs.dimensions->>'period_read', '') !~* '(20[0-9]{2}[-/][0-9]{2}|semana|corte|mes|periodo)'
+              OR COALESCE(cs.dimensions->>'window_read', '') !~* '(ventana|meses|periodos|hist[oó]ric|serie|trayectoria|desde|regresa|reactiv|repite|satura|acelera|ca[ií]da|anomal|nuevo|emergente|persistente|sin patr[oó]n|aislado)'
+              OR COALESCE(cs.dimensions->>'marketing_hypothesis', '') !~* '(campa[nñ]a|pauta|paid|org[aá]nico|brief|claim|promesa|creativ|pieza|performance|search|ecomm|venta|review|google business|fuente|knowledge|no_connection|sin evidencia|sin conexi[oó]n)'
+              OR COALESCE(cs.dimensions->>'next_month_decision', '') !~* '(probar|testear|medir|auditar|pausar|mover|monitorear|comparar|ajustar|revisar|contener|activar|desactivar|validar|publicar|no escalar|priorizar)'
+            )
+        ) AS signals_without_marketing_intelligence_read,
         (
           SELECT COUNT(*)::int
           FROM canonical_signals cs
@@ -2392,6 +2423,7 @@ async function buildSignalPulseQualityGates(args: {
     gate("move_is_marketing_action", args.movesCount > 0 && Number(coverage?.moves_without_action ?? 0) === 0, `${coverage?.moves_without_action ?? 0} moves sin acción clara de marketing.`),
     gate("signal_actionability_review", Number(coverage?.weak_named_signals ?? 0) === 0, `${coverage?.weak_named_signals ?? 0} señales se nombraron como débiles o no relevantes.`),
     gate("contextual_synthesis_complete", Number(coverage?.signals_without_contextual_synthesis ?? 0) === 0, `${coverage?.signals_without_contextual_synthesis ?? 0} señales publicables sin síntesis contextual Claude/RAG completa.`),
+    gate("marketing_intelligence_read", Number(coverage?.signals_without_marketing_intelligence_read ?? 0) === 0, `${coverage?.signals_without_marketing_intelligence_read ?? 0} señales publicables sin lectura separada de corte, ventana, hipótesis marketing y decisión medible.`),
     gate("semantic_context_used", Number(coverage?.signals_without_semantic_context ?? 0) === 0, `${coverage?.signals_without_semantic_context ?? 0} señales publicables sin RAG semántico, samples, serie de periodo o performance activa.`),
     gate("signal_intelligence_case", Number(coverage?.signals_without_intelligence_case ?? 0) === 0, `${coverage?.signals_without_intelligence_case ?? 0} señales publicables sin caso de inteligencia de ventana/corte/intersección/evidencia.`),
     gate("performance_connection_qualified", Number(coverage?.signals_with_unqualified_performance_connection ?? 0) === 0, `${coverage?.signals_with_unqualified_performance_connection ?? 0} señales publicables con conexión a performance/marketing no calificada o sin overlap directo.`),

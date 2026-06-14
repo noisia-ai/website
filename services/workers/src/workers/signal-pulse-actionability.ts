@@ -60,6 +60,10 @@ export type SignalPulseSynthesisValidationInput = {
   actionHint: string;
   signalRole: string;
   analysisScope: string;
+  periodRead?: string;
+  windowRead?: string;
+  marketingHypothesis?: string;
+  nextMonthDecision?: string;
   performanceConnection: string;
   evidenceBasis: string;
   confidenceRationale: string;
@@ -157,6 +161,21 @@ export function validateSignalPulseSynthesis(input: SignalPulseSynthesisValidati
   if (substantiveLength(input.actionHint) < 45) reasons.push("action_hint_too_thin");
   if (substantiveLength(input.confidenceRationale) < 45) reasons.push("confidence_rationale_too_thin");
   if (!hasTraceableMentionId(input.evidenceBasis)) reasons.push("evidence_basis_without_mention_id");
+  if (substantiveLength(input.periodRead ?? "") < 60) reasons.push("period_read_too_thin");
+  if (substantiveLength(input.windowRead ?? "") < 70) reasons.push("window_read_too_thin");
+  if (substantiveLength(input.marketingHypothesis ?? "") < 70) reasons.push("marketing_hypothesis_too_thin");
+  if (substantiveLength(input.nextMonthDecision ?? "") < 60) reasons.push("next_month_decision_too_thin");
+  if (!hasPeriodLanguage(input.periodRead ?? "")) reasons.push("period_read_missing_period_anchor");
+  if (!hasWindowPatternLanguage(input.windowRead ?? "", numberFromContext(context.active_periods))) {
+    reasons.push("window_read_missing_window_pattern");
+  }
+  if (!hasMarketingSourceLanguage(input.marketingHypothesis ?? "")) {
+    reasons.push("marketing_hypothesis_missing_marketing_source");
+  }
+  if (!hasDecisionLanguage(input.nextMonthDecision ?? "") || !hasMeasurementLanguage(`${input.nextMonthDecision ?? ""} ${input.actionHint}`)) {
+    reasons.push("next_month_decision_not_measurable");
+  }
+  if (!hasMeasurementLanguage(input.actionHint)) reasons.push("action_hint_not_measurable");
 
   const connection = input.performanceConnection.trim().toLowerCase();
   if (!/^(connected|no_connection|insufficient_data):/.test(connection)) reasons.push("performance_connection_unqualified");
@@ -176,7 +195,7 @@ export function validateSignalPulseSynthesis(input: SignalPulseSynthesisValidati
   if (numberFromContext(context.evidence_sample_ids) < 1) reasons.push("missing_evidence_sample_ids");
   if (numberFromContext(context.synthesis_questions) < 2) reasons.push("missing_synthesis_questions");
 
-  const combinedCopy = `${input.title}\n${input.description}\n${input.marketingRead}\n${input.actionHint}\n${input.confidenceRationale}`;
+  const combinedCopy = `${input.title}\n${input.description}\n${input.marketingRead}\n${input.periodRead ?? ""}\n${input.windowRead ?? ""}\n${input.marketingHypothesis ?? ""}\n${input.nextMonthDecision ?? ""}\n${input.actionHint}\n${input.confidenceRationale}`;
   if (GENERIC_SIGNAL_COPY_PATTERNS.some((pattern) => pattern.test(combinedCopy))) {
     reasons.push("generic_keyword_template_copy");
   }
@@ -203,6 +222,30 @@ function substantiveLength(value: string) {
 
 function hasTraceableMentionId(value: string) {
   return /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i.test(value);
+}
+
+function hasPeriodLanguage(value: string) {
+  return /\b20\d{2}[-/](0[1-9]|1[0-2])\b|\bsemana\b|\bcorte\b|\bmes\b|\bperiodo\b|\bperiod\b/i.test(value);
+}
+
+function hasWindowPatternLanguage(value: string, activePeriods: number) {
+  const normalized = normalizeSignalPhrase(value);
+  if (!normalized) return false;
+  const hasWindowWord = /\b(ventana|meses|periodos|historico|historica|serie|trayectoria|desde|regresa|reactiva|reactivacion|repite|repeticion|satura|saturacion|acelera|aceleracion|caida|anomalia|nuevo|emergente|persistente)\b/i.test(normalized);
+  if (activePeriods >= 2) return hasWindowWord;
+  return hasWindowWord || /\b(no hay patron|sin patron|solo corte|aislado)\b/i.test(normalized);
+}
+
+function hasMarketingSourceLanguage(value: string) {
+  return /\b(campa[nñ]a|pauta|paid|org[aá]nico|brief|claim|promesa|creativ[oa]|pieza|performance|search|ecomm|venta|ventas|review|reviews|google business|fuente|fuentes|kb|knowledge|no_connection|sin evidencia|no hay evidencia|sin conexi[oó]n)\b/i.test(value);
+}
+
+function hasDecisionLanguage(value: string) {
+  return /\b(probar|testear|medir|auditar|pausar|mover|monitorear|comparar|ajustar|revisar|contener|activar|desactivar|separar|validar|publicar|no escalar|no pautar|priorizar)\b/i.test(value);
+}
+
+function hasMeasurementLanguage(value: string) {
+  return /\b(medir|comparar|validar|monitorear|ctr|costo|interacci[oó]n|engagement|volumen|sentimiento|comentarios|dudas|quejas|menciones|hook rate|conversion|conversi[oó]n|guardados|shares|respuesta|control|baseline)\b/i.test(value);
 }
 
 function numberFromContext(value: unknown) {
