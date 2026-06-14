@@ -327,11 +327,14 @@ function SignalPulseAnalysisReview({
   const qualityGates = arrayRecords(meta.quality_gates);
   const failedGates = qualityGates.filter((gate) => gate.passed === false);
   const noisySignals = state.signals.filter((signal) => looksNonActionableSignal(signal.title, signal.description, signal.dimensions));
-  const inactiveCutSignals = state.signals.filter((signal) => Number(signal.current_volume ?? signal.volume ?? 0) <= 0);
+  const publishableSignals = state.signals.filter((signal) => isPublishableSignal(signal.title, signal.description, signal.dimensions, Number(signal.current_volume ?? signal.volume ?? 0)));
+  const inactiveCutSignals = state.signals.filter((signal) => isPublishCandidate(signal.dimensions) && Number(signal.current_volume ?? signal.volume ?? 0) <= 0);
+  const hiddenSignalCount = Math.max(0, state.signals.length - publishableSignals.length);
   const repeatedMoveCount = state.moves.filter((move) => move.action_text.includes("Bajarlo a una serie corta")).length;
   const reviewIssues = [
     ...failedGates.map((gate) => `Gate fallido: ${stringValue(gate.id) || "quality_gate"}`),
     ...noisySignals.slice(0, 6).map((signal) => `Señal requiere curaduría: ${signal.title}`),
+    publishableSignals.length < 3 ? `${publishableSignals.length} señales publicables en el corte actual; mínimo 3 para publicar.` : null,
     inactiveCutSignals.length > 0 ? `${inactiveCutSignals.length} señales no tienen volumen en el corte actual.` : null,
     repeatedMoveCount >= 3 ? `${repeatedMoveCount} marketing moves repiten la misma fórmula.` : null
   ].filter((issue): issue is string => Boolean(issue));
@@ -341,7 +344,7 @@ function SignalPulseAnalysisReview({
   const measuredMentions = Number(readiness.conversation_mentions ?? 0);
   const signalPulseMentions = Number(readiness.signal_pulse_mentions ?? 0);
   const sampledRows = Number(cluster.mentions_sampled ?? 0);
-  const maxClaudeSamples = Math.min(state.signals.length, 24) * 4;
+  const maxClaudeSamples = Math.min(state.signals.length, 12) * 4;
   const cutMeta = asRecord(signalPulseMeta.cut);
   const cutLabel = (state.cut?.label ?? stringValue(cutMeta.label)) || "Corte pendiente";
   const dataThrough = (state.cut?.period_end ?? stringValue(cutMeta.data_through)) || null;
@@ -394,7 +397,7 @@ function SignalPulseAnalysisReview({
           <ReadinessTile label="Query pack SP" value={signalPulseMentions} detail="Menciones atribuidas al pack Signal Pulse." />
           <ReadinessTile label="Cluster global sample" value={sampledRows || "n/d"} detail="Filas usadas para candidatos globales." />
           <ReadinessTile label="Candidatos por periodo" value={Number(cluster.period_first_candidate_clusters ?? 0)} detail="Clusters detectados mes a mes." />
-          <ReadinessTile label="Claude nombró" value={state.signals.length} detail={`Hasta ${maxClaudeSamples} snippets cortos, no 60K menciones.`} />
+          <ReadinessTile label="Claude sintetizó" value={publishableSignals.length} detail={`Hasta ${maxClaudeSamples} snippets cortos; las keywords quedan fuera del Pulse.`} />
           <ReadinessTile label="Ventana" value={`${formatDateLabel(windowStart)} - ${formatDateLabel(windowEnd)}`} detail="Los comparativos usan la ventana; el publish usa el corte actual." />
         </div>
       </section>
@@ -414,24 +417,23 @@ function SignalPulseAnalysisReview({
       <section className="analysis-review-card">
         <div className="analysis-section-head">
           <SectionTitle icon="wave" eyebrow="Signal review" title="Señales que entrarían al Pulse" />
-          <span>{noisySignals.length} requieren curaduría</span>
+          <span>{publishableSignals.length} publicables · {hiddenSignalCount} fuera</span>
         </div>
         <div className="analysis-preview-list analysis-preview-list--two">
-          {state.signals.slice(0, 24).map((signal, index) => {
-            const needsReview = looksNonActionableSignal(signal.title, signal.description, signal.dimensions);
+          {publishableSignals.length > 0 ? publishableSignals.slice(0, 8).map((signal, index) => {
             const currentVolume = Number(signal.current_volume ?? signal.volume ?? 0);
             const windowVolume = Number(signal.window_volume ?? 0);
             const bodyPrefix = `${currentVolume} menciones en ${signal.cut_period_label || cutLabel}; ${windowVolume} en ventana. Última actividad: ${signal.last_seen_period || "sin actividad en ventana"}.`;
             return (
               <PreviewItem
                 key={signal.id}
-                code={needsReview ? "REVIEW" : currentVolume <= 0 ? "INACTIVA EN CUT" : `${index + 1}`}
+                code={`${index + 1}`}
                 title={signal.title}
                 body={`${bodyPrefix} ${signal.description || stringValue(signal.dimensions.marketing_read) || "Sin lectura editorial guardada."}`}
                 meta={`${signal.cut_period_label || cutLabel} · impacto SQL ${formatImpact(signal.impact_v1)} · confianza ${signal.confidence || "baja"}`}
               />
             );
-          })}
+          }) : <EmptyCard text="Esta corrida no produjo señales publicables del corte actual. Hay que regenerar síntesis o revisar clustering antes de publicar." />}
         </div>
       </section>
 
@@ -619,6 +621,19 @@ async function getSignalPulseReviewState(corpusId: string, analysisId: string) {
        FROM marketing_moves
        WHERE study_corpus_id = $1
          AND engine_analysis_id = $2
+         AND EXISTS (
+           SELECT 1
+           FROM canonical_signals cs
+           WHERE cs.id = ANY(marketing_moves.signal_refs)
+             AND cs.study_corpus_id = marketing_moves.study_corpus_id
+             AND cs.methodology_slug = 'signal-pulse'
+             AND cs.status = 'active'
+             AND COALESCE(cs.dimensions->>'review_status', '') = 'publish_candidate'
+             AND lower(cs.canonical_title) NOT LIKE 'cluster pendiente de síntesis:%'
+             AND lower(cs.canonical_title) NOT LIKE 'cluster pendiente de sintesis:%'
+             AND lower(cs.canonical_title) !~ '^(fricción|friccion|oportunidad|territorio): (hasta|siempre|manejar|pinche|velocidad|mejor|nada|seguro|aseguradora|aseguradoras|choque|accidente|vehiculo|vehículo|qualitas|quálitas|sabritas|gobernador|padrino|antojo|groseras|vieja)$'
+             AND lower(COALESCE(cs.dimensions->>'term', '')) NOT IN ('hasta', 'siempre', 'manejar', 'pinche', 'velocidad', 'mejor', 'nada', 'seguro', 'seguros', 'seguro auto', 'aseguradora', 'aseguradoras', 'choque', 'choques', 'accidente', 'accidentes', 'auto', 'autos', 'vehiculo', 'vehículo', 'vehiculos', 'vehículos', 'qualitas', 'quálitas', 'sabritas', 'gobernador', 'padrino', 'antojo', 'groseras', 'vieja', 'directo manicomio', 'actuan aseguradoras saber', 'alcanzo aseguradora particulares', 'aclarar situacion real')
+         )
        ORDER BY position NULLS LAST, created_at
        LIMIT 80`,
       [corpusId, analysisId]
@@ -890,16 +905,40 @@ function countClientReadyActions(actions: JsonRecord[]) {
   return actions.filter((action) => stringValue(action.action_text).trim().length > 20).length;
 }
 
+const RAW_SIGNAL_REVIEW_TERMS = new Set([
+  "accidente", "accidentes", "aclarar", "actuan", "alcanzo", "antojo", "aseguradora",
+  "aseguradoras", "auto", "autos", "choque", "choques", "danos", "danos", "directo",
+  "excelente", "gobernador", "groseras", "manicomio", "padrino", "particulares",
+  "potosi", "qualitas", "responsable", "saber", "sabritas", "seguro", "seguros",
+  "situacion", "vehiculo", "vehiculos", "vieja"
+]);
+
+function isPublishCandidate(dimensions: JsonRecord) {
+  return stringValue(dimensions.review_status) === "publish_candidate";
+}
+
+function isPublishableSignal(title: string, description: string | null, dimensions: JsonRecord, currentVolume: number) {
+  return isPublishCandidate(dimensions)
+    && currentVolume > 0
+    && !looksNonActionableSignal(title, description, dimensions)
+    && !looksRawKeywordSignal(title, dimensions);
+}
+
 function looksNonActionableSignal(title: string, description: string | null, dimensions: JsonRecord) {
   const source = `${title} ${description ?? ""} ${stringValue(dimensions.marketing_read)} ${stringValue(dimensions.action_hint)}`.toLowerCase();
   const normalizedTitle = title
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
-  if (/^(friccion|oportunidad|territorio): (hasta|siempre|manejar|pinche|velocidad|mejor|nada)$/.test(normalizedTitle)) {
+  if (
+    /^cluster pendiente de sintesis:/.test(normalizedTitle)
+    || /^(friccion|oportunidad|territorio): (hasta|siempre|manejar|pinche|velocidad|mejor|nada)$/.test(normalizedTitle)
+  ) {
     return true;
   }
   return [
+    "pendiente de síntesis",
+    "pendiente de sintesis",
     "señal débil",
     "sin relevancia",
     "sin valor",
@@ -915,6 +954,30 @@ function looksNonActionableSignal(title: string, description: string | null, dim
     "futbol",
     "links sin contexto"
   ].some((pattern) => source.includes(pattern));
+}
+
+function looksRawKeywordSignal(title: string, dimensions: JsonRecord) {
+  const term = normalizeReviewSignalPhrase(stringValue(dimensions.term));
+  const titleTerm = normalizeReviewSignalPhrase(title.replace(/^(fricción|friccion|oportunidad|territorio|prioridad|cluster pendiente de síntesis|cluster pendiente de sintesis):\s*/i, ""));
+  return isRawReviewPhrase(term) || isRawReviewPhrase(titleTerm);
+}
+
+function normalizeReviewSignalPhrase(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isRawReviewPhrase(value: string) {
+  if (!value) return false;
+  const words = value.split(/\s+/).filter(Boolean);
+  if (words.length === 1) return true;
+  const rawCount = words.filter((word) => RAW_SIGNAL_REVIEW_TERMS.has(word)).length;
+  return words.length <= 3 && rawCount >= Math.max(1, words.length - 1);
 }
 
 function recommendationFallback(rec: {

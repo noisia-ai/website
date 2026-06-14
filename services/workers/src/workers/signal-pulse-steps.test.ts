@@ -15,6 +15,7 @@ import {
 } from "./signal-pulse-budget";
 import { buildSignalPulseDeterministicRead, buildSignalPulseMarketingMove } from "./signal-pulse-copy";
 import { splitSignalPulseMetaForMerge } from "./signal-pulse-meta";
+import { isActionableSignalPulseTerm } from "./signal-pulse-actionability";
 import { chooseSignalPulseWindowEnd } from "./signal-pulse-window";
 
 test("Signal Pulse embedding clusters group semantic neighborhoods without reusing mentions", () => {
@@ -78,7 +79,7 @@ test("Signal Pulse period-first selection keeps a month-specific signal outside 
   assert.deepEqual(selected.find((item) => item.term === "renovacion enero urgente")?.discovery_periods, ["2025-01"]);
 });
 
-test("Signal Pulse deterministic copy sounds like a marketing read, not a placeholder", () => {
+test("Signal Pulse deterministic copy marks clusters as synthesis backlog, not client-ready insights", () => {
   const copy = buildSignalPulseDeterministicRead({
     canonicalTitle: "Territorio botana crujiente con chile",
     term: "botana crujiente con chile",
@@ -89,16 +90,17 @@ test("Signal Pulse deterministic copy sounds like a marketing read, not a placeh
     rank: 1
   });
 
-  assert.equal(copy.title, "Oportunidad: Botana Crujiente Con Chile");
+  assert.equal(copy.title, "Cluster pendiente de síntesis: Botana Crujiente Con Chile");
   assert.match(copy.description, /64 menciones/);
-  assert.match(copy.marketingRead, /ángulo creativo/);
-  assert.match(copy.actionHint, /claim o hook/);
+  assert.match(copy.description, /todavía no hay una lectura editorial publicable/);
+  assert.match(copy.marketingRead, /no debe entrar al Pulse/);
+  assert.match(copy.actionHint, /sintetizar el porqué/);
   assert.doesNotMatch(copy.description, /La conversacion esta agrupando/i);
   assert.doesNotMatch(copy.description, /senal|conclusion|esta empujando/i);
   assert.doesNotMatch(copy.marketingRead, /Probar contenido o pauta alrededor/i);
 });
 
-test("Signal Pulse deterministic copy changes posture for risks and weak signals", () => {
+test("Signal Pulse deterministic copy never turns risk clusters into publishable frictions by itself", () => {
   const risk = buildSignalPulseDeterministicRead({
     canonicalTitle: "Territorio empaque roto",
     term: "empaque roto",
@@ -118,12 +120,20 @@ test("Signal Pulse deterministic copy changes posture for risks and weak signals
     rank: 5
   });
 
-  assert.equal(risk.title, "Fricción: Empaque Roto");
-  assert.match(risk.marketingRead, /contener/);
-  assert.match(risk.actionHint, /reduzca duda/);
-  assert.equal(directional.title, "Merch Especial");
+  assert.equal(risk.title, "Cluster pendiente de síntesis: Empaque Roto");
+  assert.match(risk.marketingRead, /Pendiente de síntesis/);
+  assert.match(risk.actionHint, /Revisar muestras/);
+  assert.equal(directional.title, "Cluster pendiente de síntesis: Merch Especial");
   assert.match(directional.description, /apenas alcanzan para monitoreo/);
-  assert.match(directional.actionHint, /prueba de bajo costo/);
+  assert.match(directional.actionHint, /sintetizar/);
+});
+
+test("Signal Pulse actionable cluster filter rejects raw keywords and keeps synthesized phrases", () => {
+  for (const term of ["seguro", "aseguradora", "choque", "antojo", "gobernador", "seguro auto"]) {
+    assert.equal(isActionableSignalPulseTerm(term), false, term);
+  }
+
+  assert.equal(isActionableSignalPulseTerm("renovacion enero urgente"), true);
 });
 
 test("Signal Pulse marketing moves reuse the signal action hint and define measurement", () => {

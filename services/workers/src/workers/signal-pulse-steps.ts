@@ -33,6 +33,7 @@ import {
   SIGNAL_PULSE_INTERPRETATION_COST_USD,
   shouldSkipSignalPulseLlmForBudget
 } from "./signal-pulse-budget";
+import { isActionableSignalPulseTerm, isRawKeywordSignalPhrase, normalizeSignalPhrase } from "./signal-pulse-actionability";
 import { buildSignalPulseDeterministicRead, buildSignalPulseMarketingMove } from "./signal-pulse-copy";
 
 type SignalPulseStepJobData = {
@@ -81,14 +82,14 @@ const STOPWORDS_ES_MX = new Set([
   "algo", "cada", "mismo", "misma", "mismos", "mismas", "otro", "otra", "otros", "otras"
 ]);
 
-const MAX_SIGNAL_CLUSTERS = 24;
+const MAX_SIGNAL_CLUSTERS = 12;
 const MAX_EVIDENCE_PER_SIGNAL = 8;
 const EMBEDDING_ANCHOR_LIMIT = 220;
 const EMBEDDING_NEIGHBORS_PER_ANCHOR = 36;
 const EMBEDDING_MIN_SIMILARITY = 0.74;
 const GLOBAL_CLUSTER_ROW_LIMIT = 6000;
 const PERIOD_CLUSTER_ROW_LIMIT = 1600;
-const PERIOD_CLUSTERS_PER_PERIOD = 2;
+const PERIOD_CLUSTERS_PER_PERIOD = 1;
 const SIGNAL_PULSE_LLM_TIMEOUT_MS = 45_000;
 const NON_ACTIONABLE_CLUSTER_TERMS = new Set([
   "amen", "dios", "jesus", "gracias", "felicidades", "bendiciones", "saludos",
@@ -468,6 +469,8 @@ export async function signalPulseNameSignalsJob(job: Job<SignalPulseStepJobData>
             rank: candidate.position,
             marketing_read: read.marketingRead,
             action_hint: read.actionHint,
+            actionability: "review",
+            review_status: "needs_human_review",
             interpretation_source: read.interpretationSource,
             cluster_first: true,
             per_mention_coding: false
@@ -1178,6 +1181,7 @@ async function buildSignalPulseInterpretation(ctx: AnalysisContext) {
       WHERE cs.study_corpus_id = $1
         AND cs.methodology_slug = 'signal-pulse'
         AND cs.status <> 'archived'
+        AND COALESCE(cs.dimensions->>'review_status', '') = 'publish_candidate'
         AND latest.volume > 0
       ORDER BY COALESCE(latest.impact::numeric, 0) DESC, latest.volume DESC
       LIMIT 1
@@ -1236,6 +1240,8 @@ async function maybeApplyClaudeSignalNaming(args: {
       mention_count: Number(dimensions.mention_count ?? 0),
       sentiment_avg: numberOrNull(dimensions.sentiment_avg),
       platforms: stringArrayFrom(dimensions.platforms).slice(0, 5),
+      discovery_periods: stringArrayFrom(dimensions.discovery_periods).slice(0, 4),
+      max_period_mention_count: Number(dimensions.max_period_mention_count ?? dimensions.mention_count ?? 0),
       samples: await loadMentionSamples(stringArrayFrom(dimensions.sample_mention_ids).slice(0, 4))
     };
   }));
@@ -1244,7 +1250,9 @@ async function maybeApplyClaudeSignalNaming(args: {
   const prompt = [
     "Eres editor de Signal Pulse para marketing. Nombra clusters de conversación como señales accionables.",
     "Reglas duras: no hagas coding por mención; no inventes números; usa solo los números del JSON; conserva ids; español MX; copy corto y claro.",
-    "Si un cluster es ruido, política no accionable, insultos, religión, fútbol, links sin contexto o conversación sin vínculo claro con marca/categoría, marca actionability=\"exclude\" y no lo presentes como oportunidad.",
+    "Un título publicable NO puede ser una keyword, categoría, entidad o token suelto. Debe expresar una tensión, oportunidad, barrera o aprendizaje humano inferido de las muestras.",
+    "Si el cluster sólo dice seguro, aseguradora, choque, auto, accidente, una marca/competidor, un insulto, política, religión, fútbol, links sin contexto o conversación sin vínculo claro con marca/categoría, marca actionability=\"exclude\".",
+    "Publica máximo 6 señales. El resto debe ser review o exclude. Mejor pocas señales buenas que muchas tarjetas genéricas.",
     "Devuelve SOLO JSON válido con forma:",
     '{"signals":[{"id":"uuid","title":"Oportunidad: ...","description":"...","marketing_read":"...","action_hint":"...","actionability":"publish|review|exclude"}]}',
     "Clusters:",
@@ -1275,12 +1283,20 @@ async function maybeApplyClaudeSignalNaming(args: {
     for (const row of rows) {
       const id = stringFrom(row.id);
       if (!id) continue;
+      const sourceCandidate = args.candidates.find((candidate) => candidate.id === id);
+      const sourceDimensions = sourceCandidate?.dimensions ?? {};
       const title = stringFrom(row.title).slice(0, 160);
       const description = stringFrom(row.description).slice(0, 500);
       const marketingRead = stringFrom(row.marketing_read).slice(0, 500);
       const actionHint = stringFrom(row.action_hint).slice(0, 360);
       const actionability = normalizeActionability(row.actionability);
-      const excluded = actionability === "exclude" || isNonActionableSignalCopy({ title, description, marketingRead, actionHint });
+      const excluded = actionability === "exclude" || isNonActionableSignalCopy({
+        title,
+        description,
+        marketingRead,
+        actionHint,
+        term: stringFrom(sourceDimensions.term)
+      });
       if (!title || !description) continue;
       const result = await pool.query(
         `
@@ -1485,6 +1501,7 @@ async function loadSignalPulseInterpretationContext(ctx: AnalysisContext) {
       WHERE cs.study_corpus_id = $1
         AND cs.methodology_slug = 'signal-pulse'
         AND cs.status <> 'archived'
+        AND COALESCE(cs.dimensions->>'review_status', '') = 'publish_candidate'
         AND latest.volume > 0
       ORDER BY COALESCE(latest.impact::numeric, 0) DESC, latest.volume DESC
       LIMIT 8
@@ -1562,13 +1579,17 @@ async function materializeMarketingMoves(args: {
       LEFT JOIN evidence ON evidence.canonical_signal_id = latest.canonical_signal_id
       WHERE cs.status = 'active'
         AND latest.volume > 0
-        AND COALESCE(cs.dimensions->>'review_status', '') <> 'excluded_from_signal_pulse'
+        AND COALESCE(cs.dimensions->>'review_status', '') = 'publish_candidate'
         AND lower(cs.canonical_title) NOT LIKE '%señal débil%'
         AND lower(cs.canonical_title) NOT LIKE '%sin relevancia%'
         AND lower(cs.canonical_title) NOT LIKE '%sin valor%'
         AND lower(cs.canonical_title) NOT LIKE '%sin conexión%'
         AND lower(cs.canonical_title) NOT LIKE '%sin conexion%'
         AND lower(cs.canonical_title) NOT LIKE '%sin ancla%'
+        AND lower(cs.canonical_title) NOT LIKE 'cluster pendiente de síntesis:%'
+        AND lower(cs.canonical_title) NOT LIKE 'cluster pendiente de sintesis:%'
+        AND lower(cs.canonical_title) !~ '^(fricción|friccion|oportunidad|territorio): (hasta|siempre|manejar|pinche|velocidad|mejor|nada|seguro|aseguradora|aseguradoras|choque|accidente|vehiculo|vehículo|qualitas|quálitas|sabritas|gobernador|padrino|antojo|groseras|vieja)$'
+        AND lower(COALESCE(cs.dimensions->>'term', '')) NOT IN ('hasta', 'siempre', 'manejar', 'pinche', 'velocidad', 'mejor', 'nada', 'seguro', 'seguros', 'seguro auto', 'aseguradora', 'aseguradoras', 'choque', 'choques', 'accidente', 'accidentes', 'auto', 'autos', 'vehiculo', 'vehículo', 'vehiculos', 'vehículos', 'qualitas', 'quálitas', 'sabritas', 'gobernador', 'padrino', 'antojo', 'groseras', 'vieja', 'directo manicomio', 'actuan aseguradoras saber', 'alcanzo aseguradora particulares', 'aclarar situacion real')
       ORDER BY COALESCE(latest.impact::numeric, 0) DESC, latest.volume DESC
       LIMIT 12
     `,
@@ -1651,6 +1672,9 @@ async function materializeChartAggregates(ctx: AnalysisContext) {
         FROM latest
         JOIN canonical_signals cs ON cs.id = latest.canonical_signal_id
         WHERE latest.volume > 0
+          AND cs.methodology_slug = 'signal-pulse'
+          AND cs.status = 'active'
+          AND COALESCE(cs.dimensions->>'review_status', '') = 'publish_candidate'
         ORDER BY latest.impact_v1 DESC NULLS LAST, latest.volume DESC
         LIMIT 80
       `,
@@ -1670,6 +1694,9 @@ async function materializeChartAggregates(ctx: AnalysisContext) {
         JOIN canonical_signals cs ON cs.id = spm.canonical_signal_id
         JOIN report_periods rp ON rp.id = spm.period_id
         WHERE spm.study_corpus_id = $1
+          AND cs.methodology_slug = 'signal-pulse'
+          AND cs.status = 'active'
+          AND COALESCE(cs.dimensions->>'review_status', '') = 'publish_candidate'
         ORDER BY rp.period_start, spm.rank NULLS LAST, spm.impact_v1 DESC NULLS LAST
       `,
       [ctx.study_corpus_id]
@@ -1702,7 +1729,8 @@ async function materializeChartAggregates(ctx: AnalysisContext) {
         FROM canonical_signals cs
         WHERE cs.study_corpus_id = $1
           AND cs.methodology_slug = 'signal-pulse'
-          AND cs.status <> 'archived'
+          AND cs.status = 'active'
+          AND COALESCE(cs.dimensions->>'review_status', '') = 'publish_candidate'
         ORDER BY rank
         LIMIT 120
       `,
@@ -1877,8 +1905,10 @@ async function buildSignalPulseQualityGates(args: {
               OR lower(cs.canonical_title) LIKE '%sin conexión%'
               OR lower(cs.canonical_title) LIKE '%sin conexion%'
               OR lower(cs.canonical_title) LIKE '%sin ancla%'
-              OR lower(cs.canonical_title) ~ '^(fricción|friccion|oportunidad|territorio): (hasta|siempre|manejar|pinche|velocidad|mejor|nada)$'
-              OR lower(COALESCE(cs.dimensions->>'term', '')) IN ('hasta', 'siempre', 'manejar', 'pinche', 'velocidad', 'mejor', 'nada')
+              OR lower(cs.canonical_title) LIKE 'cluster pendiente de síntesis:%'
+              OR lower(cs.canonical_title) LIKE 'cluster pendiente de sintesis:%'
+              OR lower(cs.canonical_title) ~ '^(fricción|friccion|oportunidad|territorio): (hasta|siempre|manejar|pinche|velocidad|mejor|nada|seguro|aseguradora|aseguradoras|choque|accidente|vehiculo|vehículo|qualitas|quálitas|sabritas|gobernador|padrino|antojo|groseras|vieja)$'
+              OR lower(COALESCE(cs.dimensions->>'term', '')) IN ('hasta', 'siempre', 'manejar', 'pinche', 'velocidad', 'mejor', 'nada', 'seguro', 'seguros', 'seguro auto', 'aseguradora', 'aseguradoras', 'choque', 'choques', 'accidente', 'accidentes', 'auto', 'autos', 'vehiculo', 'vehículo', 'vehiculos', 'vehículos', 'qualitas', 'quálitas', 'sabritas', 'gobernador', 'padrino', 'antojo', 'groseras', 'vieja', 'directo manicomio', 'actuan aseguradoras saber', 'alcanzo aseguradora particulares', 'aclarar situacion real')
             )
         ) AS weak_named_signals,
         (
@@ -1889,6 +1919,7 @@ async function buildSignalPulseQualityGates(args: {
           WHERE cs.study_corpus_id = $1
             AND cs.methodology_slug = 'signal-pulse'
             AND cs.status = 'active'
+            AND COALESCE(cs.dimensions->>'review_status', '') = 'publish_candidate'
             AND rp.granularity = 'month'
             AND rp.period_start = (
               SELECT MAX(period_start)
@@ -1905,6 +1936,7 @@ async function buildSignalPulseQualityGates(args: {
           WHERE cs.study_corpus_id = $1
             AND cs.methodology_slug = 'signal-pulse'
             AND cs.status = 'active'
+            AND COALESCE(cs.dimensions->>'review_status', '') = 'publish_candidate'
             AND rp.granularity = 'month'
             AND rp.period_start = (
               SELECT MAX(period_start)
@@ -1941,7 +1973,7 @@ async function buildSignalPulseQualityGates(args: {
     gate("period_comparability", Number(coverage?.comparable_periods ?? 0) >= expectedPeriods, `${coverage?.comparable_periods ?? 0}/${expectedPeriods} periodos comparables.`),
     gate("performance_structured", Number(coverage?.performance_records ?? 0) > 0, `${coverage?.performance_records ?? 0} registros de performance estructurada.`),
     gate("performance_period_coverage", Number(coverage?.performance_periods ?? 0) >= expectedPeriods, `${coverage?.performance_periods ?? 0}/${expectedPeriods} periodos con performance estructurada.`),
-    gate("current_cut_signal_presence", Number(coverage?.current_active_signals ?? 0) > 0, `${coverage?.current_active_signals ?? 0} señales activas en el corte actual; ${coverage?.inactive_current_signals ?? 0} inactivas en el corte.`),
+    gate("current_cut_signal_presence", Number(coverage?.current_active_signals ?? 0) >= 3, `${coverage?.current_active_signals ?? 0} señales publicables en el corte actual; ${coverage?.inactive_current_signals ?? 0} publicables inactivas en el corte.`),
     gate("signal_min_evidence", Number(coverage?.evidence ?? 0) > 0, `${coverage?.evidence ?? 0} evidencias ligadas a señales.`),
     gate("confidence_assigned", Number(coverage?.signals_without_confidence ?? 0) === 0, `${coverage?.signals_without_confidence ?? 0} métricas de señal sin confianza.`),
     gate("chart_data_available", args.chartsCount >= 4, `${args.chartsCount} chart aggregates listos.`),
@@ -2278,9 +2310,9 @@ function signalTypeForCluster(cluster: TermCluster) {
   return "marketing_signal";
 }
 
-function isActionableSignalPulseCluster(cluster: TermCluster) {
-  const term = cluster.term.trim().toLowerCase();
-  if (!term || term.length < 4 || /^\d+$/.test(term)) return false;
+export function isActionableSignalPulseCluster(cluster: TermCluster) {
+  const term = normalizeSignalPhrase(cluster.term);
+  if (!isActionableSignalPulseTerm(term)) return false;
   if (NON_ACTIONABLE_CLUSTER_TERMS.has(term)) return false;
   const words = term.split(/\s+/).filter(Boolean);
   if (words.length === 1 && (STOPWORDS_ES_MX.has(term) || NON_ACTIONABLE_CLUSTER_TERMS.has(term))) return false;
@@ -2354,16 +2386,26 @@ function isNonActionableSignalCopy(input: {
   description: string;
   marketingRead: string;
   actionHint: string;
+  term?: string;
 }) {
   const source = `${input.title} ${input.description} ${input.marketingRead} ${input.actionHint}`.toLowerCase();
   const normalizedTitle = input.title
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
-  if (/^(friccion|oportunidad|territorio): (hasta|siempre|manejar|pinche|velocidad|mejor|nada)$/.test(normalizedTitle)) {
+  const normalizedTerm = normalizeSignalPhrase(input.term ?? "");
+  const titleWithoutPrefix = normalizeSignalPhrase(normalizedTitle.replace(/^(friccion|oportunidad|territorio|prioridad|cluster pendiente de sintesis):\s*/i, ""));
+  if (
+    /^cluster pendiente de sintesis:/.test(normalizedTitle)
+    || (normalizedTerm.length > 0 && isRawKeywordSignalPhrase(normalizedTerm))
+    || isRawKeywordSignalPhrase(titleWithoutPrefix)
+    || /^(friccion|oportunidad|territorio): (hasta|siempre|manejar|pinche|velocidad|mejor|nada)$/.test(normalizedTitle)
+  ) {
     return true;
   }
   return [
+    "pendiente de síntesis",
+    "pendiente de sintesis",
     "señal débil",
     "sin relevancia",
     "sin valor",

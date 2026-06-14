@@ -37,17 +37,12 @@ export type SignalPulseMoveCopy = {
 
 export function buildSignalPulseDeterministicRead(input: SignalPulseCopyInput): SignalPulseCopy {
   const territory = cleanTerritory(input.term || input.canonicalTitle);
-  const title = titleForSignal(territory, input);
-  const platformLabel = platformPhrase(input.platforms);
-  const evidenceLabel = evidencePhrase(input.mentionCount);
-  const sentimentLabel = sentimentPhrase(input.sentimentAvg);
-  const posture = postureFor(input);
 
   return {
-    title,
-    description: `${evidenceLabel} ${platformLabel} está empujando "${territory}" con tono ${sentimentLabel}. No es una conclusión de escritorio: sale de un cluster de menciones y debe leerse como territorio accionable del mes.`,
-    marketingRead: `${posture.read} El equipo puede convertirlo en una prueba concreta sin sobrerreaccionar: un hook, una pieza corta o una variante de pauta que mida respuesta real.`,
-    actionHint: posture.action,
+    title: `Cluster pendiente de síntesis: ${titleCase(territory)}`,
+    description: `${evidencePhrase(input.mentionCount)} ${platformPhrase(input.platforms)} agrupó conversación alrededor de "${territory}", pero todavía no hay una lectura editorial publicable.`,
+    marketingRead: "Pendiente de síntesis por Claude: este cluster no debe entrar al Pulse ni generar acciones hasta convertirse en una tensión, oportunidad o aprendizaje claro.",
+    actionHint: "Revisar muestras y sintetizar el porqué de la conversación antes de proponer contenido, pauta o claims.",
     interpretationSource: "deterministic_marketing_read_v2"
   };
 }
@@ -125,34 +120,6 @@ function defaultAction(moveType: string, territory: string) {
   if (moveType === "amplify") return `Amplificar "${territory}" con presupuesto controlado`;
   if (moveType === "monitor") return `Monitorear "${territory}" sin escalarlo todavía`;
   return `Convertir "${territory}" en contenido de prueba`;
-}
-
-function titleForSignal(territory: string, input: SignalPulseCopyInput) {
-  const core = titleCase(territory).replace(/^Territorio\s+/i, "");
-  if (input.signalType === "risk") return `Fricción: ${core}`;
-  if (input.signalType === "opportunity") return `Oportunidad: ${core}`;
-  if (input.rank <= 3) return `Prioridad: ${core}`;
-  return core;
-}
-
-function postureFor(input: SignalPulseCopyInput) {
-  const territory = cleanTerritory(input.term || input.canonicalTitle);
-  if (input.signalType === "risk" || (input.sentimentAvg ?? 0) < -0.12) {
-    return {
-      read: `La señal marca una fricción que conviene contener antes de amplificar el territorio.`,
-      action: `Preparar una respuesta de contenido que reduzca duda sobre "${territory}" y medir si baja la conversación negativa.`
-    };
-  }
-  if (input.signalType === "opportunity" || (input.sentimentAvg ?? 0) > 0.18) {
-    return {
-      read: `La señal trae energía positiva suficiente para probarla como ángulo creativo.`,
-      action: `Testear "${territory}" como claim o hook principal en una celda pequeña de contenido/pauta.`
-    };
-  }
-  return {
-    read: `La señal todavía no pide una apuesta grande; pide aprender rápido si el territorio mueve respuesta.`,
-    action: `Convertir "${territory}" en una prueba de bajo costo y comparar contra el mensaje base del mes.`
-  };
 }
 
 function evidencePhrase(count: number) {
