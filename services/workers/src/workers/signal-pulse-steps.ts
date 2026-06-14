@@ -110,6 +110,8 @@ const CLAUDE_NAMING_BATCH_SIZE = 4;
 const EMBEDDING_ANCHOR_LIMIT = 220;
 const EMBEDDING_NEIGHBORS_PER_ANCHOR = 36;
 const EMBEDDING_MIN_SIMILARITY = 0.74;
+const PERIOD_EMBEDDING_ANCHOR_LIMIT = 44;
+const PERIOD_EMBEDDING_NEIGHBORS_PER_ANCHOR = 24;
 const GLOBAL_CLUSTER_ROW_LIMIT = 6000;
 const PERIOD_CLUSTER_ROW_LIMIT = 1600;
 const PERIOD_CLUSTERS_PER_PERIOD = 1;
@@ -439,10 +441,15 @@ export async function signalPulseClusterJob(job: Job<SignalPulseStepJobData>) {
       `,
       [ctx.study_corpus_id]
     )).rows;
-    const embeddingClusters = await loadEmbeddingNeighborhoodClusters(ctx.study_corpus_id);
+    const embeddingClusters = (await loadEmbeddingNeighborhoodClusters({
+      corpusId: ctx.study_corpus_id,
+      anchorLimit: EMBEDDING_ANCHOR_LIMIT,
+      neighborLimit: EMBEDDING_NEIGHBORS_PER_ANCHOR
+    })).clusters;
     const rawGlobalClusters = (embeddingClusters.length > 0 ? embeddingClusters : buildCheapTermClusters(rows))
       .map((cluster) => ({ ...cluster, discovery_source: "global" as const }));
     const rawPeriodClusters = await loadPeriodFirstClusters(ctx.study_corpus_id);
+    const semanticPeriodClusters = rawPeriodClusters.filter((cluster) => cluster.algorithm === "semantic_embedding_neighborhood_v1");
     const globalClusters = rawGlobalClusters.filter(isActionableSignalPulseCluster);
     const periodClusters = rawPeriodClusters.filter(isActionableSignalPulseCluster);
     const clusters = selectPeriodFirstSignalPulseClusters({
@@ -456,15 +463,18 @@ export async function signalPulseClusterJob(job: Job<SignalPulseStepJobData>) {
     await mergeMeta(engineAnalysisId, {
       signal_pulse: {
         cluster: {
-          algorithm: periodClusters.length > 0
-            ? `${embeddingClusters.length > 0 ? "semantic_embedding_neighborhood_v1" : "term_cluster_v2_sql_materialized"}+period_first_candidates_v1`
-            : embeddingClusters.length > 0 ? "semantic_embedding_neighborhood_v1" : "term_cluster_v2_sql_materialized",
-          fallback_used: embeddingClusters.length === 0,
+          algorithm: signalPulseClusterAlgorithm({
+            globalSemanticClusters: embeddingClusters.length,
+            periodSemanticClusters: semanticPeriodClusters.length,
+            periodClusters: rawPeriodClusters.length
+          }),
+          fallback_used: embeddingClusters.length === 0 && semanticPeriodClusters.length === 0,
           cluster_first: true,
           per_mention_coding: false,
           clusters,
           global_candidate_clusters: globalClusters.length,
           period_first_candidate_clusters: periodClusters.length,
+          period_first_semantic_candidate_clusters: semanticPeriodClusters.length,
           excluded_candidate_clusters: (rawGlobalClusters.length + rawPeriodClusters.length) - (globalClusters.length + periodClusters.length),
           materialized_signals: signals.length
         },
@@ -489,17 +499,21 @@ export async function signalPulseClusterJob(job: Job<SignalPulseStepJobData>) {
         mentions_sampled: rows.length,
         global_candidate_clusters: globalClusters.length,
         period_first_candidate_clusters: periodClusters.length,
+        period_first_semantic_candidate_clusters: semanticPeriodClusters.length,
         excluded_candidate_clusters: (rawGlobalClusters.length + rawPeriodClusters.length) - (globalClusters.length + periodClusters.length)
       }
     });
     const next = await enqueueEngineStep({ engineAnalysisId, step: "sp_name_signals" });
     return {
       clusters: clusters.length,
-      algorithm: periodClusters.length > 0
-        ? `${embeddingClusters.length > 0 ? "semantic_embedding_neighborhood_v1" : "term_cluster_v2_sql_materialized"}+period_first_candidates_v1`
-        : embeddingClusters.length > 0 ? "semantic_embedding_neighborhood_v1" : "term_cluster_v2_sql_materialized",
+      algorithm: signalPulseClusterAlgorithm({
+        globalSemanticClusters: embeddingClusters.length,
+        periodSemanticClusters: semanticPeriodClusters.length,
+        periodClusters: rawPeriodClusters.length
+      }),
       global_candidate_clusters: globalClusters.length,
       period_first_candidate_clusters: periodClusters.length,
+      period_first_semantic_candidate_clusters: semanticPeriodClusters.length,
       excluded_candidate_clusters: (rawGlobalClusters.length + rawPeriodClusters.length) - (globalClusters.length + periodClusters.length),
       materialized_signals: signals.length,
       next_step_job_id: next.jobId
@@ -978,6 +992,28 @@ async function loadPeriodFirstClusters(corpusId: string): Promise<TermCluster[]>
   )).rows;
   const clusters: TermCluster[] = [];
   for (const period of periods) {
+    const semanticPeriod = await loadEmbeddingNeighborhoodClusters({
+      corpusId,
+      periodStart: period.period_start,
+      periodEnd: period.period_end,
+      anchorLimit: PERIOD_EMBEDDING_ANCHOR_LIMIT,
+      neighborLimit: PERIOD_EMBEDDING_NEIGHBORS_PER_ANCHOR
+    });
+    if (semanticPeriod.clusters.length > 0) {
+      clusters.push(...semanticPeriod.clusters
+        .slice(0, PERIOD_CLUSTERS_PER_PERIOD * 4)
+        .map((cluster) => ({
+          ...cluster,
+          discovery_source: "period_first" as const,
+          discovery_periods: [period.label],
+          max_period_mention_count: cluster.mention_count
+        })));
+      continue;
+    }
+    if (semanticPeriod.neighborhoodRows > 0) {
+      continue;
+    }
+
     const rows = (await pool.query<{
       id: string;
       text_clean: string;
@@ -2546,7 +2582,14 @@ async function loadSignalPeriodMentions(args: {
   };
 }
 
-async function loadEmbeddingNeighborhoodClusters(corpusId: string) {
+async function loadEmbeddingNeighborhoodClusters(args: {
+  corpusId: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  anchorLimit: number;
+  neighborLimit: number;
+  minSimilarity?: number;
+}): Promise<{ clusters: TermCluster[]; neighborhoodRows: number }> {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -2581,8 +2624,10 @@ async function loadEmbeddingNeighborhoodClusters(corpusId: string) {
             AND se.scope_type = 'mention'
             AND m.inclusion_status = 'included'
             AND length(m.text_clean) >= 24
-            AND (rb.min_start IS NULL OR m.published_at >= rb.min_start)
-            AND (rb.max_end IS NULL OR m.published_at < (rb.max_end + interval '1 day'))
+            AND (
+              ($5::date IS NOT NULL AND $6::date IS NOT NULL AND m.published_at >= $5::date AND m.published_at < ($6::date + interval '1 day'))
+              OR (($5::date IS NULL OR $6::date IS NULL) AND (rb.min_start IS NULL OR m.published_at >= rb.min_start) AND (rb.max_end IS NULL OR m.published_at < (rb.max_end + interval '1 day')))
+            )
           ORDER BY CASE WHEN mqs.id IS NOT NULL THEN 0 ELSE 1 END, m.published_at DESC
           LIMIT $2
         )
@@ -2609,8 +2654,10 @@ async function loadEmbeddingNeighborhoodClusters(corpusId: string) {
             AND se.scope_type = 'mention'
             AND m.inclusion_status = 'included'
             AND length(m.text_clean) >= 24
-            AND (rb.min_start IS NULL OR m.published_at >= rb.min_start)
-            AND (rb.max_end IS NULL OR m.published_at < (rb.max_end + interval '1 day'))
+            AND (
+              ($5::date IS NOT NULL AND $6::date IS NOT NULL AND m.published_at >= $5::date AND m.published_at < ($6::date + interval '1 day'))
+              OR (($5::date IS NULL OR $6::date IS NULL) AND (rb.min_start IS NULL OR m.published_at >= rb.min_start) AND (rb.max_end IS NULL OR m.published_at < (rb.max_end + interval '1 day')))
+            )
           ORDER BY se.embedding <=> anchors.embedding
           LIMIT $3
         ) neighbor ON true
@@ -2618,10 +2665,20 @@ async function loadEmbeddingNeighborhoodClusters(corpusId: string) {
         WHERE 1 - (neighbor.embedding <=> anchors.embedding) >= $4
         ORDER BY anchors.published_at DESC, anchors.anchor_id, neighbor.embedding <=> anchors.embedding
       `,
-      [corpusId, EMBEDDING_ANCHOR_LIMIT, EMBEDDING_NEIGHBORS_PER_ANCHOR, EMBEDDING_MIN_SIMILARITY]
+      [
+        args.corpusId,
+        args.anchorLimit,
+        args.neighborLimit,
+        args.minSimilarity ?? EMBEDDING_MIN_SIMILARITY,
+        args.periodStart ?? null,
+        args.periodEnd ?? null
+      ]
     )).rows;
     await client.query("COMMIT");
-    return buildEmbeddingNeighborhoodClusters(rows);
+    return {
+      clusters: buildEmbeddingNeighborhoodClusters(rows),
+      neighborhoodRows: rows.length
+    };
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;
@@ -2742,6 +2799,18 @@ function averageDelta(current: number, values: number[]) {
   const previousValues = values.slice(0, -1);
   const average = previousValues.reduce((sum, item) => sum + item, 0) / Math.max(1, previousValues.length);
   return round(current - average, 3);
+}
+
+function signalPulseClusterAlgorithm(args: {
+  globalSemanticClusters: number;
+  periodSemanticClusters: number;
+  periodClusters: number;
+}) {
+  const global = args.globalSemanticClusters > 0 ? "semantic_embedding_neighborhood_v1" : "term_cluster_v2_sql_materialized";
+  const period = args.periodClusters > 0
+    ? args.periodSemanticClusters > 0 ? "period_first_semantic_candidates_v1" : "period_first_term_candidates_v1"
+    : null;
+  return period ? `${global}+${period}` : global;
 }
 
 function moveTypeFor(lifecycle: string | null, impact: number, signalRole = "monitor") {

@@ -53,6 +53,8 @@ El payload publicado conserva `period_metrics` por señal. Las señales con acti
 
 El worker también materializa `report_periods` semanales (`granularity='week'`) y pasa `weekly_series`/`weekly_pattern` al naming de Claude. Por ahora las métricas publicables (`signal_period_metrics`, charts y gates de publicación) siguen usando meses para mantener estable el corte mensual; el plano semanal sirve para explicar picos, reactivaciones y caídas dentro del mes.
 
+La detección period-first también usa clustering semántico cuando existen embeddings de menciones. Antes el global path podía usar `semantic_embedding_neighborhood_v1`, pero los candidatos por mes caían a `term_cluster_v2`; eso reabría la puerta a anclas como `seguro` o `choque`. Ahora cada mes intenta vecindarios semánticos con límites acotados. Si el mes tiene embeddings pero no forma un vecindario suficiente, no se inventa un candidato barato de keyword; el fallback de términos sólo queda para periodos sin embeddings disponibles.
+
 Para evitar que el cruce dependa sólo de keywords, cada cluster recibe también:
 
 - `period_campaigns`: campañas, ads o piezas con pauta/performance en los meses donde el cluster estuvo activo.
@@ -229,12 +231,13 @@ Con eso, una señal de `paid_gap` produce una acción para Paid media + Creative
 3. Confirmar que el launch plan marca `Knowledge context` como aprobado: KB procesada o brief suficiente.
 4. Confirmar en `sp_readiness` que no aparecen `missing_knowledge_context`, `missing_semantic_mention_embeddings`, `missing_semantic_knowledge_embeddings` ni `missing_embedding_provider`.
 5. Confirmar en el ledger evento `sp_rag_context` y eventos `sp_name_signals`.
-6. Revisar que las señales publicables no sean keywords crudas como `Seguro`, `Choque`, `Aseguradora`.
-7. Revisar que cada señal mencione periodo actual o patrón de ventana cuando sea relevante.
-8. Revisar que `performance_connection` no fuerce causalidad.
-9. Revisar que `analysis_scope` distinga corte actual vs patrón de ventana.
-10. Revisar que `sp_rag_context` registre `marketing_activity_months` y `repeated_marketing_language` > 0 cuando haya performance/creativos.
-11. Revisar que los eventos `sp_name_signals` registren `knowledge_matches` y/o `conversation_matches` > 0 cuando haya embeddings.
-12. Revisar que `context_summary` esté persistido en cada señal publicable.
-13. Revisar que `evidence_basis` cite sample ids reales cuando Claude haya aplicado naming.
-14. Revisar que los moves salgan del `action_hint`, `signal_role` y `performance_connection`, no de plantilla genérica.
+6. Confirmar en `signal_pulse.cluster.algorithm` que aparece `semantic_embedding_neighborhood_v1` y, si entraron candidatos mensuales, `period_first_semantic_candidates_v1` cuando hay embeddings suficientes.
+7. Revisar que las señales publicables no sean keywords crudas como `Seguro`, `Choque`, `Aseguradora`.
+8. Revisar que cada señal mencione periodo actual o patrón de ventana cuando sea relevante.
+9. Revisar que `performance_connection` no fuerce causalidad.
+10. Revisar que `analysis_scope` distinga corte actual vs patrón de ventana.
+11. Revisar que `sp_rag_context` registre `marketing_activity_months` y `repeated_marketing_language` > 0 cuando haya performance/creativos.
+12. Revisar que los eventos `sp_name_signals` registren `knowledge_matches` y/o `conversation_matches` > 0 cuando haya embeddings.
+13. Revisar que `context_summary` esté persistido en cada señal publicable.
+14. Revisar que `evidence_basis` cite sample ids reales cuando Claude haya aplicado naming.
+15. Revisar que los moves salgan del `action_hint`, `signal_role` y `performance_connection`, no de plantilla genérica.
