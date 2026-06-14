@@ -298,6 +298,35 @@ test("Signal Pulse Claude naming prompt uses marketing-first RAG context, not T&
               channels: ["paid"]
             }
           ],
+          period_campaigns: [
+            {
+              period_label: "2026-05",
+              period_start: "2026-05-01",
+              period_end: "2026-05-31",
+              platform: "meta",
+              channel: "paid",
+              entity_kind: "campaign",
+              entity_name: "Confianza auto",
+              objective: "traffic",
+              spend: 1200,
+              impressions: 88000,
+              clicks: 940,
+              engagement: 1800,
+              avg_ctr: 0.012,
+              records: 42
+            }
+          ],
+          performance_events: [
+            {
+              month: "2026-05",
+              metric: "engagement",
+              current_value: 1800,
+              previous_value: 900,
+              delta_abs: 900,
+              delta_pct: 100,
+              direction: "up"
+            }
+          ],
           matching_creatives: [
             {
               record_date: "2026-05-10",
@@ -361,6 +390,8 @@ test("Signal Pulse Claude naming prompt uses marketing-first RAG context, not T&
   assert.match(prompt, /performance_records/);
   assert.match(prompt, /Riesgo creativo/);
   assert.match(prompt, /Gap de pauta/);
+  assert.match(prompt, /Confianza auto/);
+  assert.match(prompt, /engagement/);
   assert.match(prompt, /Brief mayo/);
   assert.match(prompt, /2026-05/);
   assert.match(prompt, /no_connection/);

@@ -84,6 +84,31 @@ export type SignalPulseClusterPromptContext = {
   weekly_pattern?: SignalPulseWindowPattern;
   performance_context: {
     active_months: Array<SignalPulseMarketingContext["performance_window"][number]>;
+    period_campaigns: Array<{
+      period_label: string;
+      period_start: string;
+      period_end: string;
+      platform: string;
+      channel: string;
+      entity_kind: string;
+      entity_name: string | null;
+      objective: string | null;
+      spend: number;
+      impressions: number;
+      clicks: number;
+      engagement: number;
+      avg_ctr: number | null;
+      records: number;
+    }>;
+    performance_events: Array<{
+      month: string;
+      metric: string;
+      current_value: number;
+      previous_value: number;
+      delta_abs: number;
+      delta_pct: number | null;
+      direction: "up" | "down" | "flat";
+    }>;
     matching_creatives: Array<{
       record_date: string;
       platform: string;
@@ -166,7 +191,15 @@ export async function loadSignalPulseClusterPromptContext(args: {
 
   const windowPattern = summarizeWindowPattern(periodSeries);
   const weeklyPattern = summarizeWindowPattern(weeklySeries);
-  const activeMonths = new Set(periodSeries.filter((period) => period.volume > 0).map((period) => period.label));
+  const activeMonthLabels = periodSeries.filter((period) => period.volume > 0).map((period) => period.label);
+  const activeMonths = new Set(activeMonthLabels);
+  const [periodCampaigns, performanceEvents] = await Promise.all([
+    loadPeriodCampaignContext({
+      corpusId: args.ctx.study_corpus_id,
+      periodLabels: activeMonthLabels
+    }),
+    Promise.resolve(summarizePerformanceEvents(args.marketingContext.performance_window, activeMonthLabels))
+  ]);
   return {
     period_series: periodSeries,
     weekly_series: weeklySeries,
@@ -174,6 +207,8 @@ export async function loadSignalPulseClusterPromptContext(args: {
     weekly_pattern: weeklyPattern,
     performance_context: {
       active_months: args.marketingContext.performance_window.filter((month) => activeMonths.has(month.month)),
+      period_campaigns: periodCampaigns,
+      performance_events: performanceEvents,
       matching_creatives: matchingCreatives
     },
     knowledge_matches: knowledgeMatches
@@ -465,6 +500,113 @@ async function loadMatchingCreatives(args: {
   }));
 }
 
+async function loadPeriodCampaignContext(args: {
+  corpusId: string;
+  periodLabels: string[];
+}): Promise<SignalPulseClusterPromptContext["performance_context"]["period_campaigns"]> {
+  const labels = Array.from(new Set(args.periodLabels.filter(Boolean))).slice(0, 12);
+  if (labels.length === 0) return [];
+  const rows = (await pool.query<{
+    period_label: string;
+    period_start: string;
+    period_end: string;
+    platform: string;
+    channel: string;
+    entity_kind: string;
+    entity_name: string | null;
+    objective: string | null;
+    spend: string | null;
+    impressions: string | null;
+    clicks: string | null;
+    engagement: string | null;
+    avg_ctr: string | null;
+    records: number;
+  }>(
+    `
+      WITH selected_periods AS (
+        SELECT label, period_start, period_end
+        FROM report_periods
+        WHERE study_corpus_id = $1
+          AND granularity = 'month'
+          AND label = ANY($2::text[])
+      )
+      SELECT
+        sp.label AS period_label,
+        sp.period_start::text,
+        sp.period_end::text,
+        pr.platform,
+        pr.channel,
+        pr.entity_kind,
+        COALESCE(pr.entity_name, pr.external_id) AS entity_name,
+        pr.objective,
+        COALESCE(SUM(pr.spend), 0)::text AS spend,
+        COALESCE(SUM(pr.impressions), 0)::text AS impressions,
+        COALESCE(SUM(pr.clicks), 0)::text AS clicks,
+        COALESCE(SUM(pr.engagement), 0)::text AS engagement,
+        AVG(pr.ctr)::text AS avg_ctr,
+        COUNT(pr.id)::int AS records
+      FROM selected_periods sp
+      JOIN performance_records pr
+        ON pr.study_corpus_id = $1
+       AND pr.record_date >= sp.period_start
+       AND pr.record_date <= sp.period_end
+      GROUP BY sp.label, sp.period_start, sp.period_end, pr.platform, pr.channel, pr.entity_kind, pr.entity_name, pr.external_id, pr.objective
+      ORDER BY sp.period_start DESC, COALESCE(SUM(pr.spend), 0) DESC, COALESCE(SUM(pr.impressions), 0) DESC, COALESCE(SUM(pr.engagement), 0) DESC
+      LIMIT 24
+    `,
+    [args.corpusId, labels]
+  )).rows;
+  return rows.map((row) => ({
+    period_label: row.period_label,
+    period_start: row.period_start,
+    period_end: row.period_end,
+    platform: row.platform,
+    channel: row.channel,
+    entity_kind: row.entity_kind,
+    entity_name: row.entity_name,
+    objective: row.objective,
+    spend: Number(row.spend ?? 0),
+    impressions: Number(row.impressions ?? 0),
+    clicks: Number(row.clicks ?? 0),
+    engagement: Number(row.engagement ?? 0),
+    avg_ctr: numberOrNull(row.avg_ctr),
+    records: Number(row.records ?? 0)
+  }));
+}
+
+function summarizePerformanceEvents(
+  performanceWindow: SignalPulseMarketingContext["performance_window"],
+  periodLabels: string[]
+): SignalPulseClusterPromptContext["performance_context"]["performance_events"] {
+  const labels = new Set(periodLabels);
+  const events: SignalPulseClusterPromptContext["performance_context"]["performance_events"] = [];
+  for (let index = 0; index < performanceWindow.length; index += 1) {
+    const current = performanceWindow[index];
+    if (!current || !labels.has(current.month)) continue;
+    const previous = performanceWindow[index - 1] ?? null;
+    for (const metric of ["spend", "impressions", "clicks", "engagement", "avg_ctr"] as const) {
+      const currentValue = Number(current[metric] ?? 0);
+      const previousValue = Number(previous?.[metric] ?? 0);
+      if (!Number.isFinite(currentValue) || !Number.isFinite(previousValue)) continue;
+      const deltaAbs = round(currentValue - previousValue, metric === "avg_ctr" ? 5 : 2);
+      if (deltaAbs === 0) continue;
+      const deltaPct = previousValue !== 0 ? round((deltaAbs / previousValue) * 100, 2) : null;
+      events.push({
+        month: current.month,
+        metric,
+        current_value: currentValue,
+        previous_value: previousValue,
+        delta_abs: deltaAbs,
+        delta_pct: deltaPct,
+        direction: deltaAbs > 0 ? "up" : "down"
+      });
+    }
+  }
+  return events
+    .sort((a, b) => Math.abs(b.delta_pct ?? b.delta_abs) - Math.abs(a.delta_pct ?? a.delta_abs))
+    .slice(0, 12);
+}
+
 function buildMarketingBrief(analysisPlan: Record<string, unknown> | null, params: Record<string, unknown> | null) {
   const plan = recordValue(analysisPlan);
   const marketingBrief = recordValue(plan.marketing_brief);
@@ -530,6 +672,11 @@ function recordValue(value: unknown): Record<string, unknown> {
 function numberOrNull(value: unknown) {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function round(value: number, digits = 2) {
+  const factor = 10 ** digits;
+  return Math.round(value * factor) / factor;
 }
 
 function normalizeText(value: string) {

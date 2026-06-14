@@ -13,6 +13,8 @@ Signal Pulse dejó de tratar el corte mensual como análisis aislado. El worker 
 - performance mensual de la ventana (`performance_records`);
 - serie mensual por cluster antes del naming;
 - serie semanal por cluster antes del naming cuando hay cobertura suficiente;
+- campañas/creativos/performance activos en los periodos donde vive el cluster;
+- eventos de performance calculados por delta contra el periodo previo;
 - contexto de creativos/performance que matchean el territorio del cluster;
 - evidence snippets acotados por cluster.
 
@@ -28,6 +30,14 @@ Signal Pulse ahora separa dos planos:
 El payload publicado conserva `period_metrics` por señal. Las señales con actividad histórica pueden existir en el payload aunque estén inactivas en el corte actual; el API publicado filtra por el mes más reciente por default para no contaminar el reporte mensual.
 
 El worker también materializa `report_periods` semanales (`granularity='week'`) y pasa `weekly_series`/`weekly_pattern` al naming de Claude. Por ahora las métricas publicables (`signal_period_metrics`, charts y gates de publicación) siguen usando meses para mantener estable el corte mensual; el plano semanal sirve para explicar picos, reactivaciones y caídas dentro del mes.
+
+Para evitar que el cruce dependa sólo de keywords, cada cluster recibe también:
+
+- `period_campaigns`: campañas, ads o piezas con pauta/performance en los meses donde el cluster estuvo activo.
+- `performance_events`: cambios estructurados de spend, impressions, clicks, engagement y CTR contra el mes previo.
+- `matching_creatives`: creativos cuyo texto sí matchea el territorio del cluster.
+
+Claude debe usar estos datos para interpretar o descartar conexión; no puede declarar causalidad si la evidencia no lo sostiene.
 
 Para exploración/dashboard, los endpoints publicados aceptan filtros:
 
