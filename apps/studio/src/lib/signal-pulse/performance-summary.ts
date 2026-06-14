@@ -245,7 +245,7 @@ function scoreOrganicSignal(signal: PulseOrganicPaidSignalInput, campaigns: Arra
     : confidence.includes("media") || confidence.includes("medium")
       ? 12
       : 5;
-  const lifecycleScore = lifecycle.includes("accelerating") || lifecycle.includes("creciendo") || lifecycle.includes("emerging")
+  const lifecycleScore = lifecycle.includes("accelerating") || lifecycle.includes("creciendo") || lifecycle.includes("emerging") || lifecycle.includes("reappeared")
     ? 14
     : lifecycle.includes("new") || lifecycle.includes("nueva")
       ? 10

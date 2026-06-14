@@ -27,6 +27,7 @@ test("impact_v1 uses the closed weighted formula and clamps inputs", () => {
 
 test("Signal Pulse lifecycle classifies basic monthly movement", () => {
   assert.equal(classifySignalPulseLifecycle({ currentVolume: 20, previousVolume: 0, periodsSeen: 1 }), "new");
+  assert.equal(classifySignalPulseLifecycle({ currentVolume: 18, previousVolume: 0, periodsSeen: 3 }), "reappeared");
   assert.equal(classifySignalPulseLifecycle({ currentVolume: 30, previousVolume: 10, periodsSeen: 4 }), "accelerating");
   assert.equal(classifySignalPulseLifecycle({ currentVolume: 4, previousVolume: 12, periodsSeen: 5 }), "declining");
   assert.equal(classifySignalPulseLifecycle({ currentVolume: 10, previousVolume: 11, periodsSeen: 5, volatility: 0.9 }), "volatile");

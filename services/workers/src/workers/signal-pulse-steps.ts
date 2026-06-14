@@ -21,6 +21,7 @@ import {
 import { safeJsonStringifyForPostgres } from "./postgres-json";
 import {
   buildEmbeddingNeighborhoodClusters,
+  selectPeriodFirstSignalPulseClusters,
   type EmbeddingNeighborhoodRow,
   type TermCluster
 } from "./signal-pulse-clustering";
@@ -80,6 +81,9 @@ const MAX_EVIDENCE_PER_SIGNAL = 8;
 const EMBEDDING_ANCHOR_LIMIT = 220;
 const EMBEDDING_NEIGHBORS_PER_ANCHOR = 36;
 const EMBEDDING_MIN_SIMILARITY = 0.74;
+const GLOBAL_CLUSTER_ROW_LIMIT = 6000;
+const PERIOD_CLUSTER_ROW_LIMIT = 1600;
+const PERIOD_CLUSTERS_PER_PERIOD = 2;
 
 export async function signalPulseReadinessJob(job: Job<SignalPulseStepJobData>) {
   return runSignalPulseStep(job, async ({ engineAnalysisId, pipelineStepId }) => {
@@ -278,34 +282,55 @@ export async function signalPulseClusterJob(job: Job<SignalPulseStepJobData>) {
           AND m.inclusion_status = 'included'
           AND length(m.text_clean) >= 24
         ORDER BY CASE WHEN mqs.id IS NOT NULL THEN 0 ELSE 1 END, m.published_at DESC
-        LIMIT 6000
+        LIMIT ${GLOBAL_CLUSTER_ROW_LIMIT}
       `,
       [ctx.study_corpus_id]
     )).rows;
     const embeddingClusters = await loadEmbeddingNeighborhoodClusters(ctx.study_corpus_id);
-    const clusters = (embeddingClusters.length > 0 ? embeddingClusters : buildCheapTermClusters(rows))
-      .slice(0, MAX_SIGNAL_CLUSTERS);
+    const globalClusters = (embeddingClusters.length > 0 ? embeddingClusters : buildCheapTermClusters(rows))
+      .map((cluster) => ({ ...cluster, discovery_source: "global" as const }));
+    const periodClusters = await loadPeriodFirstClusters(ctx.study_corpus_id);
+    const clusters = selectPeriodFirstSignalPulseClusters({
+      globalClusters,
+      periodClusters,
+      maxClusters: MAX_SIGNAL_CLUSTERS,
+      perPeriod: PERIOD_CLUSTERS_PER_PERIOD
+    });
     const signals = await materializeCanonicalSignals({ ctx, engineAnalysisId, clusters });
     await mergeMeta(engineAnalysisId, {
       signal_pulse: {
         cluster: {
-          algorithm: embeddingClusters.length > 0 ? "semantic_embedding_neighborhood_v1" : "term_cluster_v2_sql_materialized",
+          algorithm: periodClusters.length > 0
+            ? `${embeddingClusters.length > 0 ? "semantic_embedding_neighborhood_v1" : "term_cluster_v2_sql_materialized"}+period_first_candidates_v1`
+            : embeddingClusters.length > 0 ? "semantic_embedding_neighborhood_v1" : "term_cluster_v2_sql_materialized",
           fallback_used: embeddingClusters.length === 0,
           cluster_first: true,
           per_mention_coding: false,
           clusters,
+          global_candidate_clusters: globalClusters.length,
+          period_first_candidate_clusters: periodClusters.length,
           materialized_signals: signals.length
         }
       }
     });
     await markEngineStepCompleted({
       pipelineStepId,
-      resultSummary: { clusters: clusters.length, materialized_signals: signals.length, mentions_sampled: rows.length }
+      resultSummary: {
+        clusters: clusters.length,
+        materialized_signals: signals.length,
+        mentions_sampled: rows.length,
+        global_candidate_clusters: globalClusters.length,
+        period_first_candidate_clusters: periodClusters.length
+      }
     });
     const next = await enqueueEngineStep({ engineAnalysisId, step: "sp_name_signals" });
     return {
       clusters: clusters.length,
-      algorithm: embeddingClusters.length > 0 ? "semantic_embedding_neighborhood_v1" : "term_cluster_v2_sql_materialized",
+      algorithm: periodClusters.length > 0
+        ? `${embeddingClusters.length > 0 ? "semantic_embedding_neighborhood_v1" : "term_cluster_v2_sql_materialized"}+period_first_candidates_v1`
+        : embeddingClusters.length > 0 ? "semantic_embedding_neighborhood_v1" : "term_cluster_v2_sql_materialized",
+      global_candidate_clusters: globalClusters.length,
+      period_first_candidate_clusters: periodClusters.length,
       materialized_signals: signals.length,
       next_step_job_id: next.jobId
     };
@@ -652,7 +677,7 @@ async function materializeCanonicalSignals(args: {
         FROM mentions
         WHERE id = ANY($1::uuid[])
       `,
-      [cluster.sample_mention_ids]
+      [cluster.member_mention_ids.length > 0 ? cluster.member_mention_ids : cluster.sample_mention_ids]
     );
     const result = await pool.query<{ id: string }>(
       `
@@ -708,7 +733,10 @@ async function materializeCanonicalSignals(args: {
           platforms: cluster.platforms,
           engagement_sum: cluster.engagement_sum,
           sentiment_avg: cluster.sentiment_avg,
-          cluster_first: true
+          cluster_first: true,
+          discovery_source: cluster.discovery_source ?? "global",
+          discovery_periods: cluster.discovery_periods ?? [],
+          max_period_mention_count: cluster.max_period_mention_count ?? cluster.mention_count
         }),
         firstLast.rows[0]?.first_seen,
         firstLast.rows[0]?.last_seen
@@ -729,6 +757,65 @@ async function materializeCanonicalSignals(args: {
     });
   }
   return materialized;
+}
+
+async function loadPeriodFirstClusters(corpusId: string): Promise<TermCluster[]> {
+  const periods = (await pool.query<{ label: string; period_start: string; period_end: string }>(
+    `SELECT label, period_start::text, period_end::text
+     FROM report_periods
+     WHERE study_corpus_id = $1 AND granularity = 'month'
+     ORDER BY period_start`,
+    [corpusId]
+  )).rows;
+  const clusters: TermCluster[] = [];
+  for (const period of periods) {
+    const rows = (await pool.query<{
+      id: string;
+      text_clean: string;
+      platform: string | null;
+      sentiment_score: string | null;
+      engagement_score: string | null;
+    }>(
+      `
+        SELECT
+          m.id::text,
+          m.text_clean,
+          COALESCE(m.resolved_platform, m.platform) AS platform,
+          m.sentiment_score::text,
+          CASE
+            WHEN COALESCE(m.engagement->>'total', m.engagement->>'interactions', m.engagement->>'engagement', '') ~ '^-?[0-9]+(\\.[0-9]+)?$'
+            THEN COALESCE(m.engagement->>'total', m.engagement->>'interactions', m.engagement->>'engagement')::numeric
+            ELSE 0
+          END::text AS engagement_score
+        FROM mentions m
+        LEFT JOIN mention_query_sources mqs ON mqs.mention_id = m.id AND mqs.lens_slug = 'signal-pulse'
+        WHERE m.study_corpus_id = $1
+          AND m.inclusion_status = 'included'
+          AND m.published_at >= $2::date
+          AND m.published_at < ($3::date + interval '1 day')
+          AND length(m.text_clean) >= 24
+        ORDER BY CASE WHEN mqs.id IS NOT NULL THEN 0 ELSE 1 END,
+                 CASE
+                   WHEN COALESCE(m.engagement->>'total', m.engagement->>'interactions', m.engagement->>'engagement', '') ~ '^-?[0-9]+(\\.[0-9]+)?$'
+                   THEN COALESCE(m.engagement->>'total', m.engagement->>'interactions', m.engagement->>'engagement')::numeric
+                   ELSE 0
+                 END DESC,
+                 m.published_at DESC
+        LIMIT ${PERIOD_CLUSTER_ROW_LIMIT}
+      `,
+      [corpusId, period.period_start, period.period_end]
+    )).rows;
+    const periodClusters = buildCheapTermClusters(rows)
+      .slice(0, PERIOD_CLUSTERS_PER_PERIOD * 4)
+      .map((cluster) => ({
+        ...cluster,
+        discovery_source: "period_first" as const,
+        discovery_periods: [period.label],
+        max_period_mention_count: cluster.mention_count
+      }));
+    clusters.push(...periodClusters);
+  }
+  return clusters;
 }
 
 async function materializePeriodMetrics(args: {
@@ -1727,7 +1814,7 @@ async function loadSignalPeriodMentions(args: {
           AND (
             (cardinality($5::uuid[]) > 0 AND m.id = ANY($5::uuid[]))
             OR
-            (cardinality($5::uuid[]) = 0 AND translate(lower(m.text_clean), 'áéíóúüñ', 'aeiouun') LIKE lower($4))
+            translate(lower(m.text_clean), 'áéíóúüñ', 'aeiouun') LIKE lower($4)
           )
       ),
       source_counts AS (
@@ -1935,7 +2022,7 @@ function averageDelta(current: number, values: number[]) {
 }
 
 function moveTypeFor(lifecycle: string | null, impact: number) {
-  if (lifecycle === "emerging") return "test_claim";
+  if (lifecycle === "emerging" || lifecycle === "reappeared") return "test_claim";
   if (lifecycle === "rising" || impact >= 65) return "amplify";
   if (lifecycle === "declining") return "monitor";
   return "create_content";

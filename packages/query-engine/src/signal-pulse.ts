@@ -12,7 +12,7 @@ export type ImpactV1Input = {
   temporalConsistency: number;
 };
 
-export type SignalPulseLifecycle = "new" | "emerging" | "accelerating" | "mature" | "declining" | "dormant" | "volatile";
+export type SignalPulseLifecycle = "new" | "emerging" | "reappeared" | "accelerating" | "mature" | "declining" | "dormant" | "volatile";
 
 export function buildMonthlyReportPeriods(args: {
   windowEnd: string | Date;
@@ -62,6 +62,7 @@ export function classifySignalPulseLifecycle(args: {
   if (current === 0) return "dormant";
   if (volatility >= 0.7 && periodsSeen >= 3) return "volatile";
   if (previous === 0 && periodsSeen <= 1) return "new";
+  if (previous === 0 && periodsSeen > 1) return "reappeared";
   if (previous === 0) return "emerging";
   if (current >= previous * 1.5) return "accelerating";
   if (current <= previous * 0.55) return "declining";

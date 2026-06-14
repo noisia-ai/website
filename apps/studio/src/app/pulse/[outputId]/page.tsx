@@ -859,6 +859,7 @@ function labelLifecycle(value: string) {
   const labels: Record<string, string> = {
     new: "Nueva",
     emerging: "Emergente",
+    reappeared: "Reaparece",
     accelerating: "Creciendo",
     mature: "Persistente",
     declining: "Cayendo",

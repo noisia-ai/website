@@ -101,8 +101,8 @@ function noGoFor(input: SignalPulseMoveInput, urgencyReason: string) {
 }
 
 function urgencyFor(input: SignalPulseMoveInput) {
-  if (input.lifecycle === "emerging") {
-    return { timing: "esta semana", reason: "la señal está emergiendo y necesita validación rápida" };
+  if (input.lifecycle === "emerging" || input.lifecycle === "reappeared") {
+    return { timing: "esta semana", reason: input.lifecycle === "reappeared" ? "la señal reapareció y necesita validación rápida" : "la señal está emergiendo y necesita validación rápida" };
   }
   if (input.lifecycle === "rising" || input.impact >= 65) {
     return { timing: "este mes", reason: "la señal ya trae momentum suficiente para una prueba visible" };

@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   buildEmbeddingNeighborhoodClusters,
+  selectPeriodFirstSignalPulseClusters,
   selectSignalPulseClusterPhrase,
   type EmbeddingNeighborhoodRow
 } from "./signal-pulse-clustering";
@@ -46,6 +47,33 @@ test("Signal Pulse semantic phrase selection prefers repeated marketing language
 
   assert.match(phrase, /crujiente/);
   assert.doesNotMatch(phrase, /para/);
+});
+
+test("Signal Pulse period-first selection keeps a month-specific signal outside the global top", () => {
+  const globalClusters = Array.from({ length: 6 }, (_, index) => cluster({
+    term: `global ${index}`,
+    mentionCount: 100 - index,
+    memberIds: [`g${index}-1`, `g${index}-2`, `g${index}-3`, `g${index}-4`],
+    source: "global"
+  }));
+  const januarySpike = cluster({
+    term: "renovacion enero urgente",
+    mentionCount: 9,
+    memberIds: ["jan-1", "jan-2", "jan-3", "jan-4", "jan-5", "jan-6", "jan-7", "jan-8", "jan-9"],
+    source: "period_first",
+    periods: ["2025-01"]
+  });
+
+  const selected = selectPeriodFirstSignalPulseClusters({
+    globalClusters,
+    periodClusters: [januarySpike],
+    maxClusters: 4,
+    perPeriod: 1
+  });
+
+  assert.equal(selected.some((item) => item.term === "renovacion enero urgente"), true);
+  assert.equal(selected.length, 4);
+  assert.deepEqual(selected.find((item) => item.term === "renovacion enero urgente")?.discovery_periods, ["2025-01"]);
 });
 
 test("Signal Pulse deterministic copy sounds like a marketing read, not a placeholder", () => {
@@ -181,4 +209,26 @@ function row(
   similarity: string
 ): EmbeddingNeighborhoodRow {
   return { anchor_id, mention_id, text_clean, platform, sentiment_score, engagement_score, similarity };
+}
+
+function cluster(args: {
+  term: string;
+  mentionCount: number;
+  memberIds: string[];
+  source: "global" | "period_first";
+  periods?: string[];
+}) {
+  return {
+    term: args.term,
+    mention_count: args.mentionCount,
+    platforms: ["tiktok"],
+    member_mention_ids: args.memberIds,
+    sample_mention_ids: args.memberIds.slice(0, 4),
+    sentiment_avg: 0.1,
+    engagement_sum: args.mentionCount * 2,
+    algorithm: "term_cluster_v2" as const,
+    discovery_source: args.source,
+    discovery_periods: args.periods ?? [],
+    max_period_mention_count: args.periods?.length ? args.mentionCount : undefined
+  };
 }
