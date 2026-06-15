@@ -23,6 +23,7 @@ import { chooseSignalPulseWindowEnd } from "./signal-pulse-window";
 import { summarizeSignalPulseMarketingActivity } from "./signal-pulse-marketing-activity";
 import { rankSignalPulseMarketingRecordsForCluster } from "./signal-pulse-marketing-record-match";
 import { buildSignalPulsePatternFlags, type SignalPulsePatternSeriesPoint, type SignalPulsePatternWindow } from "./signal-pulse-pattern-flags";
+import { buildSignalPulseSourceHealth } from "./signal-pulse-source-health";
 
 test("Signal Pulse embedding clusters group semantic neighborhoods without reusing mentions", () => {
   const rows: EmbeddingNeighborhoodRow[] = [
@@ -170,6 +171,98 @@ test("Signal Pulse deterministic copy never turns risk clusters into publishable
   assert.equal(directional.title, "Cluster pendiente de síntesis: Merch Especial");
   assert.match(directional.description, /apenas alcanzan para monitoreo/);
   assert.match(directional.actionHint, /sintetizar/);
+});
+
+test("Signal Pulse source health makes coverage gaps explicit for Claude", () => {
+  const health = buildSignalPulseSourceHealth({
+    expectedMonths: 12,
+    knowledgeSources: 0,
+    marketingBrief: { objective: "Entender si pauta y conversación se cruzan." },
+    performanceWindow: [
+      { month: "2026-05", records: 6, spend: 100, impressions: 1000, clicks: 10, engagement: 40, avg_ctr: 0.01, platforms: ["meta"], channels: ["paid"] }
+    ],
+    structuredSourceWindow: [
+      {
+        month: "2026-05",
+        source_type: "social_performance",
+        provider: "meta",
+        channel: "paid",
+        records: 6,
+        metrics: { spend: 100, impressions: 1000, clicks: 10 },
+        entity_kinds: ["campaign"],
+        objectives: ["traffic"],
+        sample_entities: ["Confianza mayo"],
+        sample_texts: ["Seguro con respuesta rápida"]
+      }
+    ],
+    semanticCoverage: { semanticMentions: 0, semanticKnowledgeChunks: 0 },
+    semanticAvailable: true
+  });
+
+  assert.equal(health.expected_months, 12);
+  assert.equal(health.performance.records, 6);
+  assert.equal(health.performance.months_with_records, 1);
+  assert.equal(health.performance.missing_months_estimate, 11);
+  assert.equal(health.performance.has_paid, true);
+  assert.equal(health.performance.has_organic, false);
+  assert.equal(health.knowledge.ready, false);
+  assert.equal(health.conversation.ready, false);
+  assert.ok(health.gaps.includes("partial_performance_window"));
+  assert.ok(health.gaps.includes("missing_organic_source"));
+  assert.ok(health.gaps.includes("missing_knowledge_context"));
+  assert.ok(health.gaps.includes("missing_semantic_mention_embeddings"));
+});
+
+test("Signal Pulse source health accepts rich brief and paid plus organic coverage", () => {
+  const health = buildSignalPulseSourceHealth({
+    expectedMonths: 2,
+    knowledgeSources: 0,
+    marketingBrief: {
+      objective: "Encontrar aprendizajes accionables para siguiente pauta.",
+      brand_context: "Marca regional con necesidad de defender claridad y confianza.",
+      active_campaigns: ["Confianza auto"],
+      target_audience: "Personas renovando seguro de auto."
+    },
+    performanceWindow: [
+      { month: "2026-04", records: 4, spend: 0, impressions: 500, clicks: 5, engagement: 30, avg_ctr: 0.01, platforms: ["instagram"], channels: ["organic"] },
+      { month: "2026-05", records: 7, spend: 100, impressions: 1000, clicks: 10, engagement: 40, avg_ctr: 0.01, platforms: ["meta"], channels: ["paid"] }
+    ],
+    structuredSourceWindow: [
+      {
+        month: "2026-04",
+        source_type: "social_performance",
+        provider: "instagram",
+        channel: "organic",
+        records: 4,
+        metrics: { engagement: 30 },
+        entity_kinds: ["post"],
+        objectives: [],
+        sample_entities: ["Post claridad"],
+        sample_texts: ["Cómo funciona la cobertura"]
+      },
+      {
+        month: "2026-05",
+        source_type: "social_performance",
+        provider: "meta",
+        channel: "paid",
+        records: 7,
+        metrics: { spend: 100, impressions: 1000, clicks: 10 },
+        entity_kinds: ["campaign"],
+        objectives: ["traffic"],
+        sample_entities: ["Confianza mayo"],
+        sample_texts: ["Seguro con respuesta rápida"]
+      }
+    ],
+    semanticCoverage: { semanticMentions: 120, semanticKnowledgeChunks: 0 },
+    semanticAvailable: true
+  });
+
+  assert.equal(health.performance.missing_months_estimate, 0);
+  assert.equal(health.performance.has_paid, true);
+  assert.equal(health.performance.has_organic, true);
+  assert.equal(health.knowledge.ready, true);
+  assert.equal(health.conversation.ready, true);
+  assert.deepEqual(health.gaps, []);
 });
 
 test("Signal Pulse accepts raw cluster anchors but still identifies raw output phrases", () => {
@@ -1136,6 +1229,31 @@ test("Signal Pulse Claude naming prompt uses marketing-first RAG context, not T&
         example_creatives: ["Seguro de auto con respuesta rapida"]
       }
     ],
+    source_health: {
+      expected_months: 12,
+      performance: {
+        records: 42,
+        months_with_records: 1,
+        missing_months_estimate: 11,
+        source_types: ["social_performance"],
+        providers: ["meta"],
+        channels: ["paid"],
+        has_paid: true,
+        has_organic: false
+      },
+      knowledge: {
+        sources: 1,
+        semantic_chunks: 8,
+        marketing_brief_signals: 3,
+        ready: true
+      },
+      conversation: {
+        semantic_mentions: 1200,
+        semantic_available: true,
+        ready: true
+      },
+      gaps: ["partial_performance_window", "missing_organic_source"]
+    },
     rag: {
       semantic_available: true,
       embedding_model: "voyage-4-large",
@@ -1153,6 +1271,8 @@ test("Signal Pulse Claude naming prompt uses marketing-first RAG context, not T&
   assert.match(prompt, /structured_source_window/);
   assert.match(prompt, /structured_source_events/);
   assert.match(prompt, /matching_structured_sources/);
+  assert.match(prompt, /source_health/);
+  assert.match(prompt, /missing_organic_source/);
   assert.match(prompt, /period_relation/);
   assert.match(prompt, /repeated_marketing_language/);
   assert.match(prompt, /conversation_matches/);

@@ -82,6 +82,7 @@ Para evitar que el cruce dependa sólo de keywords, cada cluster recibe también
 - `knowledge_matches`: chunks de KB recuperados semánticamente con el query del cluster + brief + actividad de marketing.
 - `conversation_matches`: menciones relacionadas recuperadas por embeddings, con `mention_id`, plataforma, fecha, periodo y similitud.
 - `investigation_brief`: síntesis pre-LLM del caso por cluster, separando corte actual, patrón de ventana, picos semanales, intersecciones de marketing/performance y mapa de evidencia.
+- `source_health`: mapa de cobertura previo a la síntesis: meses esperados, meses con performance, registros, `source_types`, providers, channels, paid/orgánico, KB/brief, embeddings de conversación y `gaps` como `partial_performance_window`, `missing_paid_source`, `missing_organic_source`, `missing_knowledge_context`, `missing_semantic_mention_embeddings` o `missing_semantic_knowledge_embeddings`.
 
 Claude debe usar estos datos para interpretar o descartar conexión; no puede declarar causalidad si la evidencia no lo sostiene.
 
@@ -90,8 +91,11 @@ Además, el contexto global de la corrida incluye:
 - `marketing_activity_window`: meses con performance, canales, objetivos, top campañas/piezas y ejemplos de creative text.
 - `structured_source_window`: meses/fuentes/proveedores/canales con métricas normalizadas desde tablas estructuradas. No son mentions ni texto libre; son el mapa de dónde hubo pauta, orgánico, search, reviews, ecomm, ventas u otros datos operativos.
 - `repeated_marketing_language`: frases de 2-4 tokens repetidas en creativos/campañas/objetivos a lo largo de la ventana, con meses, gasto, impresiones, engagement y ejemplos.
+- `source_health`: resumen auditable de cobertura y faltantes que también se registra en el cost ledger (`sp_rag_context` y `sp_name_signals`).
 
 Esto permite detectar casos como "la marca lleva 5 meses empujando el mismo claim" o "la pauta habla de confianza pero la conversación pide claridad" sin convertir performance en mentions ni pedirle a Claude que invente números.
+
+Si `source_health.gaps` dice que falta orgánico, paid, search, reviews, ventas, KB o embeddings, el prompt instruye al modelo a no inferir esa fuente. La salida debe usar `insufficient_data` o `no_connection` en vez de maquillar la ausencia como insight.
 
 Los snippets que llegan al naming incluyen `id`, `text`, `platform` y `published_at`. El prompt exige que `evidence_basis` cite sample ids/periodos usados, para que la lectura cualitativa quede trazable contra evidencia real y no sólo contra paráfrasis del modelo.
 

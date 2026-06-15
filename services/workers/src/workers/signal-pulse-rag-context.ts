@@ -21,6 +21,7 @@ import {
 } from "./signal-pulse-marketing-record-match";
 import { buildSignalPulsePatternFlags, type SignalPulsePatternFlag } from "./signal-pulse-pattern-flags";
 import { loadSignalPulseSemanticPeriodSeriesRows } from "./signal-pulse-semantic-periods";
+import { buildSignalPulseSourceHealth, type SignalPulseSourceHealth } from "./signal-pulse-source-health";
 
 type SignalPulseContextScope = {
   study_corpus_id: string;
@@ -103,6 +104,7 @@ export type SignalPulseMarketingContext = {
   structured_source_window: SignalPulseStructuredSourceMonth[];
   marketing_activity_window: SignalPulseMarketingActivityMonth[];
   repeated_marketing_language: SignalPulseRepeatedMarketingLanguage[];
+  source_health: SignalPulseSourceHealth;
   rag: {
     semantic_available: boolean;
     embedding_model: string | null;
@@ -240,25 +242,38 @@ export type ClusterContextInput = {
 };
 
 export async function loadSignalPulseMarketingContext(ctx: SignalPulseContextScope): Promise<SignalPulseMarketingContext> {
-  const [ragContext, sourceInventory, performanceWindow, structuredSourceWindow, marketingActivity] = await Promise.all([
+  const [ragContext, sourceInventory, performanceWindow, structuredSourceWindow, marketingActivity, semanticCoverage] = await Promise.all([
     loadAnalysisRagContext(ctx.study_corpus_id, ctx.brand_id),
     loadSourceInventory(ctx.study_corpus_id),
     loadPerformanceWindow(ctx.study_corpus_id),
     loadStructuredSourceWindow(ctx.study_corpus_id),
-    loadMarketingActivityWindow(ctx.study_corpus_id)
+    loadMarketingActivityWindow(ctx.study_corpus_id),
+    loadSemanticCoverage(ctx.study_corpus_id)
   ]);
+  const marketingBrief = buildMarketingBrief(ctx.analysis_plan, ctx.params);
+  const knowledgeSources = ragContext.knowledgeSources
+    .filter((source) => source.type !== "query_strategy_brief")
+    .slice(0, 10)
+    .map((source) => ({ type: source.type, content: compactRecord(source.content, 900) }));
+  const expectedMonths = readExpectedWindowMonths(marketingBrief);
 
   return {
-    marketing_brief: buildMarketingBrief(ctx.analysis_plan, ctx.params),
-    knowledge_sources: ragContext.knowledgeSources
-      .filter((source) => source.type !== "query_strategy_brief")
-      .slice(0, 10)
-      .map((source) => ({ type: source.type, content: compactRecord(source.content, 900) })),
+    marketing_brief: marketingBrief,
+    knowledge_sources: knowledgeSources,
     source_inventory: sourceInventory,
     performance_window: performanceWindow,
     structured_source_window: structuredSourceWindow,
     marketing_activity_window: marketingActivity.months,
     repeated_marketing_language: marketingActivity.repeatedLanguage,
+    source_health: buildSignalPulseSourceHealth({
+      expectedMonths,
+      knowledgeSources: knowledgeSources.length,
+      marketingBrief,
+      performanceWindow,
+      structuredSourceWindow,
+      semanticCoverage,
+      semanticAvailable: hasEmbeddingProvider()
+    }),
     rag: {
       semantic_available: hasEmbeddingProvider(),
       embedding_model: hasEmbeddingProvider() ? getEmbeddingModel() : null,
@@ -378,6 +393,26 @@ async function loadSourceInventory(corpusId: string) {
     status: row.status,
     visibility: row.visibility
   }));
+}
+
+async function loadSemanticCoverage(corpusId: string) {
+  const row = (await pool.query<{
+    semantic_mentions: number;
+    semantic_knowledge_chunks: number;
+  }>(
+    `
+      SELECT
+        COUNT(DISTINCT mention_id) FILTER (WHERE scope_type = 'mention' AND mention_id IS NOT NULL)::int AS semantic_mentions,
+        COUNT(*) FILTER (WHERE scope_type = 'knowledge_source')::int AS semantic_knowledge_chunks
+      FROM semantic_embeddings
+      WHERE study_corpus_id = $1
+    `,
+    [corpusId]
+  )).rows[0];
+  return {
+    semanticMentions: Number(row?.semantic_mentions ?? 0),
+    semanticKnowledgeChunks: Number(row?.semantic_knowledge_chunks ?? 0)
+  };
 }
 
 async function loadPerformanceWindow(corpusId: string): Promise<SignalPulseMarketingContext["performance_window"]> {
@@ -1403,6 +1438,11 @@ function buildMarketingBrief(analysisPlan: Record<string, unknown> | null, param
     target_window_months: plan.target_window_months ?? params?.window_months,
     budget_cap_usd: plan.budget_cap_usd ?? params?.budget_cap_usd
   }, 1200);
+}
+
+function readExpectedWindowMonths(marketingBrief: Record<string, unknown>) {
+  const number = Number(marketingBrief.target_window_months ?? 12);
+  return Number.isFinite(number) && number > 0 ? number : 12;
 }
 
 function buildClusterSemanticQuery(cluster: ClusterContextInput, marketingContext: SignalPulseMarketingContext) {

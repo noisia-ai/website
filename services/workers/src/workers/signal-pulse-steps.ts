@@ -1508,6 +1508,16 @@ async function maybeApplyClaudeSignalNaming(args: {
       marketing_activity_months: marketingContext.marketing_activity_window.length,
       repeated_marketing_language: marketingContext.repeated_marketing_language.length,
       source_inventory: marketingContext.source_inventory.length,
+      source_health: {
+        expected_months: marketingContext.source_health.expected_months,
+        performance_months: marketingContext.source_health.performance.months_with_records,
+        performance_records: marketingContext.source_health.performance.records,
+        has_paid: marketingContext.source_health.performance.has_paid,
+        has_organic: marketingContext.source_health.performance.has_organic,
+        knowledge_ready: marketingContext.source_health.knowledge.ready,
+        semantic_mentions: marketingContext.source_health.conversation.semantic_mentions,
+        gaps: marketingContext.source_health.gaps
+      },
       semantic_available: marketingContext.rag.semantic_available,
       cluster_first: true,
       per_mention_coding: false
@@ -1610,6 +1620,11 @@ async function applyClaudeSignalNamingBatch(args: {
             matching_structured_sources: args.batch.reduce((sum, item) => sum + item.context.performance_context.matching_structured_sources.length, 0),
             marketing_activity_months: args.marketingContext.marketing_activity_window.length,
             repeated_marketing_language: args.marketingContext.repeated_marketing_language.length,
+            source_health_gaps: args.marketingContext.source_health.gaps,
+            source_health_expected_months: args.marketingContext.source_health.expected_months,
+            source_health_performance_months: args.marketingContext.source_health.performance.months_with_records,
+            source_health_has_paid: args.marketingContext.source_health.performance.has_paid,
+            source_health_has_organic: args.marketingContext.source_health.performance.has_organic,
             knowledge_matches: args.batch.reduce((sum, item) => sum + item.context.knowledge_matches.length, 0),
             conversation_matches: args.batch.reduce((sum, item) => sum + item.context.conversation_matches.length, 0),
             semantic_available: args.marketingContext.rag.semantic_available,
