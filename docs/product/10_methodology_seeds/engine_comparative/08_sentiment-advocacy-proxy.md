@@ -2,8 +2,7 @@
 
 `slug: sentiment-advocacy-proxy` · status: nuevo · prioridad: **alta**
 
-> **No es NPS real** (no viene de encuesta). Es un **proxy de advocacy**: promotores, detractores, intensidad emocional y temas asociados. Honesto en el nombre.
-
+> **No es NPS real** (no viene de encuesta). Es un **proxy de advocacy**: promotores, detractores, intensidad emocional y temas asociados. 
 ---
 
 ## Resumen (formato cliente)
