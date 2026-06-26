@@ -164,6 +164,26 @@
       "variants": ["light"],
       "ready": true,
       "placeholders": ["FOOTER_NN", "FOOTER_TOTAL"]
+    },
+    {
+      "id": "applications",
+      "name": "Para qué se usa — casos (cards)",
+      "file": "slides/applications/applications.html",
+      "category": "about",
+      "when": "Grid de 8 cards de casos de uso (lanzamiento, medios, producto, defensa, reposicionamiento, tendencias, crisis, influencia). READY. Pega bien después del bloque 'qué es Noisia'.",
+      "variants": ["light"],
+      "ready": true,
+      "placeholders": ["FOOTER_NN", "FOOTER_TOTAL"]
+    },
+    {
+      "id": "industries",
+      "name": "Para quién — industrias (cards)",
+      "file": "slides/industries/industries.html",
+      "category": "about",
+      "when": "Grid de 8 cards por sector (CPG/food/beauty, retail/marketplaces, fintech, telecom, movilidad, gaming/tech, salud/farma, agencias). READY.",
+      "variants": ["light"],
+      "ready": true,
+      "placeholders": ["FOOTER_NN", "FOOTER_TOTAL"]
     }
   ]
 }

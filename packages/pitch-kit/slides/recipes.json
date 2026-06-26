@@ -13,7 +13,7 @@
       ],
       "load_kb": ["packages/kb/00-overview/positioning.md", "packages/kb/00-overview/principles.md"],
       "slides": ["about-noisia", "about-pipeline", "about-method"],
-      "notes": "Slides READY: jálalas tal cual, solo corrige los footers NN/TOTAL. Si cambias la categoría de los ejemplos en about-method, mantén los números coherentes y sin data de cliente real."
+      "notes": "Slides READY: jálalas tal cual, solo corrige los footers NN/TOTAL. Si cambias la categoría de los ejemplos en about-method, mantén los números coherentes y sin data de cliente real. Opcional: añade 'applications' (para qué se usa) e 'industries' (para quién) para una intro de 5 slides."
     },
     {
       "id": "methodology-explainer",
