@@ -18,6 +18,8 @@ operative rulebook for anyone (human or agent) editing the kit itself.
 3. **Signal numbers are deterministic.** Metrics fetched via `signal/fetch-insights.mjs` are used as-is; never hand-edit a number. Keep every quote's source.
 4. **The kit must learn.** When you build something reusable, contribute it back (see below). When you only consume existing slides, don't.
 5. **Brand fidelity.** Use the tokens in `engine/noisia-tokens.css`; don't introduce off-palette colors or fonts. Canvas is 1920×1080.
+6. **Copy passes `COPY_RULES.md`.** Humanize + client-ready sanitize every word: no internal/purpose/navigation text on a slide (the header-right is always `noisia.ai`), no AI tells, no emojis; in Spanish keep standard tech anglicisms (**Dashboard**, not "Panel de control"). Noisia is complex; the press is simple.
+7. **Tiers are a reference, not a cage.** Foundation/Intelligence/Strategy guide scoping and pricing — propose a custom scope when the real work doesn't fit a tier.
 
 ## 🔁 Contribution loop (how the kit grows)
 When you create a reusable slide / rule / builder improvement:

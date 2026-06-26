@@ -43,7 +43,9 @@
         "growth-ladder es OBLIGATORIA (la slide 'cómo crecemos el negocio': Foundation→Intelligence→Strategy).",
         "NUNCA pongas montos en las slides (regla dura de pricing-logic.md). La slide pricing-scope muestra la lógica y la modalidad, no cifras.",
         "Define el tier (Foundation/Intelligence/Strategy) por # de metodologías y modalidad, y refléjalo en study-scope, deliverables y timeline de forma consistente.",
-        "Entregables y tiempos salen del tier en kb/02-services/<tier>.md — no los inventes."
+        "Entregables y tiempos salen del tier en kb/02-services/<tier>.md — no los inventes.",
+        "Los tiers Foundation/Intelligence/Strategy son REFERENCIA, no límite. Si el alcance real no encaja, propón un scope a medida en study-scope/deliverables/timeline en vez de forzarlo a un tier.",
+        "Todo el copy pasa por COPY_RULES.md antes de renderizar: client-ready (sin texto interno/propósito), humanizado, y en español los anglicismos técnicos se quedan (Dashboard, no 'Panel de control')."
       ]
     }
   ]
