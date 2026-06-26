@@ -33,6 +33,12 @@
 /packages/query-engine/             @noisia-ai
 /services/workers/                  @noisia-ai
 
+# --- Pitch kit: engine/builders need review; the slide library is open to the
+#     commercial team so they can contribute slides without waiting on a review.
+#     (slides/** still passes CI + secret-scan; a no-owner line removes the gate.)
+/packages/pitch-kit/                @noisia-ai
+/packages/pitch-kit/slides/
+
 # --- Agent config, CI, deploy, and the guardrails themselves ---
 /.github/                           @noisia-ai
 /AGENTS.md                          @noisia-ai

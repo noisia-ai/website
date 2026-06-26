@@ -1,0 +1,76 @@
+{
+  "$schema": "./catalog.schema.json",
+  "version": 1,
+  "updated": "2026-06-25",
+  "note": "Machine-readable index of reusable Noisia slide templates. Agents read this to know what slides exist. When you add a slide, ADD ITS ENTRY HERE (see ../AGENTS.md → contribution loop).",
+  "engine": {
+    "canvas": "1920x1080",
+    "files": ["noisia-tokens.css", "deck.css", "deck-stage.js"],
+    "shell": "engine/deck-template.html"
+  },
+  "slides": [
+    {
+      "id": "cover",
+      "name": "Portada",
+      "file": "slides/cover/cover.html",
+      "category": "opening",
+      "when": "Siempre la primera. Marca + título-tesis + meta (para quién, fecha).",
+      "variants": ["light", "dark"],
+      "placeholders": ["EYEBROW", "TITLE", "SUBTITLE", "META_FOR", "META_DATE", "FOOTER_NN", "FOOTER_TOTAL"]
+    },
+    {
+      "id": "statement",
+      "name": "Statement / Tesis (dark)",
+      "file": "slides/statement/statement.html",
+      "category": "narrative",
+      "when": "Una sola idea grande que el cliente debe recordar. Fondo oscuro, alto contraste.",
+      "variants": ["dark"],
+      "placeholders": ["EYEBROW", "STATEMENT", "FOOTER_NN", "FOOTER_TOTAL"]
+    },
+    {
+      "id": "three-up",
+      "name": "Tres columnas",
+      "file": "slides/three-up/three-up.html",
+      "category": "structure",
+      "when": "Comparar 3 cosas en paralelo (ej. Foundation / Intelligence / Strategy, 3 fases).",
+      "variants": ["light"],
+      "placeholders": ["EYEBROW", "TITLE", "COL1_*", "COL2_*", "COL3_*", "FOOTER_NN", "FOOTER_TOTAL"]
+    },
+    {
+      "id": "finding",
+      "name": "Hallazgo con evidencia",
+      "file": "slides/finding/finding.html",
+      "category": "evidence",
+      "when": "Mostrar un hallazgo defendible: afirmación + evidencia trazable + confianza calibrada.",
+      "variants": ["light"],
+      "placeholders": ["EYEBROW", "CLAIM", "EVIDENCE_QUOTE", "EVIDENCE_SOURCE", "CONFIDENCE", "FOOTER_NN", "FOOTER_TOTAL"]
+    },
+    {
+      "id": "signal-insight",
+      "name": "Insight de Signal",
+      "file": "slides/signal-insight/signal-insight.html",
+      "category": "evidence",
+      "when": "Insertar una métrica + quote traídos de Signal/Signal Pulse vía signal/fetch-insights.mjs.",
+      "variants": ["light", "dark"],
+      "placeholders": ["EYEBROW", "METRIC", "METRIC_LABEL", "QUOTE", "QUOTE_SOURCE", "FOOTER_NN", "FOOTER_TOTAL"]
+    },
+    {
+      "id": "legal",
+      "name": "Aviso legal / Alcance",
+      "file": "slides/legal/legal.html",
+      "category": "closing",
+      "when": "Alcance, confidencialidad, limitaciones metodológicas, notas legales. Pedida seguido por clientes.",
+      "variants": ["light"],
+      "placeholders": ["TITLE", "BODY_POINTS", "FOOTER_NN", "FOOTER_TOTAL"]
+    },
+    {
+      "id": "closing",
+      "name": "Cierre / CTA",
+      "file": "slides/closing/closing.html",
+      "category": "closing",
+      "when": "Última slide. Llamado a la acción + contacto.",
+      "variants": ["dark"],
+      "placeholders": ["STATEMENT", "CONTACT", "CTA_LABEL", "FOOTER_NN", "FOOTER_TOTAL"]
+    }
+  ]
+}
