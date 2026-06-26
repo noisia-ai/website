@@ -1,0 +1,31 @@
+<!doctype html>
+<!--
+  Noisia deck shell. Assemble a deck by copying the engine/ files next to this
+  index.html, then replacing <!-- SLIDES --> with slide fragments from ../slides/.
+  Render to PDF with: node packages/pitch-kit/builders/build-pdf.mjs <this-file> out.pdf
+  Design canvas: 1920x1080 (16:9). See ../AGENTS.md for rules.
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>{{DECK_TITLE}}</title>
+<link rel="stylesheet" href="noisia-tokens.css">
+<link rel="stylesheet" href="deck.css">
+<!-- Optional speaker notes: one string per slide, in order. -->
+<script type="application/json" id="speaker-notes">
+[]
+</script>
+<style>
+  deck-stage { width: 100vw; height: 100vh; display: block; }
+  deck-stage section { background: transparent; }
+</style>
+</head>
+<body>
+<deck-stage width="1920" height="1080">
+
+<!-- SLIDES: paste slide fragments here, in order. Update the NN / TOTAL in each footer. -->
+
+</deck-stage>
+<script src="deck-stage.js"></script>
+</body>
+</html>

@@ -29,3 +29,6 @@ pnpm-debug.log*
 !**/.env.example
 tsconfig.tsbuildinfo
 *.swp
+
+# Pitch kit: local working decks (may contain client data — never commit)
+packages/pitch-kit/examples/_local/

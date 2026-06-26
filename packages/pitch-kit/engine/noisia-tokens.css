@@ -1,0 +1,267 @@
+/*
+ * Noisia Design System — Colors & Typography
+ * Source: DESIGN V2.md + noisia_cheaf_freebie/src/styles/tokens.css
+ * Font: Google Sans via CDN (see @import below)
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap');
+
+/* ─────────────────────────────────────────
+   BASE TOKENS
+───────────────────────────────────────── */
+:root {
+  /* Canvas & surfaces */
+  --canvas:        #ffffff;
+  --surface-01:    #fafafa;
+  --surface-02:    #f4f4f4;
+  --surface-03:    #eeeeee;
+
+  /* Neutrals */
+  --neutral-03:    #eeeeee;
+  --neutral-04:    #e6e6e6;
+  --neutral-05:    #dadada;
+  --neutral-09:    #999999;
+  --neutral-10:    #6d6d6d;
+  --neutral-11:    #2b2b2b;
+  --ink:           #0a0a0a;
+
+  /* Signal — cyan = discovery */
+  --signal:        #00eeee;
+  --signal-dark:   #008a8a;
+
+  /* Tension — red = contradiction */
+  --tension:       #ee0b00;
+  --tension-soft:  #fff0ef;
+
+  /* Positive — green = behavioral proof */
+  --positive:      #008f66;
+  --positive-soft: #eaf8f2;
+
+  /* Auxiliary */
+  --whisper:       #c4a8e8;
+
+  /* Atmospheric (background canvas only — never on text/buttons/icons) */
+  --blob-dark:     #061218;
+  --blob-charcoal: #2a2b2f;
+  --blob-cyan:     #00eeee;
+  --blob-red:      #ee0b00;
+
+  /* ─── SEMANTIC ALIASES ─── */
+  --fg-primary:    var(--neutral-11);
+  --fg-secondary:  var(--neutral-10);
+  --fg-emphasis:   var(--ink);
+  --fg-inverse:    var(--canvas);
+  --bg-page:       var(--canvas);
+  --bg-raised:     var(--surface-01);
+  --bg-sunken:     var(--surface-02);
+  --border-subtle: var(--neutral-03);
+  --border-medium: var(--neutral-04);
+  --accent:        var(--signal);
+  --accent-dark:   var(--signal-dark);
+  --danger:        var(--tension);
+  --danger-soft:   var(--tension-soft);
+  --success:       var(--positive);
+  --success-soft:  var(--positive-soft);
+
+  /* ─── RADIUS ─── */
+  --radius-xs:   8px;
+  --radius-sm:   12px;
+  --radius-md:   16px;
+  --radius-lg:   20px;
+  --radius-xl:   24px;
+  --radius-xxl:  32px;
+  --radius-pill: 999px;
+
+  /* ─── SPACING ─── */
+  --space-xs:   4px;
+  --space-sm:   8px;
+  --space-md:   16px;
+  --space-lg:   24px;
+  --space-xl:   40px;
+  --space-2xl:  64px;
+  --space-3xl:  96px;
+
+  --section-mobile-report:    88px;
+  --section-desktop-report:   120px;
+  --section-mobile-marketing: 72px;
+  --section-desktop-marketing:112px;
+  --dashboard-gap:            16px;
+  --panel-padding-compact:    16px;
+  --panel-padding-comfortable:24px;
+  --workspace-gutter:         20px;
+  --app-toolbar-height:       56px;
+
+  /* ─── MAX WIDTHS ─── */
+  --max-read: 720px;
+  --max-wide: 1080px;
+  --max-marketing: 1440px;
+
+  /* ─── SHADOWS ─── */
+  --shadow-soft: 0 4px 32px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04);
+  --shadow-lift: 0 8px 48px rgba(0,0,0,0.1), 0 1px 5px rgba(0,0,0,0.05);
+  --shadow-glass: 0 22px 64px rgba(43,43,43,0.08), inset 0 1px 0 rgba(255,255,255,0.86);
+  --shadow-cta:   0 10px 24px rgba(10,10,10,0.14);
+
+  /* ─── FONTS ─── */
+  --font-sans: "Google Sans", system-ui, sans-serif;
+}
+
+/* ─────────────────────────────────────────
+   SEMANTIC TYPOGRAPHY
+───────────────────────────────────────── */
+
+/* Display — hero headings */
+.t-display {
+  font-family: var(--font-sans);
+  font-size: clamp(3.4rem, 9vw, 7.4rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+/* Headline large */
+.t-headline-lg {
+  font-family: var(--font-sans);
+  font-size: clamp(2.7rem, 7vw, 4.8rem);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: 0;
+}
+
+/* Headline medium */
+.t-headline-md {
+  font-family: var(--font-sans);
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+/* Headline small */
+.t-headline-sm {
+  font-family: var(--font-sans);
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: 0;
+}
+
+/* Body large */
+.t-body-lg {
+  font-family: var(--font-sans);
+  font-size: clamp(1.08rem, 2vw, 1.32rem);
+  font-weight: 400;
+  line-height: 1.48;
+  letter-spacing: 0;
+}
+
+/* Body */
+.t-body {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: 0;
+}
+
+/* Label — all-caps eyebrows, tags, table headers */
+.t-label {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0;
+}
+
+/* Caption */
+.t-caption {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+
+/* Metric — big numbers */
+.t-metric {
+  font-family: var(--font-sans);
+  font-size: clamp(2.4rem, 11vw, 7.4rem);
+  font-weight: 700;
+  line-height: 0.86;
+  letter-spacing: 0;
+}
+
+/* Button */
+.t-button {
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+/* ─────────────────────────────────────────
+   HTML ELEMENT DEFAULTS
+───────────────────────────────────────── */
+body {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--fg-primary);
+  background: var(--bg-page);
+  -webkit-font-smoothing: antialiased;
+  text-wrap: pretty;
+}
+
+h1 { font-size: clamp(2.7rem, 7vw, 4.8rem); font-weight: 500; line-height: 1.04; letter-spacing: 0; margin: 0; }
+h2 { font-size: clamp(2rem, 5vw, 3rem);     font-weight: 500; line-height: 1.08; letter-spacing: 0; margin: 0; }
+h3 { font-size: clamp(1.4rem, 3vw, 1.9rem); font-weight: 700; line-height: 1.18; letter-spacing: 0; margin: 0; }
+h4 { font-size: 1.32rem;  font-weight: 700;  line-height: 1.3;  letter-spacing: 0; margin: 0; }
+h5 { font-size: 1rem;     font-weight: 700;  line-height: 1.4;  letter-spacing: 0; margin: 0; }
+h6 { font-size: 0.88rem;  font-weight: 700;  line-height: 1.4;  letter-spacing: 0; margin: 0; }
+
+p  { max-width: 65ch; color: var(--fg-primary); line-height: 1.6; margin: 0; }
+
+code, pre {
+  font-family: "Roboto Mono", "Fira Code", monospace;
+  font-size: 0.9em;
+  background: var(--surface-02);
+  border-radius: var(--radius-xs);
+  padding: 0.1em 0.35em;
+}
+
+/* ─────────────────────────────────────────
+   GLASS SURFACE UTILITY
+   The default Noisia card surface
+───────────────────────────────────────── */
+.glass {
+  background: rgba(255,255,255,0.58);
+  border: 1px solid rgba(255,255,255,0.66);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: blur(20px) saturate(125%);
+}
+
+.glass-footer {
+  background: rgba(255,255,255,0.52);
+  border: 1px solid rgba(255,255,255,0.76);
+  border-radius: var(--radius-xxl);
+  box-shadow: 0 22px 70px rgba(43,43,43,0.1), inset 0 1px 0 rgba(255,255,255,0.9);
+  backdrop-filter: blur(24px) saturate(130%);
+}
+
+/* ─────────────────────────────────────────
+   EYEBROW / SECTION LABEL
+───────────────────────────────────────── */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-02);
+  color: var(--fg-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.1;
+}

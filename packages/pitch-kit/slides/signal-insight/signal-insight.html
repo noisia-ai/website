@@ -1,0 +1,22 @@
+<!-- slide: signal-insight · Insight de Signal · variants: light|dark
+     Fill from signal/fetch-insights.mjs output. METRIC is computed by Signal (deterministic), not invented. -->
+<section class="slide" data-label="Insight Signal">
+  <div class="frame">
+    <div class="slide-header">
+      <div class="left"><img class="logo" src="logo_norm.svg" alt="Noisia"></div>
+      <div class="right"><span>noisia.ai</span></div>
+    </div>
+    <span class="eyebrow signal">· {{EYEBROW}}</span>
+    <div style="display:grid; grid-template-columns:0.8fr 1.2fr; gap:80px; align-items:center; flex:1;">
+      <div class="col">
+        <span class="metric" style="font-size:var(--type-metric); line-height:0.9;">{{METRIC}}</span>
+        <span class="body" style="font-size:28px; color:var(--fg-secondary);">{{METRIC_LABEL}}</span>
+      </div>
+      <blockquote style="margin:0; border-left:4px solid var(--signal); padding-left:32px;">
+        <p class="body" style="font-size:36px; font-style:italic;">"{{QUOTE}}"</p>
+        <span class="body" style="font-size:22px; color:var(--fg-secondary);">— {{QUOTE_SOURCE}}</span>
+      </blockquote>
+    </div>
+    <div class="slide-footer"><span>noisia · social intelligence architects</span><span>{{FOOTER_NN}} / {{FOOTER_TOTAL}}</span></div>
+  </div>
+</section>
